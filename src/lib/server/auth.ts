@@ -4,10 +4,23 @@
  * Better Auth selbst in der konfigurierten Datenbank an (siehe init.ts).
  */
 import { betterAuth } from 'better-auth';
+import { APIError } from 'better-auth/api';
+import { admin } from 'better-auth/plugins';
+import { createAccessControl } from 'better-auth/plugins/access';
+import { adminAc, defaultStatements } from 'better-auth/plugins/admin/access';
+import { sendSystemMail } from './mail';
 import { getDb } from './db';
 import { serverConfig } from './runtime';
 
 export type Role = 'admin' | 'editor';
+
+// Rollen des CMS: admin verwaltet Nutzer, editor pflegt Inhalte. Zugriffsrechte auf
+// Inhalte prüft das CMS selbst (Hook, requireAdmin); das Plugin regelt nur die Nutzerverwaltung.
+const ac = createAccessControl(defaultStatements);
+export const roles = {
+	admin: ac.newRole({ ...adminAc.statements }),
+	editor: ac.newRole({})
+};
 
 export interface SessionUser {
 	id: string;
@@ -31,7 +44,8 @@ function createAuth(database: unknown, countUsers: () => Promise<number>) {
 		// damit localhost, Container-IP und <projekt>.test gleichermaßen funktionieren.
 		baseURL: cfg.isProd ? cfg.origin : undefined,
 		basePath: '/api/auth',
-		secret: cfg.authSecret || (cfg.isProd ? undefined : 'dev-secret-please-set-AUTH_SECRET-0123456789'),
+		secret:
+			cfg.authSecret || (cfg.isProd ? undefined : 'dev-secret-please-set-AUTH_SECRET-0123456789'),
 		// better-sqlite3 Database bzw. pg Pool — Better Auth erkennt beide.
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		database: database as any,
@@ -54,20 +68,33 @@ function createAuth(database: unknown, countUsers: () => Promise<number>) {
 		},
 		emailAndPassword: {
 			enabled: true,
-			disableSignUp: !cfg.allowSignup
+			// „Passwort vergessen": Link per Mail über den CMS-Transport; Ziel ist /admin/reset.
+			sendResetPassword: async ({ user, url }) => {
+				await sendSystemMail({
+					to: user.email,
+					subject: 'Passwort zurücksetzen',
+					markdown: `Hallo ${user.name || user.email},\n\nüber diesen Link können Sie ein neues Passwort für das CMS setzen (eine Stunde gültig):\n\n[Passwort zurücksetzen](${url})\n\nFalls Sie das nicht angefordert haben, ignorieren Sie diese Nachricht.`
+				});
+			},
+			resetPasswordTokenExpiresIn: 3600
 		},
+		// Nutzerverwaltung (Rollen, Anlegen, Entfernen) — Rolle „admin" darf verwalten.
+		plugins: [admin({ ac, roles, defaultRole: 'editor', adminRoles: ['admin'] })],
 		socialProviders,
-		user: {
-			additionalFields: {
-				role: { type: 'string', required: false, defaultValue: 'editor', input: false }
-			}
-		},
 		databaseHooks: {
 			user: {
 				create: {
-					// Erster Nutzer wird Admin, alle weiteren Redakteur.
+					// Erster Nutzer wird Admin (immer möglich). Weitere Konten nur mit ALLOW_SIGNUP=1 —
+					// so bleibt eine vergessene Einstellung folgenlos, sobald ein Konto existiert.
 					before: async (user) => {
-						const role: Role = (await countUsers()) === 0 ? 'admin' : 'editor';
+						const first = (await countUsers()) === 0;
+						if (!first && !cfg.allowSignup) {
+							throw new APIError('FORBIDDEN', {
+								message:
+									'Registrierung ist geschlossen. Bitte einen Administrator um ein Konto bitten.'
+							});
+						}
+						const role: Role = first ? 'admin' : 'editor';
 						return { data: { ...user, role } };
 					}
 				}
@@ -121,6 +148,7 @@ export function authOptions() {
 	const cfg = serverConfig();
 	const { oauth } = cfg;
 	return {
+		// Anzeige im Login: Registrierung ist offen, wenn erlaubt oder noch kein Konto existiert (siehe hooks).
 		signup: cfg.allowSignup,
 		providers: [
 			oauth.github.clientId ? 'github' : null,

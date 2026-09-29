@@ -52,15 +52,21 @@ export interface MailTemplateOptions<F extends FieldMap> {
 	captcha?: boolean;
 }
 
-export function defineMail<const F extends FieldMap>(def: MailTemplateOptions<F>): MailTemplateDefinition<F> {
+export function defineMail<const F extends FieldMap>(
+	def: MailTemplateOptions<F>
+): MailTemplateDefinition<F> {
 	if (!/^[a-z][a-z0-9-]*$/.test(def.name)) {
 		throw new Error(`Mail-Vorlage „${def.name}": Name nur a-z, 0-9, -`);
 	}
 	if (def.replyToField && !def.fields[def.replyToField]) {
-		throw new Error(`Mail-Vorlage „${def.name}": replyToField „${def.replyToField}" fehlt in fields.`);
+		throw new Error(
+			`Mail-Vorlage „${def.name}": replyToField „${def.replyToField}" fehlt in fields.`
+		);
 	}
 	if (def.autoReply && !def.fields[def.autoReply.toField]) {
-		throw new Error(`Mail-Vorlage „${def.name}": autoReply.toField „${def.autoReply.toField}" fehlt in fields.`);
+		throw new Error(
+			`Mail-Vorlage „${def.name}": autoReply.toField „${def.autoReply.toField}" fehlt in fields.`
+		);
 	}
 	return {
 		name: def.name,

@@ -16,20 +16,27 @@
 	// svelte-ignore state_referenced_locally
 	let active = $state(data.lang);
 	$effect(() => {
-		if (active !== data.lang) goto(`/admin/${data.def.name}?lang=${active}&q=${encodeURIComponent(data.q)}`);
+		if (active !== data.lang)
+			goto(`/admin/${data.def.name}?lang=${active}&q=${encodeURIComponent(data.q)}`);
 	});
 
-	const fmt = (iso: string) => new Date(iso).toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' });
+	const fmt = (iso: string) =>
+		new Date(iso).toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' });
 </script>
 
 <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
-	<h1 class="text-2xl font-semibold">{data.def.labelPlural} <span class="text-muted-foreground text-base font-normal">({data.rows.length})</span></h1>
+	<h1 class="text-2xl font-semibold">
+		{data.def.labelPlural}
+		<span class="text-muted-foreground text-base font-normal">({data.rows.length})</span>
+	</h1>
 	<div class="flex items-center gap-2">
 		<form method="get">
 			<input type="hidden" name="lang" value={data.lang} />
 			<Input type="search" name="q" value={data.q} placeholder="Suchen …" class="w-56" />
 		</form>
-		<Button href="/admin/{data.def.name}/new?lang={data.lang}"><PlusIcon aria-hidden="true" /> {data.def.label} anlegen</Button>
+		<Button href="/admin/{data.def.name}/new?lang={data.lang}"
+			><PlusIcon aria-hidden="true" /> {data.def.label} anlegen</Button
+		>
 	</div>
 </div>
 
@@ -52,7 +59,12 @@
 			{#each data.rows as { row, langs } (row.slug)}
 				{@const inLang = langs.find((l) => l.lang === data.lang)}
 				<Table.TableRow>
-					<Table.TableCell><a href="/admin/{data.def.name}/{row.slug}?lang={data.lang}" class="font-medium hover:underline">{row.title || row.slug}</a></Table.TableCell>
+					<Table.TableCell
+						><a
+							href="/admin/{data.def.name}/{row.slug}?lang={data.lang}"
+							class="font-medium hover:underline">{row.title || row.slug}</a
+						></Table.TableCell
+					>
 					<Table.TableCell><code class="text-xs">{row.slug}</code></Table.TableCell>
 					<Table.TableCell>
 						{#if !inLang}<Badge variant="info">fehlt</Badge>
@@ -62,11 +74,15 @@
 					<Table.TableCell>
 						<span class="flex gap-1">
 							{#each langs as l (l.lang)}
-								<Badge variant={l.status === 'published' ? 'positive' : 'neutral'}>{l.lang.toUpperCase()}</Badge>
+								<Badge variant={l.status === 'published' ? 'positive' : 'neutral'}
+									>{l.lang.toUpperCase()}</Badge
+								>
 							{/each}
 						</span>
 					</Table.TableCell>
-					<Table.TableCell class="text-muted-foreground text-sm">{fmt((inLang ?? row).updatedAt)} · {(inLang ?? row).updatedBy}</Table.TableCell>
+					<Table.TableCell class="text-muted-foreground text-sm"
+						>{fmt((inLang ?? row).updatedAt)} · {(inLang ?? row).updatedBy}</Table.TableCell
+					>
 				</Table.TableRow>
 			{/each}
 		</Table.TableBody>

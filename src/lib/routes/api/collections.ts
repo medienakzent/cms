@@ -16,6 +16,11 @@ export const GET = () =>
 				fields: c.fields,
 				blocks: c.blocks
 			})),
-			blocks: Object.values(registry.blocks).map((b) => ({ name: b.name, label: b.label, version: b.version, fields: b.fields }))
+			blocks: Object.values(registry.blocks).map((b) => ({
+				name: b.name,
+				label: b.label,
+				version: b.version,
+				fields: b.fields
+			}))
 		};
 	});

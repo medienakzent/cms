@@ -157,7 +157,10 @@ export const f = {
 	): MultiselectField<O> => ({ kind: 'multiselect', options, ...o }),
 	media: (o: Opts<MediaField> = {}): MediaField => ({ kind: 'media', ...o }),
 	link: (o: Opts<LinkField> = {}): LinkField => ({ kind: 'link', ...o }),
-	reference: (collection: string, o: Omit<ReferenceField, 'kind' | 'collection'> = {}): ReferenceField => ({
+	reference: (
+		collection: string,
+		o: Omit<ReferenceField, 'kind' | 'collection'> = {}
+	): ReferenceField => ({
 		kind: 'reference',
 		collection,
 		...o
@@ -166,7 +169,10 @@ export const f = {
 		collection: string,
 		o: Omit<ReferencesField, 'kind' | 'collection'> = {}
 	): ReferencesField => ({ kind: 'references', collection, ...o }),
-	list: <const I extends Field>(of: I, o: Omit<ListField<I>, 'kind' | 'of'> = {}): ListField<I> => ({
+	list: <const I extends Field>(
+		of: I,
+		o: Omit<ListField<I>, 'kind' | 'of'> = {}
+	): ListField<I> => ({
 		kind: 'list',
 		of,
 		...o

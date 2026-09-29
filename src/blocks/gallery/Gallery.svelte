@@ -18,7 +18,9 @@
 						class="aspect-[4/3] w-full rounded-md object-cover"
 						loading="lazy"
 					/>
-					{#if item.caption}<figcaption class="text-muted-foreground mt-1 text-sm">{item.caption}</figcaption>{/if}
+					{#if item.caption}<figcaption class="text-muted-foreground mt-1 text-sm">
+							{item.caption}
+						</figcaption>{/if}
 				</figure>
 			{/if}
 		{/each}

@@ -17,7 +17,11 @@ export const load: LayoutServerLoad = async ({ params, locals }) => {
 		lang,
 		languages: config.languages,
 		siteName: config.site.name,
-		nav: pages.items.map((p) => ({ slug: p.slug, title: p.title, href: localizePath(config, lang, p.slug === 'home' ? '/' : `/${p.slug}`) })),
+		nav: pages.items.map((p) => ({
+			slug: p.slug,
+			title: p.title,
+			href: localizePath(config, lang, p.slug === 'home' ? '/' : `/${p.slug}`)
+		})),
 		preview: !!locals.user,
 		// Captcha-Konfiguration für Formulare (Provider, Site-Key, Challenge-URL)
 		captcha: cms.forms.captcha()

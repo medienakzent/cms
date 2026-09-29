@@ -78,9 +78,11 @@ docker exec -w /app cms-dev npm run package   # Paket bauen + publint
 ```ts
 import { cms } from '@medienakzent/cms/server';
 
-const page = await cms.collection('pages').get('about', { lang: 'en' });    // veröffentlicht, mit Fallback
+const page = await cms.collection('pages').get('about', { lang: 'en' }); // veröffentlicht, mit Fallback
 const pages = await cms.collection('pages').list({ lang: 'de', limit: 10 });
-await cms.collection('pages').save('about', 'de', { fields, blocks }, { actor, status: 'published' });
+await cms
+	.collection('pages')
+	.save('about', 'de', { fields, blocks }, { actor, status: 'published' });
 ```
 
 ```svelte
@@ -88,6 +90,7 @@ await cms.collection('pages').save('about', 'de', { fields, blocks }, { actor, s
 	import { BlockRenderer } from '@medienakzent/cms/render';
 	let { data } = $props();
 </script>
+
 <BlockRenderer blocks={data.doc.blocks} />
 ```
 
@@ -140,14 +143,14 @@ GET /api/v1/events?lang=de&status=published&limit=20&offset=0&sort=-start
     &q=volltext
 ```
 
-| Feldart | Operatoren | sortierbar |
-| --- | --- | --- |
-| text | eq ne in nin contains | ja |
-| number, date | eq ne in nin lt lte gt gte | ja |
-| boolean | eq ne | ja |
-| select, reference | eq ne in nin | ja |
-| multiselect, references | eq ne in nin | nein |
-| textarea, richtext, media, link, list, blocks | — (nur Volltext `q`) | nein |
+| Feldart                                       | Operatoren                 | sortierbar |
+| --------------------------------------------- | -------------------------- | ---------- |
+| text                                          | eq ne in nin contains      | ja         |
+| number, date                                  | eq ne in nin lt lte gt gte | ja         |
+| boolean                                       | eq ne                      | ja         |
+| select, reference                             | eq ne in nin               | ja         |
+| multiselect, references                       | eq ne in nin               | nein       |
+| textarea, richtext, media, link, list, blocks | — (nur Volltext `q`)       | nein       |
 
 Sortierung: `sort=feld` oder `sort=-feld`, zusätzlich `updatedAt`, `createdAt`,
 `publishedAt`, `title`, `slug`. Ohne `sort` gilt `sortBy` der Collection.
@@ -158,7 +161,10 @@ In Code identisch, nur typisiert:
 ```ts
 await cms.collection('events').list({
 	lang: 'de',
-	filters: [{ field: 'start', op: 'gte', value: '2026-01-01' }, { field: 'tags', value: 'jazz' }],
+	filters: [
+		{ field: 'start', op: 'gte', value: '2026-01-01' },
+		{ field: 'tags', value: 'jazz' }
+	],
 	sort: '-start',
 	limit: 20
 });
@@ -182,9 +188,13 @@ Vorlagen liegen je Kunde in `src/mail/<name>.ts` und nutzen das Feldsystem der B
 ```ts
 export default defineMail({
 	name: 'contact',
-	fields: { name: f.text({ required: true }), email: f.text({ required: true }), message: f.textarea({ required: true }) },
+	fields: {
+		name: f.text({ required: true }),
+		email: f.text({ required: true }),
+		message: f.textarea({ required: true })
+	},
 	replyToField: 'email',
-	to: ['office@example.com'],                       // leer → MAIL_TO_DEFAULT
+	to: ['office@example.com'], // leer → MAIL_TO_DEFAULT
 	subject: { de: 'Kontaktanfrage von {{name}}', en: 'Contact request from {{name}}' },
 	body: { de: '## Neue Anfrage\n\n{{all}}', en: '## New request\n\n{{all}}' },
 	autoReply: { toField: 'email', subject: 'Ihre Anfrage', body: 'Hallo {{name}}, danke …' }
@@ -224,8 +234,9 @@ selbst gehostetes Proof-of-Work, keine Drittanbieter, keine Cookies, keine Einwi
 ```svelte
 <script>
 	import { Captcha } from '@medienakzent/cms/forms';
-	import { page } from '$app/state';   // data.captcha kommt aus dem Layout-Load: cms.forms.captcha()
+	import { page } from '$app/state'; // data.captcha kommt aus dem Layout-Load: cms.forms.captcha()
 </script>
+
 <form …>
 	…
 	<Captcha config={page.data.captcha} />
@@ -264,23 +275,45 @@ Dienste laden erst nach Einwilligung ihrer Kategorie, Seitenwechsel werden gemel
 (`cms_consent`, 180 Tage) mit Versionsnummer. Ohne optionale Dienste erscheint kein Banner.
 Gestaltung über die Klassen `cms-consent*` und CSS-Variablen `--cms-consent-*`.
 
+## Produktivbetrieb
+
+- `ORIGIN` auf die öffentliche https-URL setzen, `AUTH_SECRET` mit mindestens 32 Zeichen
+  (`openssl rand -base64 32`), `API_TOKEN` nur, wenn Skripte die API brauchen.
+- Erster Nutzer registriert sich selbst und wird Admin; danach ist die Registrierung geschlossen,
+  weitere Konten legt ein Admin unter „Nutzer" an. `ALLOW_SIGNUP=1` nur bewusst setzen.
+- „Passwort vergessen" braucht einen funktionierenden Mail-Transport (`MAIL_TRANSPORT=smtp`).
+- Healthcheck: `GET /api/health` (200/503). Sitemap: `/sitemap.xml`, KI-Überblick: `/llms.txt`,
+  `static/robots.txt` im Projekt anpassen.
+- Volumes sichern: `/storage` (Inhalte, Medien, Historie, Einsendungen) und `/data` (Index, Auth).
+  Der Index ist rekonstruierbar, Auth-Tabellen (Konten) nicht — beides sichern.
+- Uploads: `BODY_SIZE_LIMIT` am Node-Server über der größten `maxTotalSize` halten.
+- Rate-Limits und Captcha-Replay-Schutz sind prozesslokal — bei mehreren Instanzen Sticky Sessions
+  oder einen gemeinsamen Speicher nachrüsten.
+- Redakteure können in Richtext-Feldern HTML setzen (Markdown erlaubt es). Konten daher nur an
+  vertrauenswürdige Personen vergeben; Formular-Eingaben von Besuchern werden immer escaped.
+- Für KI-Suchsysteme (GEO): sauberes SSR-HTML, JSON-LD und Meta-Beschreibungen kommen vom
+  Kundenlayout; `llms.txt` und `sitemap.xml` liefert das CMS. Wer KI-Training ausschließen will,
+  trägt in `robots.txt` z. B. `GPTBot`, `ClaudeBot`, `Google-Extended` mit `Disallow: /` ein.
+
 ## REST-API (Auszug)
 
-| Methode | Pfad | Zweck |
-| --- | --- | --- |
-| GET | `/api/v1/collections` | Struktur (Collections, Blocks, Felder) |
-| GET | `/api/v1/<coll>?lang=&status=&q=&sort=&filter[...]=` | Liste aus dem Index (siehe Abfragen) |
-| POST | `/api/v1/<coll>` `{ slug, lang, fields, blocks, status }` | Anlegen |
-| GET | `/api/v1/<coll>/<slug>?lang=&editable=1` | Dokument (zusammengeführt) |
-| PUT | `/api/v1/<coll>/<slug>?lang=` `{ fields, blocks, status }` | Speichern einer Sprachfassung |
-| POST | `/api/v1/<coll>/<slug>/status` `{ lang, status }` | Veröffentlichen / Entwurf |
-| DELETE | `/api/v1/<coll>/<slug>[?lang=]` | Sprachfassung oder Dokument löschen |
-| GET | `/api/v1/<coll>/<slug>/versions` · POST `…/versions/<id>/restore` | Versionen |
-| GET/POST | `/api/v1/media` · PATCH/DELETE `/api/v1/media/<id>` | Medien |
-| POST | `/api/v1/reindex` | Index neu aufbauen (Admin) |
-| POST | `/api/mail/<vorlage>` | Öffentlich: Formular senden (Captcha, Rate-Limit, Honeypot) |
-| GET | `/api/captcha/challenge` | Öffentlich: ALTCHA-Aufgabe (Rate-Limit) |
-| GET | `/api/v1/submissions?template=&status=&limit=&offset=` · GET/DELETE `/api/v1/submissions/<id>` | Einsendungen (geschützt) |
+| Methode  | Pfad                                                                                           | Zweck                                                       |
+| -------- | ---------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| GET      | `/api/v1/collections`                                                                          | Struktur (Collections, Blocks, Felder)                      |
+| GET      | `/api/v1/<coll>?lang=&status=&q=&sort=&filter[...]=`                                           | Liste aus dem Index (siehe Abfragen)                        |
+| POST     | `/api/v1/<coll>` `{ slug, lang, fields, blocks, status }`                                      | Anlegen                                                     |
+| GET      | `/api/v1/<coll>/<slug>?lang=&editable=1`                                                       | Dokument (zusammengeführt)                                  |
+| PUT      | `/api/v1/<coll>/<slug>?lang=` `{ fields, blocks, status }`                                     | Speichern einer Sprachfassung                               |
+| POST     | `/api/v1/<coll>/<slug>/status` `{ lang, status }`                                              | Veröffentlichen / Entwurf                                   |
+| DELETE   | `/api/v1/<coll>/<slug>[?lang=]`                                                                | Sprachfassung oder Dokument löschen                         |
+| GET      | `/api/v1/<coll>/<slug>/versions` · POST `…/versions/<id>/restore`                              | Versionen                                                   |
+| GET/POST | `/api/v1/media` · PATCH/DELETE `/api/v1/media/<id>`                                            | Medien                                                      |
+| POST     | `/api/v1/reindex`                                                                              | Index neu aufbauen (Admin)                                  |
+| POST     | `/api/v1/users` · PATCH/DELETE `/api/v1/users/<id>`                                            | Nutzerverwaltung (Admin-Sitzung)                            |
+| GET      | `/api/health` · `/sitemap.xml` · `/llms.txt`                                                   | Öffentlich: Betrieb und Auffindbarkeit                      |
+| POST     | `/api/mail/<vorlage>`                                                                          | Öffentlich: Formular senden (Captcha, Rate-Limit, Honeypot) |
+| GET      | `/api/captcha/challenge`                                                                       | Öffentlich: ALTCHA-Aufgabe (Rate-Limit)                     |
+| GET      | `/api/v1/submissions?template=&status=&limit=&offset=` · GET/DELETE `/api/v1/submissions/<id>` | Einsendungen (geschützt)                                    |
 
 ## Datenbank-Adapter
 

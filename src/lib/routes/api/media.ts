@@ -7,7 +7,12 @@ import { media } from '../../server/media';
 export const GET = (event: RequestEvent) =>
 	api(async () => {
 		const p = event.url.searchParams;
-		return media.list({ kind: p.get('kind') ?? undefined, q: p.get('q') ?? undefined, limit: Number(p.get('limit') ?? 60), offset: Number(p.get('offset') ?? 0) });
+		return media.list({
+			kind: p.get('kind') ?? undefined,
+			q: p.get('q') ?? undefined,
+			limit: Number(p.get('limit') ?? 60),
+			offset: Number(p.get('offset') ?? 0)
+		});
 	});
 
 /** POST /api/v1/media  multipart/form-data, Feld `file` (mehrfach erlaubt) */
@@ -33,7 +38,8 @@ export const GET_ITEM = (event: RequestEvent) =>
 export const PATCH_ITEM = (event: RequestEvent) =>
 	api(async () => {
 		const body = await readJsonBody(event, ['alt']);
-		if (typeof body.alt !== 'string' || body.alt.length > 500) throw new CmsError(400, 'alt: Text bis 500 Zeichen');
+		if (typeof body.alt !== 'string' || body.alt.length > 500)
+			throw new CmsError(400, 'alt: Text bis 500 Zeichen');
 		return media.updateAlt(event.params.id ?? '', body.alt);
 	});
 

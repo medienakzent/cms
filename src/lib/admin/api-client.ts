@@ -22,7 +22,10 @@ export async function apiFetch<T = unknown>(
 		body = JSON.stringify(init.json);
 	}
 	const res = await fetch(path, { ...init, headers, body });
-	const data = (await res.json().catch(() => ({}))) as { error?: string; issues?: ValidationIssue[] };
+	const data = (await res.json().catch(() => ({}))) as {
+		error?: string;
+		issues?: ValidationIssue[];
+	};
 	if (!res.ok) throw new ApiError(res.status, data.error ?? res.statusText, data.issues ?? []);
 	return data as T;
 }

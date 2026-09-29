@@ -16,7 +16,16 @@
 		showScope?: boolean;
 	};
 
-	let { fields, value, onchange, path = '', errors, lang, blockDefs, showScope = true }: Props = $props();
+	let {
+		fields,
+		value,
+		onchange,
+		path = '',
+		errors,
+		lang,
+		blockDefs,
+		showScope = true
+	}: Props = $props();
 
 	function set(key: string, v: unknown) {
 		onchange({ ...value, [key]: v });

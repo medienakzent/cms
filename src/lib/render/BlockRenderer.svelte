@@ -7,7 +7,10 @@
 	 * Der immer gleiche Wrapper: rendert eine Block-Liste in Reihenfolge.
 	 * Komponenten kommen aus der Registry (Kontext) oder explizit über `components`.
 	 */
-	let { blocks, components }: { blocks: RenderBlock[]; components?: Record<string, BlockComponent> } = $props();
+	let {
+		blocks,
+		components
+	}: { blocks: RenderBlock[]; components?: Record<string, BlockComponent> } = $props();
 
 	// Kontext muss bei der Initialisierung gelesen werden; `components` als Prop ist eine bewusste Einmal-Entscheidung.
 	// svelte-ignore state_referenced_locally

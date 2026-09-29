@@ -28,7 +28,9 @@ export function ensureReady(): Promise<void> {
 			} else if (reset || Object.keys(counts).length === 0) {
 				const r = await reindexContent();
 				await reindexMedia();
-				console.log(`[cms] Index aufgebaut: ${r.documents} Dokumente, ${r.languages} Sprachfassungen`);
+				console.log(
+					`[cms] Index aufgebaut: ${r.documents} Dokumente, ${r.languages} Sprachfassungen`
+				);
 			}
 		})().catch((e) => {
 			ready = null;
@@ -41,7 +43,8 @@ export function ensureReady(): Promise<void> {
 async function seed() {
 	const { config, registry } = getRuntime();
 	const home = config.routing.home;
-	if (!registry.collections[home.collection] || !registry.blocks.hero || !registry.blocks.text) return;
+	if (!registry.collections[home.collection] || !registry.blocks.hero || !registry.blocks.text)
+		return;
 	const api = collection(home.collection);
 	await api.create({
 		slug: home.slug,
@@ -56,7 +59,8 @@ async function seed() {
 					type: 'hero',
 					data: {
 						title: 'Willkommen',
-						subtitle: 'Dieses CMS rendert Seiten aus Blocks. Melde dich unter /admin an, um Inhalte zu pflegen.',
+						subtitle:
+							'Dieses CMS rendert Seiten aus Blocks. Melde dich unter /admin an, um Inhalte zu pflegen.',
 						layout: 'center'
 					}
 				},

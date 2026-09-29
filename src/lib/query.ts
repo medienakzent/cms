@@ -70,7 +70,13 @@ export interface ListQueryInput {
 	offset?: number;
 }
 
-export const LIMITS = { maxLimit: 200, defaultLimit: 50, maxOffset: 100_000, maxQ: 200, maxInValues: 50 };
+export const LIMITS = {
+	maxLimit: 200,
+	defaultLimit: 50,
+	maxOffset: 100_000,
+	maxQ: 200,
+	maxInValues: 50
+};
 
 export class QueryError extends Error {
 	issues: ValidationIssue[];
@@ -144,7 +150,12 @@ const OPS_BY_KIND: Record<string, readonly FilterOp[]> = {
 	references: ['eq', 'ne', 'in', 'nin']
 };
 
-function coerceScalar(field: Field, raw: unknown, path: string, issues: ValidationIssue[]): string | number | null {
+function coerceScalar(
+	field: Field,
+	raw: unknown,
+	path: string,
+	issues: ValidationIssue[]
+): string | number | null {
 	const s = typeof raw === 'string' ? raw.trim() : raw;
 	switch (field.kind) {
 		case 'number': {
@@ -216,12 +227,18 @@ function buildFilter<F extends FieldMap>(
 		return null;
 	}
 	if (!(FILTER_OPS as readonly string[]).includes(op)) {
-		issues.push({ path: `${path}[${op}]`, message: `Unbekannter Operator. Erlaubt: ${FILTER_OPS.join(', ')}` });
+		issues.push({
+			path: `${path}[${op}]`,
+			message: `Unbekannter Operator. Erlaubt: ${FILTER_OPS.join(', ')}`
+		});
 		return null;
 	}
 	const allowed = OPS_BY_KIND[field.kind] ?? [];
 	if (!allowed.includes(op as FilterOp)) {
-		issues.push({ path: `${path}[${op}]`, message: `Für ${field.kind} erlaubt: ${allowed.join(', ')}` });
+		issues.push({
+			path: `${path}[${op}]`,
+			message: `Für ${field.kind} erlaubt: ${allowed.join(', ')}`
+		});
 		return null;
 	}
 	const mode = compareMode(field);
@@ -236,7 +253,9 @@ function buildFilter<F extends FieldMap>(
 			const v = coerceScalar(field, item, `${path}[${op}]`, issues);
 			if (v !== null) values.push(v);
 		}
-		return values.length === list.length ? { field: fieldPath, op: op as FilterOp, value: values, mode } : null;
+		return values.length === list.length
+			? { field: fieldPath, op: op as FilterOp, value: values, mode }
+			: null;
 	}
 	if (op === 'contains' && mode !== 'itext') {
 		issues.push({ path: `${path}[contains]`, message: 'Nur für Textfelder' });
@@ -246,7 +265,11 @@ function buildFilter<F extends FieldMap>(
 	return v === null ? null : { field: fieldPath, op: op as FilterOp, value: v, mode };
 }
 
-function buildSort<F extends FieldMap>(def: CollectionDefinition<F>, raw: string | { field: string; direction?: 'asc' | 'desc' } | undefined, issues: ValidationIssue[]): Sort {
+function buildSort<F extends FieldMap>(
+	def: CollectionDefinition<F>,
+	raw: string | { field: string; direction?: 'asc' | 'desc' } | undefined,
+	issues: ValidationIssue[]
+): Sort {
 	let field: string;
 	let direction: 'asc' | 'desc';
 	if (raw === undefined) {
@@ -266,7 +289,13 @@ function buildSort<F extends FieldMap>(def: CollectionDefinition<F>, raw: string
 	if (!f || !FACET_KINDS.has(f.kind) || MULTI_KINDS.has(f.kind)) {
 		issues.push({
 			path: 'sort',
-			message: `Nicht sortierbar. Erlaubt: ${[...BUILTIN_SORT, ...facetFields(def.fields).filter((p) => { const x = resolveField(def.fields, p); return x && !MULTI_KINDS.has(x.kind); })].join(', ')}`
+			message: `Nicht sortierbar. Erlaubt: ${[
+				...BUILTIN_SORT,
+				...facetFields(def.fields).filter((p) => {
+					const x = resolveField(def.fields, p);
+					return x && !MULTI_KINDS.has(x.kind);
+				})
+			].join(', ')}`
 		});
 		return { field: 'updatedAt', direction: 'desc', kind: 'column', mode: 'text' };
 	}
@@ -274,7 +303,11 @@ function buildSort<F extends FieldMap>(def: CollectionDefinition<F>, raw: string
 }
 
 /** Prüft und normalisiert eine Abfrage aus Bibliothekscode. Wirft `QueryError`. */
-export function buildListQuery<F extends FieldMap>(def: CollectionDefinition<F>, input: ListQueryInput, languages: string[]): ListQuery {
+export function buildListQuery<F extends FieldMap>(
+	def: CollectionDefinition<F>,
+	input: ListQueryInput,
+	languages: string[]
+): ListQuery {
 	const issues: ValidationIssue[] = [];
 	if (input.lang !== undefined && !languages.includes(input.lang)) {
 		issues.push({ path: 'lang', message: `Unbekannte Sprache. Erlaubt: ${languages.join(', ')}` });
@@ -317,7 +350,11 @@ const KNOWN_PARAMS = new Set(['lang', 'status', 'q', 'limit', 'offset', 'sort'])
 const FILTER_KEY = /^filter\[([a-zA-Z0-9_.-]+)\](?:\[([a-z]+)\])?$/;
 
 /** Parst URL-Parameter strikt: unbekannte Schlüssel sind ein Fehler. */
-export function parseListQuery<F extends FieldMap>(def: CollectionDefinition<F>, params: URLSearchParams, languages: string[]): ListQuery {
+export function parseListQuery<F extends FieldMap>(
+	def: CollectionDefinition<F>,
+	params: URLSearchParams,
+	languages: string[]
+): ListQuery {
 	const issues: ValidationIssue[] = [];
 	const input: ListQueryInput = { filters: [] };
 	for (const [key, value] of params.entries()) {

@@ -5,8 +5,12 @@
 	let { title, text, link, tone }: BlockProps<typeof def> = $props();
 </script>
 
-<section class="px-6 py-12 {tone === 'primary' ? 'bg-primary text-primary-foreground' : 'bg-muted'}">
-	<div class="mx-auto flex max-w-4xl flex-col items-start gap-4 md:flex-row md:items-center md:justify-between">
+<section
+	class="px-6 py-12 {tone === 'primary' ? 'bg-primary text-primary-foreground' : 'bg-muted'}"
+>
+	<div
+		class="mx-auto flex max-w-4xl flex-col items-start gap-4 md:flex-row md:items-center md:justify-between"
+	>
 		<div>
 			<h2 class="text-2xl font-semibold">{title}</h2>
 			{#if text}<p class="mt-1 opacity-90">{text}</p>{/if}

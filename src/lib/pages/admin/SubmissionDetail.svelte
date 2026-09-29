@@ -14,11 +14,24 @@
 	let confirm = $state(false);
 	let busy = $state(false);
 
-	const fmt = (iso: string) => new Date(iso).toLocaleString('de-DE', { dateStyle: 'long', timeStyle: 'short' });
-	const variant = (st: string) => (st === 'sent' ? 'positive' : st === 'spam' ? 'neutral' : 'signal');
-	const isFile = (v: unknown): v is { name: string; size: number; url: string } => typeof v === 'object' && v !== null && 'url' in v && 'name' in v;
-	const fmtSize = (n: number) => (n > 1048576 ? `${(n / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`);
-	const text = (v: unknown) => (typeof v === 'boolean' ? (v ? 'Ja' : 'Nein') : Array.isArray(v) ? v.join(', ') : typeof v === 'object' && v !== null ? JSON.stringify(v) : String(v ?? ''));
+	const fmt = (iso: string) =>
+		new Date(iso).toLocaleString('de-DE', { dateStyle: 'long', timeStyle: 'short' });
+	const variant = (st: string) =>
+		st === 'sent' ? 'positive' : st === 'spam' ? 'neutral' : 'signal';
+	const isFile = (v: unknown): v is { name: string; size: number; url: string } =>
+		typeof v === 'object' && v !== null && 'url' in v && 'name' in v;
+	const fmtSize = (n: number) =>
+		n > 1048576 ? `${(n / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`;
+	const text = (v: unknown) =>
+		typeof v === 'boolean'
+			? v
+				? 'Ja'
+				: 'Nein'
+			: Array.isArray(v)
+				? v.join(', ')
+				: typeof v === 'object' && v !== null
+					? JSON.stringify(v)
+					: String(v ?? '');
 
 	async function remove() {
 		busy = true;
@@ -45,8 +58,14 @@
 		</div>
 	</div>
 	<div class="flex gap-2">
-		{#if s.replyTo}<Button size="sm" variant="outline" href="mailto:{s.replyTo}?subject=Re: {encodeURIComponent(s.subject)}">Antworten</Button>{/if}
-		<Button size="sm" variant="ghost" class="text-destructive" onclick={() => (confirm = true)}><TrashIcon aria-hidden="true" /> Löschen</Button>
+		{#if s.replyTo}<Button
+				size="sm"
+				variant="outline"
+				href="mailto:{s.replyTo}?subject=Re: {encodeURIComponent(s.subject)}">Antworten</Button
+			>{/if}
+		<Button size="sm" variant="ghost" class="text-destructive" onclick={() => (confirm = true)}
+			><TrashIcon aria-hidden="true" /> Löschen</Button
+		>
 	</div>
 </div>
 
@@ -59,7 +78,9 @@
 					<dt class="text-muted-foreground text-sm">{data.labels[key] ?? key}</dt>
 					<dd class="text-sm whitespace-pre-wrap">
 						{#if isFile(value)}
-							<a href={value.url} class="text-primary underline" target="_blank" rel="noopener">{value.name}</a>
+							<a href={value.url} class="text-primary underline" target="_blank" rel="noopener"
+								>{value.name}</a
+							>
 							<span class="text-muted-foreground"> ({fmtSize(value.size)})</span>
 						{:else}
 							{text(value) || '—'}
@@ -74,20 +95,47 @@
 		<section class="border-border rounded-lg border">
 			<h2 class="border-border border-b px-4 py-3 font-medium">Versand</h2>
 			<dl class="space-y-2 px-4 py-3 text-sm">
-				<div><dt class="text-muted-foreground">An</dt><dd>{s.to.join(', ') || '—'}</dd></div>
-				<div><dt class="text-muted-foreground">Antwort an</dt><dd>{s.replyTo ?? '—'}</dd></div>
-				<div><dt class="text-muted-foreground">Transport</dt><dd>{s.transport}</dd></div>
-				{#if s.messageId}<div><dt class="text-muted-foreground">Message-ID</dt><dd class="break-all">{s.messageId}</dd></div>{/if}
-				{#if s.error}<div><dt class="text-destructive">Fehler</dt><dd class="text-destructive">{s.error}</dd></div>{/if}
+				<div>
+					<dt class="text-muted-foreground">An</dt>
+					<dd>{s.to.join(', ') || '—'}</dd>
+				</div>
+				<div>
+					<dt class="text-muted-foreground">Antwort an</dt>
+					<dd>{s.replyTo ?? '—'}</dd>
+				</div>
+				<div>
+					<dt class="text-muted-foreground">Transport</dt>
+					<dd>{s.transport}</dd>
+				</div>
+				{#if s.messageId}<div>
+						<dt class="text-muted-foreground">Message-ID</dt>
+						<dd class="break-all">{s.messageId}</dd>
+					</div>{/if}
+				{#if s.error}<div>
+						<dt class="text-destructive">Fehler</dt>
+						<dd class="text-destructive">{s.error}</dd>
+					</div>{/if}
 			</dl>
 		</section>
 		<section class="border-border rounded-lg border">
 			<h2 class="border-border border-b px-4 py-3 font-medium">Herkunft</h2>
 			<dl class="space-y-2 px-4 py-3 text-sm">
-				<div><dt class="text-muted-foreground">Seite</dt><dd class="break-all">{s.meta.url || '—'}</dd></div>
-				<div><dt class="text-muted-foreground">IP</dt><dd>{s.meta.ip || '—'}</dd></div>
-				<div><dt class="text-muted-foreground">Browser</dt><dd class="break-all">{s.meta.userAgent || '—'}</dd></div>
-				<div><dt class="text-muted-foreground">Sprache</dt><dd>{s.lang}</dd></div>
+				<div>
+					<dt class="text-muted-foreground">Seite</dt>
+					<dd class="break-all">{s.meta.url || '—'}</dd>
+				</div>
+				<div>
+					<dt class="text-muted-foreground">IP</dt>
+					<dd>{s.meta.ip || '—'}</dd>
+				</div>
+				<div>
+					<dt class="text-muted-foreground">Browser</dt>
+					<dd class="break-all">{s.meta.userAgent || '—'}</dd>
+				</div>
+				<div>
+					<dt class="text-muted-foreground">Sprache</dt>
+					<dd>{s.lang}</dd>
+				</div>
 			</dl>
 		</section>
 	</aside>

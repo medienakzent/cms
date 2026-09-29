@@ -18,7 +18,8 @@
 	let showSettings = $state(false);
 	let draft = $state<Record<string, boolean>>({});
 
-	const t = (key: Parameters<typeof consentText>[2]) => (config ? consentText(config, lang, key) : '');
+	const t = (key: Parameters<typeof consentText>[2]) =>
+		config ? consentText(config, lang, key) : '';
 
 	onMount(() => {
 		if (config) consent.init(config);
@@ -28,13 +29,23 @@
 	});
 
 	function openSettings() {
-		draft = Object.fromEntries((config?.categories ?? []).map((c) => [c.id, c.required ? true : (consent.decisions?.[c.id] ?? false)]));
+		draft = Object.fromEntries(
+			(config?.categories ?? []).map((c) => [
+				c.id,
+				c.required ? true : (consent.decisions?.[c.id] ?? false)
+			])
+		);
 		showSettings = true;
 	}
 </script>
 
 {#if config && consent.open}
-	<div class="cms-consent {klass}" role="dialog" aria-modal="true" aria-labelledby="cms-consent-title">
+	<div
+		class="cms-consent {klass}"
+		role="dialog"
+		aria-modal="true"
+		aria-labelledby="cms-consent-title"
+	>
 		<div class="cms-consent__card">
 			<h2 id="cms-consent-title" class="cms-consent__title">{t('title')}</h2>
 			<p class="cms-consent__text">{t('text')}</p>
@@ -44,12 +55,27 @@
 					{#each config.categories as c (c.id)}
 						<li class="cms-consent__category">
 							<label>
-								<input type="checkbox" checked={c.required || draft[c.id]} disabled={c.required} onchange={(e) => (draft = { ...draft, [c.id]: e.currentTarget.checked })} />
-								<span class="cms-consent__label">{localized(c.label, lang)}{#if c.required} <em>({t('required')})</em>{/if}</span>
+								<input
+									type="checkbox"
+									checked={c.required || draft[c.id]}
+									disabled={c.required}
+									onchange={(e) => (draft = { ...draft, [c.id]: e.currentTarget.checked })}
+								/>
+								<span class="cms-consent__label"
+									>{localized(c.label, lang)}{#if c.required}
+										<em>({t('required')})</em>{/if}</span
+								>
 							</label>
-							{#if c.description}<p class="cms-consent__description">{localized(c.description, lang)}</p>{/if}
+							{#if c.description}<p class="cms-consent__description">
+									{localized(c.description, lang)}
+								</p>{/if}
 							{#if config.services.some((s) => s.category === c.id)}
-								<p class="cms-consent__services">{config.services.filter((s) => s.category === c.id).map((s) => s.name).join(', ')}</p>
+								<p class="cms-consent__services">
+									{config.services
+										.filter((s) => s.category === c.id)
+										.map((s) => s.name)
+										.join(', ')}
+								</p>
 							{/if}
 						</li>
 					{/each}
@@ -57,12 +83,24 @@
 			{/if}
 
 			<div class="cms-consent__actions">
-				<button type="button" class="cms-consent__btn cms-consent__btn--primary" onclick={() => consent.acceptAll()}>{t('acceptAll')}</button>
-				<button type="button" class="cms-consent__btn" onclick={() => consent.rejectAll()}>{t('rejectAll')}</button>
+				<button
+					type="button"
+					class="cms-consent__btn cms-consent__btn--primary"
+					onclick={() => consent.acceptAll()}>{t('acceptAll')}</button
+				>
+				<button type="button" class="cms-consent__btn" onclick={() => consent.rejectAll()}
+					>{t('rejectAll')}</button
+				>
 				{#if showSettings}
-					<button type="button" class="cms-consent__btn" onclick={() => consent.set(draft)}>{t('save')}</button>
+					<button type="button" class="cms-consent__btn" onclick={() => consent.set(draft)}
+						>{t('save')}</button
+					>
 				{:else}
-					<button type="button" class="cms-consent__btn cms-consent__btn--link" onclick={openSettings}>{t('settings')}</button>
+					<button
+						type="button"
+						class="cms-consent__btn cms-consent__btn--link"
+						onclick={openSettings}>{t('settings')}</button
+					>
 				{/if}
 				<a href={config.privacyHref} class="cms-consent__privacy">{t('privacyLink')}</a>
 			</div>

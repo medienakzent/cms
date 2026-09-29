@@ -8,7 +8,12 @@
 	 * seine Lösung als verstecktes Feld ins umgebende <form> ein; die Prüfung
 	 * macht der Server in mail.send. Braucht einen sicheren Kontext (https oder localhost).
 	 */
-	type Props = { config: CaptchaClientConfig; language?: string; class?: string; hideFooter?: boolean };
+	type Props = {
+		config: CaptchaClientConfig;
+		language?: string;
+		class?: string;
+		hideFooter?: boolean;
+	};
 	let { config, language = 'de', class: klass = '', hideFooter = false }: Props = $props();
 
 	// Übersetzungen des Widgets — statisch, damit Vite sie bündeln kann.

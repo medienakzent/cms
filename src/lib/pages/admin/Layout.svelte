@@ -13,13 +13,19 @@
 	import type { Registry } from '../../registry';
 	import type { AdminLayoutData } from '../../routes/admin/layout';
 
-	let { data, children, registry }: { data: AdminLayoutData; children: Snippet; registry: Registry } = $props();
+	let {
+		data,
+		children,
+		registry
+	}: { data: AdminLayoutData; children: Snippet; registry: Registry } = $props();
 	// Registry ist für die Lebensdauer der App konstant.
 	// svelte-ignore state_referenced_locally
 	setCmsContext(registry);
 
 	const breadcrumbs = $derived<AppShellBreadcrumb[]>(
-		(page.data.breadcrumbs as AppShellBreadcrumb[] | undefined) ?? [{ label: 'Übersicht', href: '/admin' }]
+		(page.data.breadcrumbs as AppShellBreadcrumb[] | undefined) ?? [
+			{ label: 'Übersicht', href: '/admin' }
+		]
 	);
 </script>
 
@@ -35,12 +41,19 @@
 	<AppShell {breadcrumbs} navButtons={false} showLogo={false}>
 		{#snippet sidebar()}
 			{#if data.user}
-				<AdminSidebar collections={data.collections} pathname={page.url.pathname} user={data.user} siteName={data.siteName} />
+				<AdminSidebar
+					collections={data.collections}
+					pathname={page.url.pathname}
+					user={data.user}
+					siteName={data.siteName}
+				/>
 			{/if}
 		{/snippet}
 		{#snippet headerEnd()}
 			<Button size="icon-sm" variant="ghost" onclick={toggleMode} aria-label="Design umschalten">
-				{#if mode.current === 'dark'}<SunIcon aria-hidden="true" />{:else}<MoonIcon aria-hidden="true" />{/if}
+				{#if mode.current === 'dark'}<SunIcon aria-hidden="true" />{:else}<MoonIcon
+						aria-hidden="true"
+					/>{/if}
 			</Button>
 		{/snippet}
 		<div class="w-full p-4 md:p-6">

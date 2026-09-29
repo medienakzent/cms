@@ -22,8 +22,14 @@ export function buildServerConfig(env: Env) {
 		apiToken: env.API_TOKEN || '',
 		maxUploadBytes: num(env.MAX_UPLOAD_MB, 200) * 1024 * 1024,
 		oauth: {
-			github: { clientId: env.GITHUB_CLIENT_ID || '', clientSecret: env.GITHUB_CLIENT_SECRET || '' },
-			google: { clientId: env.GOOGLE_CLIENT_ID || '', clientSecret: env.GOOGLE_CLIENT_SECRET || '' },
+			github: {
+				clientId: env.GITHUB_CLIENT_ID || '',
+				clientSecret: env.GITHUB_CLIENT_SECRET || ''
+			},
+			google: {
+				clientId: env.GOOGLE_CLIENT_ID || '',
+				clientSecret: env.GOOGLE_CLIENT_SECRET || ''
+			},
 			microsoft: {
 				clientId: env.MICROSOFT_CLIENT_ID || '',
 				clientSecret: env.MICROSOFT_CLIENT_SECRET || '',
@@ -34,7 +40,10 @@ export function buildServerConfig(env: Env) {
 			/** file (Default, Ablage im Storage) | smtp | microsoft | google */
 			transport: (env.MAIL_TRANSPORT || 'file') as 'file' | 'smtp' | 'microsoft' | 'google',
 			from: env.MAIL_FROM || 'CMS <noreply@localhost>',
-			defaultTo: (env.MAIL_TO_DEFAULT || '').split(',').map((s) => s.trim()).filter(Boolean),
+			defaultTo: (env.MAIL_TO_DEFAULT || '')
+				.split(',')
+				.map((s) => s.trim())
+				.filter(Boolean),
 			smtpUrl: env.SMTP_URL || '',
 			microsoft: {
 				tenantId: env.MS_MAIL_TENANT_ID || '',
@@ -42,7 +51,10 @@ export function buildServerConfig(env: Env) {
 				clientSecret: env.MS_MAIL_CLIENT_SECRET || '',
 				sender: env.MS_MAIL_SENDER || ''
 			},
-			google: { serviceAccountFile: env.GOOGLE_MAIL_SERVICE_ACCOUNT || '', sender: env.GOOGLE_MAIL_SENDER || '' },
+			google: {
+				serviceAccountFile: env.GOOGLE_MAIL_SERVICE_ACCOUNT || '',
+				sender: env.GOOGLE_MAIL_SENDER || ''
+			},
 			/** Aufbewahrung hochgeladener Formulardateien in Tagen; 0 = unbegrenzt. */
 			uploadRetentionDays: Number(env.MAIL_UPLOAD_RETENTION_DAYS ?? 180) || 0
 		},

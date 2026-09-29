@@ -19,8 +19,15 @@ export const load: PageServerLoad = async ({ params, url, locals }) => {
 	const slug = segments[0] ?? config.routing.home.slug;
 
 	const preview = url.searchParams.has('preview') && !!locals.user;
-	const doc = await cms.collection(collection).get(slug, { lang, status: preview ? 'all' : 'published' });
+	const doc = await cms
+		.collection(collection)
+		.get(slug, { lang, status: preview ? 'all' : 'published' });
 	if (!doc) error(404, 'Seite nicht gefunden');
 	const def = cms.collections[collection];
-	return { doc, title: String(doc.fields[def.titleField] ?? ''), docPath: def.path(slug, lang) ?? '/', preview };
+	return {
+		doc,
+		title: String(doc.fields[def.titleField] ?? ''),
+		docPath: def.path(slug, lang) ?? '/',
+		preview
+	};
 };

@@ -52,7 +52,8 @@ export function normalizeField(field: Field, v: unknown): unknown {
 		case 'boolean':
 			// Formulare liefern Strings ('on', 'ja', 'true'); alles andere gilt als nicht gesetzt.
 			if (typeof v === 'boolean') return v;
-			if (typeof v === 'string') return ['true', 'on', '1', 'ja', 'yes'].includes(v.trim().toLowerCase());
+			if (typeof v === 'string')
+				return ['true', 'on', '1', 'ja', 'yes'].includes(v.trim().toLowerCase());
 			return field.default ?? false;
 		case 'select':
 			return typeof v === 'string' ? v : (field.default ?? null);
@@ -92,8 +93,17 @@ export function normalizeField(field: Field, v: unknown): unknown {
 			return out;
 		}
 		case 'file':
-			return isRecord(v) && typeof v.name === 'string' && typeof v.size === 'number' && typeof v.path === 'string'
-				? ({ name: v.name, size: v.size, mime: typeof v.mime === 'string' ? v.mime : 'application/octet-stream', path: v.path, url: typeof v.url === 'string' ? v.url : '' } satisfies FileRef)
+			return isRecord(v) &&
+				typeof v.name === 'string' &&
+				typeof v.size === 'number' &&
+				typeof v.path === 'string'
+				? ({
+						name: v.name,
+						size: v.size,
+						mime: typeof v.mime === 'string' ? v.mime : 'application/octet-stream',
+						path: v.path,
+						url: typeof v.url === 'string' ? v.url : ''
+					} satisfies FileRef)
 				: null;
 		case 'blocks':
 			return Array.isArray(v)
@@ -155,9 +165,12 @@ export function validateField(
 			break;
 		case 'number':
 			if (typeof v === 'number') {
-				if (field.integer && !Number.isInteger(v)) issues.push({ path, message: 'Ganzzahl erwartet' });
-				if (field.min !== undefined && v < field.min) issues.push({ path, message: `Mindestens ${field.min}` });
-				if (field.max !== undefined && v > field.max) issues.push({ path, message: `Höchstens ${field.max}` });
+				if (field.integer && !Number.isInteger(v))
+					issues.push({ path, message: 'Ganzzahl erwartet' });
+				if (field.min !== undefined && v < field.min)
+					issues.push({ path, message: `Mindestens ${field.min}` });
+				if (field.max !== undefined && v > field.max)
+					issues.push({ path, message: `Höchstens ${field.max}` });
 			}
 			break;
 		case 'date':
@@ -191,10 +204,17 @@ export function validateField(
 			break;
 		}
 		case 'group':
-			validateFields(field.fields, v as Record<string, unknown>, ctx, issues, path ? `${path}.` : '');
+			validateFields(
+				field.fields,
+				v as Record<string, unknown>,
+				ctx,
+				issues,
+				path ? `${path}.` : ''
+			);
 			break;
 		case 'file':
-			if (v && field.maxSize && (v as FileRef).size > field.maxSize) issues.push({ path, message: `Maximal ${Math.round(field.maxSize / 1048576)} MB` });
+			if (v && field.maxSize && (v as FileRef).size > field.maxSize)
+				issues.push({ path, message: `Maximal ${Math.round(field.maxSize / 1048576)} MB` });
 			break;
 		case 'blocks':
 			validateBlocks(v as RenderBlock[], field.allow ?? Object.keys(ctx.blocks), ctx, issues, path);

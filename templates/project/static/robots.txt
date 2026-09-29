@@ -1,0 +1,6 @@
+# Suchmaschinen und KI-Crawler: alles außer Admin und API. Wer KI-Training ausschließen will,
+# ergänzt z. B. "User-agent: GPTBot" / "Disallow: /" — siehe README des CMS.
+User-agent: *
+Disallow: /admin
+Disallow: /api/
+Sitemap: /sitemap.xml

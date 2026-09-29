@@ -22,7 +22,13 @@ import type {
 } from '../types';
 import { normalizeField, normalizeFields, validateBlocks, validateFields } from '../validate';
 import { extractFacets } from '../facets';
-import { buildListQuery, isListQuery, QueryError, type ListQuery, type ListQueryInput } from '../query';
+import {
+	buildListQuery,
+	isListQuery,
+	QueryError,
+	type ListQuery,
+	type ListQueryInput
+} from '../query';
 import { badRequest, CmsError, conflict, notFound, validation } from './errors';
 import { getIndex } from './index/index';
 import type { IndexDocument } from './index/repo';
@@ -88,7 +94,8 @@ async function readOverlays(collection: string, slug: string) {
 /** Vorherigen Stand einer Datei in die Historie kopieren (Versionierung). */
 async function archive(collection: string, slug: string, part: string, actor: Actor) {
 	const storage = getStorage();
-	const src = part === 'base' ? paths.base(collection, slug) : paths.overlay(collection, slug, part);
+	const src =
+		part === 'base' ? paths.base(collection, slug) : paths.overlay(collection, slug, part);
 	const raw = await storage.read(src);
 	if (raw === null) return;
 	const savedAt = now();
@@ -170,7 +177,8 @@ function collectRefs(fields: FieldMap, value: Record<string, unknown>, out: Set<
 		if (field.kind === 'reference' && typeof v === 'string') out.add(`${field.collection}:${v}`);
 		else if (field.kind === 'references' && Array.isArray(v))
 			for (const s of v) out.add(`${field.collection}:${s}`);
-		else if (field.kind === 'group') collectRefs(field.fields, (v as Record<string, unknown>) ?? {}, out);
+		else if (field.kind === 'group')
+			collectRefs(field.fields, (v as Record<string, unknown>) ?? {}, out);
 		else if (field.kind === 'list' && Array.isArray(v))
 			for (const item of v) collectRefs({ item: field.of }, { item }, out);
 		else if (field.kind === 'blocks' && Array.isArray(v))
@@ -216,7 +224,11 @@ function indexRows(
 	});
 }
 
-async function reindexDocument(def: CollectionDefinition, base: BaseFile, overlays: Record<string, OverlayFile>) {
+async function reindexDocument(
+	def: CollectionDefinition,
+	base: BaseFile,
+	overlays: Record<string, OverlayFile>
+) {
 	const index = await getIndex();
 	await index.pruneLangs(def.name, base.slug, Object.keys(overlays));
 	const rows = indexRows(def, base, overlays);
@@ -231,13 +243,21 @@ function prepareInput(def: CollectionDefinition, input: DocumentInput, strict: b
 		normalizeField({ kind: 'blocks' }, def.blocks ? input.blocks : []) as RenderBlock[]
 	).map((b) => {
 		const bd = blockDefs()[b.type];
-		return { id: b.id || nanoid(8), type: b.type, data: bd ? normalizeFields(bd.fields, b.data) : b.data };
+		return {
+			id: b.id || nanoid(8),
+			type: b.type,
+			data: bd ? normalizeFields(bd.fields, b.data) : b.data
+		};
 	});
 	const ctx = { strict, blocks: blockDefs() };
 	const issues = validateFields(def.fields, fields, ctx);
 	validateBlocks(blocks, allowed, ctx, issues);
 	if (issues.length) throw validation(issues);
 	return { fields, blocks };
+}
+
+function assertSlug(slug: string): void {
+	if (!isValidSlug(slug)) throw badRequest(`Ungültiger Slug „${slug}"`);
 }
 
 function getDef(name: string): CollectionDefinition {
@@ -268,6 +288,7 @@ export function collection(name: string) {
 	}
 
 	async function load(slug: string) {
+		assertSlug(slug);
 		const base = await readBase(def.name, slug);
 		if (!base) return null;
 		return { base, overlays: await readOverlays(def.name, slug) };
@@ -282,7 +303,8 @@ export function collection(name: string) {
 		 */
 		async list(input: ListQueryInput | ListQuery = {}) {
 			const query = isListQuery(input) ? input : toQuery(input);
-			if (query.collection !== def.name) throw badRequest('Abfrage gehört zu einer anderen Collection');
+			if (query.collection !== def.name)
+				throw badRequest('Abfrage gehört zu einer anderen Collection');
 			return (await getIndex()).list(query);
 		},
 		/** Geprüfte Abfrage aus Rohparametern (z. B. URLSearchParams der API). */
@@ -312,6 +334,7 @@ export function collection(name: string) {
 		},
 
 		async exists(slug: string) {
+			assertSlug(slug);
 			return getStorage().exists(paths.base(def.name, slug));
 		},
 
@@ -429,7 +452,12 @@ export function collection(name: string) {
 			});
 		},
 
-		async setStatus(slug: string, lang: string, status: DocumentStatus, actor: Actor): Promise<Document> {
+		async setStatus(
+			slug: string,
+			lang: string,
+			status: DocumentStatus,
+			actor: Actor
+		): Promise<Document> {
 			assertLang(lang);
 			return withLock(`${def.name}/${slug}`, async () => {
 				const loaded = await load(slug);
@@ -479,11 +507,16 @@ export function collection(name: string) {
 		},
 
 		async versions(slug: string): Promise<VersionInfo[]> {
+			assertSlug(slug);
 			const storage = getStorage();
 			const files = await storage.list(paths.historyDir(def.name, slug));
 			const out: VersionInfo[] = [];
 			for (const file of files) {
-				const name = file.split('/').at(-1)?.replace(/\.json$/, '') ?? '';
+				const name =
+					file
+						.split('/')
+						.at(-1)
+						?.replace(/\.json$/, '') ?? '';
 				const [stamp, part] = name.split('__');
 				if (!stamp || !part) continue;
 				const st = await storage.stat(file);
@@ -497,7 +530,10 @@ export function collection(name: string) {
 				out.push({
 					id: name,
 					part,
-					savedAt: stamp.replace(/^(\d{4}-\d{2}-\d{2})T(\d{2})-(\d{2})-(\d{2})-(\d{3})Z$/, '$1T$2:$3:$4.$5Z'),
+					savedAt: stamp.replace(
+						/^(\d{4}-\d{2}-\d{2})T(\d{2})-(\d{2})-(\d{2})-(\d{3})Z$/,
+						'$1T$2:$3:$4.$5Z'
+					),
 					savedBy,
 					size: st?.size ?? 0
 				});
@@ -507,6 +543,7 @@ export function collection(name: string) {
 
 		/** Stellt eine Version wieder her (der aktuelle Stand wandert vorher in die Historie). */
 		async restore(slug: string, versionId: string, actor: Actor): Promise<void> {
+			assertSlug(slug);
 			if (!/^[0-9TZ-]+__[a-z-]+$/i.test(versionId)) throw badRequest('Ungültige Versions-ID');
 			return withLock(`${def.name}/${slug}`, async () => {
 				const raw = await getStorage().read(paths.history(def.name, slug, versionId));

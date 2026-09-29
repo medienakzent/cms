@@ -57,7 +57,8 @@ export interface RenderBlock<D = Record<string, unknown>> {
 	data: D;
 }
 
-export type InferField<F extends Field> = F extends TextField | TextareaField | RichtextField | DateField
+export type InferField<F extends Field> = F extends
+	TextField | TextareaField | RichtextField | DateField
 	? string
 	: F extends NumberField
 		? number | null

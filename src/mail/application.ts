@@ -10,7 +10,12 @@ export default defineMail({
 		name: f.text({ label: 'Name', required: true, maxLength: 120 }),
 		email: f.text({ label: 'E-Mail', required: true, maxLength: 200 }),
 		motivation: f.textarea({ label: 'Motivation', required: true, maxLength: 4000 }),
-		portfolio: f.file({ label: 'Portfolio (PDF)', accept: ['application/pdf'], maxSize: 25 * MB, required: true }),
+		portfolio: f.file({
+			label: 'Portfolio (PDF)',
+			accept: ['application/pdf'],
+			maxSize: 25 * MB,
+			required: true
+		}),
 		cv: f.file({ label: 'Lebenslauf (PDF)', accept: ['application/pdf'], maxSize: 10 * MB })
 	},
 	replyToField: 'email',

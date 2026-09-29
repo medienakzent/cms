@@ -10,7 +10,12 @@ export async function load({ params, url }: ServerLoadEvent) {
 	if (!def) error(404, 'Collection nicht gefunden');
 	return {
 		lang: url.searchParams.get('lang') ?? config.defaultLanguage,
-		def: { name: def.name, label: def.label, labelPlural: def.labelPlural, titleField: def.titleField },
+		def: {
+			name: def.name,
+			label: def.label,
+			labelPlural: def.labelPlural,
+			titleField: def.titleField
+		},
 		breadcrumbs: [
 			{ label: 'Übersicht', href: '/admin' },
 			{ label: def.labelPlural, href: `/admin/${def.name}` },

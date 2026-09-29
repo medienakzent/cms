@@ -24,8 +24,17 @@ export const POST = (event: RequestEvent) =>
 	api(async () => {
 		const { languages, config } = getRuntime();
 		const body = await readJsonBody(event, ['slug', 'lang', 'status', 'fields', 'blocks']);
-		if (typeof body.slug !== 'string' || !isValidSlug(body.slug)) throw new CmsError(400, 'Ungültiger Slug', [{ path: 'slug', message: 'a-z, 0-9, Bindestriche' }]);
-		if (body.lang !== undefined && (typeof body.lang !== 'string' || !languages.includes(body.lang))) throw new CmsError(400, 'Unbekannte Sprache', [{ path: 'lang', message: `Erlaubt: ${languages.join(', ')}` }]);
+		if (typeof body.slug !== 'string' || !isValidSlug(body.slug))
+			throw new CmsError(400, 'Ungültiger Slug', [
+				{ path: 'slug', message: 'a-z, 0-9, Bindestriche' }
+			]);
+		if (
+			body.lang !== undefined &&
+			(typeof body.lang !== 'string' || !languages.includes(body.lang))
+		)
+			throw new CmsError(400, 'Unbekannte Sprache', [
+				{ path: 'lang', message: `Erlaubt: ${languages.join(', ')}` }
+			]);
 		const doc = parseDocumentBody(body);
 		return collection(event.params.collection ?? '').create({
 			slug: body.slug,

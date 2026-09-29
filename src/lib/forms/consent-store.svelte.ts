@@ -20,7 +20,9 @@ let config: ConsentConfig | null = null;
 
 function readCookie(name: string): string | null {
 	if (typeof document === 'undefined') return null;
-	const m = document.cookie.match(new RegExp(`(?:^|; )${name.replace(/[.$?*|{}()[\]\\/+^]/g, '\\$&')}=([^;]*)`));
+	const m = document.cookie.match(
+		new RegExp(`(?:^|; )${name.replace(/[.$?*|{}()[\]\\/+^]/g, '\\$&')}=([^;]*)`)
+	);
 	return m ? decodeURIComponent(m[1]) : null;
 }
 

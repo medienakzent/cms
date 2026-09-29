@@ -26,6 +26,9 @@ export function toAdminBlock(b: BlockDefinition): AdminBlock {
 	};
 }
 
-export const adminCollections = (): AdminCollection[] => Object.values(getRuntime().registry.collections).map(toAdminCollection);
+export const adminCollections = (): AdminCollection[] =>
+	Object.values(getRuntime().registry.collections).map(toAdminCollection);
 export const adminBlocks = (): Record<string, AdminBlock> =>
-	Object.fromEntries(Object.values(getRuntime().registry.blocks).map((b) => [b.name, toAdminBlock(b)]));
+	Object.fromEntries(
+		Object.values(getRuntime().registry.blocks).map((b) => [b.name, toAdminBlock(b)])
+	);

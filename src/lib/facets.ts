@@ -12,7 +12,11 @@ export interface Facet {
  * Welche Feldarten indiziert werden, definiert query.ts (FACET_KINDS) —
  * hier dieselbe Menge, damit Filter und Index nie auseinanderlaufen.
  */
-export function extractFacets(fields: FieldMap, value: Record<string, unknown>, prefix = ''): Facet[] {
+export function extractFacets(
+	fields: FieldMap,
+	value: Record<string, unknown>,
+	prefix = ''
+): Facet[] {
 	const out: Facet[] = [];
 	for (const [key, field] of Object.entries(fields)) {
 		const v = value?.[key];
@@ -25,10 +29,12 @@ export function extractFacets(fields: FieldMap, value: Record<string, unknown>, 
 function facetsOf(field: Field, v: unknown, path: string, out: Facet[]) {
 	switch (field.kind) {
 		case 'text':
-			if (typeof v === 'string' && v.trim()) out.push({ field: path, text: v.slice(0, 500), num: null });
+			if (typeof v === 'string' && v.trim())
+				out.push({ field: path, text: v.slice(0, 500), num: null });
 			break;
 		case 'number':
-			if (typeof v === 'number' && Number.isFinite(v)) out.push({ field: path, text: String(v), num: v });
+			if (typeof v === 'number' && Number.isFinite(v))
+				out.push({ field: path, text: String(v), num: v });
 			break;
 		case 'boolean':
 			out.push({ field: path, text: v === true ? 'true' : 'false', num: v === true ? 1 : 0 });
@@ -45,7 +51,9 @@ function facetsOf(field: Field, v: unknown, path: string, out: Facet[]) {
 			break;
 		case 'multiselect':
 		case 'references':
-			if (Array.isArray(v)) for (const x of v) if (typeof x === 'string' && x) out.push({ field: path, text: x, num: null });
+			if (Array.isArray(v))
+				for (const x of v)
+					if (typeof x === 'string' && x) out.push({ field: path, text: x, num: null });
 			break;
 		case 'group':
 			for (const [k, f] of Object.entries(field.fields)) {

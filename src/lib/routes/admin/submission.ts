@@ -7,7 +7,9 @@ export async function load({ params }: ServerLoadEvent) {
 	if (!sub) error(404, 'Einsendung nicht gefunden');
 	const def = mail.templates[sub.template];
 	// Beschriftungen aus der Vorlage, damit die Detailansicht lesbar bleibt.
-	const labels: Record<string, string> = def ? Object.fromEntries(Object.entries(def.fields).map(([k, f]) => [k, fieldLabel(k, f)])) : {};
+	const labels: Record<string, string> = def
+		? Object.fromEntries(Object.entries(def.fields).map(([k, f]) => [k, fieldLabel(k, f)]))
+		: {};
 	return {
 		sub,
 		labels,

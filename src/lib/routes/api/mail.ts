@@ -8,14 +8,19 @@ import { getRuntime } from '../../server/runtime';
 const MAX_TEXT_BODY = 64 * 1024;
 
 /** Body als JSON, Formular (urlencoded) oder multipart lesen; Dateien getrennt. */
-async function readInput(request: Request, maxTotal: number): Promise<{ fields: Record<string, unknown>; files: Record<string, File> }> {
+async function readInput(
+	request: Request,
+	maxTotal: number
+): Promise<{ fields: Record<string, unknown>; files: Record<string, File> }> {
 	const ct = (request.headers.get('content-type') ?? '').toLowerCase();
 	const len = Number(request.headers.get('content-length') ?? 0);
 	const files: Record<string, File> = {};
-	if (len > (ct.startsWith('multipart/') ? maxTotal + MAX_TEXT_BODY : MAX_TEXT_BODY)) throw new CmsError(413, 'Anfrage zu groß');
+	if (len > (ct.startsWith('multipart/') ? maxTotal + MAX_TEXT_BODY : MAX_TEXT_BODY))
+		throw new CmsError(413, 'Anfrage zu groß');
 	if (ct.startsWith('application/json')) {
 		const body = await request.json().catch(() => null);
-		if (typeof body !== 'object' || body === null || Array.isArray(body)) throw new CmsError(400, 'JSON-Objekt erwartet');
+		if (typeof body !== 'object' || body === null || Array.isArray(body))
+			throw new CmsError(400, 'JSON-Objekt erwartet');
 		return { fields: body as Record<string, unknown>, files };
 	}
 	if (ct.startsWith('application/x-www-form-urlencoded') || ct.startsWith('multipart/form-data')) {
@@ -39,11 +44,18 @@ async function readInput(request: Request, maxTotal: number): Promise<{ fields: 
 export const POST = async (event: RequestEvent) => {
 	const { registry, config } = getRuntime();
 	const def = registry.mail[event.params.template ?? ''];
-	if (!def) return api(async () => { throw new CmsError(404, `Mail-Vorlage „${event.params.template}" nicht gefunden`); });
+	if (!def)
+		return api(async () => {
+			throw new CmsError(404, `Mail-Vorlage „${event.params.template}" nicht gefunden`);
+		});
 	const input = await readInput(event.request, def.maxTotalSize).catch((e) => e as CmsError);
-	if (input instanceof CmsError) return api(async () => { throw input; });
+	if (input instanceof CmsError)
+		return api(async () => {
+			throw input;
+		});
 	const { _lang, _redirect, ...fields } = input.fields;
-	const redirectTo = typeof _redirect === 'string' && /^\/[^/\\]/.test(_redirect) ? _redirect : null;
+	const redirectTo =
+		typeof _redirect === 'string' && /^\/[^/\\]/.test(_redirect) ? _redirect : null;
 
 	const result = await api(() =>
 		mail.send(event.params.template ?? '', fields, {
@@ -57,7 +69,11 @@ export const POST = async (event: RequestEvent) => {
 			}
 		})
 	);
-	if (redirectTo) redirect(303, `${redirectTo}${redirectTo.includes('?') ? '&' : '?'}mail=${result.ok ? 'ok' : 'error'}`);
+	if (redirectTo)
+		redirect(
+			303,
+			`${redirectTo}${redirectTo.includes('?') ? '&' : '?'}mail=${result.ok ? 'ok' : 'error'}`
+		);
 	return result;
 };
 

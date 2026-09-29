@@ -17,7 +17,10 @@ export async function getDb(): Promise<DbDriver> {
 				const { createPostgresDriver } = await import('./postgres');
 				driver = createPostgresDriver(url);
 			} else if (url.startsWith('sqlite:')) {
-				driver = createSqliteDriver(url.slice('sqlite:'.length) || 'cms.db', serverConfig().dataDir);
+				driver = createSqliteDriver(
+					url.slice('sqlite:'.length) || 'cms.db',
+					serverConfig().dataDir
+				);
 			} else {
 				throw new Error(`DATABASE_URL nicht unterstützt: ${url}`);
 			}

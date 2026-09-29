@@ -26,7 +26,10 @@
 		for (const f of files) form.append('file', f);
 		uploading = true;
 		try {
-			const r = await apiFetch<{ items: MediaItem[] }>('/api/v1/media', { method: 'POST', body: form });
+			const r = await apiFetch<{ items: MediaItem[] }>('/api/v1/media', {
+				method: 'POST',
+				body: form
+			});
 			toast.success(`${r.items.length} Datei(en) hochgeladen`);
 			await invalidateAll();
 		} catch (err) {
@@ -67,15 +70,22 @@
 		toast.success('URL kopiert');
 	}
 
-	const fmtSize = (n: number) => (n > 1024 * 1024 ? `${(n / 1024 / 1024).toFixed(1)} MB` : `${Math.round(n / 1024)} KB`);
+	const fmtSize = (n: number) =>
+		n > 1024 * 1024 ? `${(n / 1024 / 1024).toFixed(1)} MB` : `${Math.round(n / 1024)} KB`;
 </script>
 
 <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
-	<h1 class="text-2xl font-semibold">Medien <span class="text-muted-foreground text-base font-normal">({data.media.total})</span></h1>
+	<h1 class="text-2xl font-semibold">
+		Medien <span class="text-muted-foreground text-base font-normal">({data.media.total})</span>
+	</h1>
 	<div class="flex items-center gap-2">
-		<form method="get"><Input type="search" name="q" value={data.q} placeholder="Suchen …" class="w-56" /></form>
+		<form method="get">
+			<Input type="search" name="q" value={data.q} placeholder="Suchen …" class="w-56" />
+		</form>
 		<input bind:this={fileInput} type="file" multiple class="hidden" onchange={upload} />
-		<Button onclick={() => fileInput?.click()} disabled={uploading}><UploadIcon aria-hidden="true" /> {uploading ? 'Lädt hoch …' : 'Hochladen'}</Button>
+		<Button onclick={() => fileInput?.click()} disabled={uploading}
+			><UploadIcon aria-hidden="true" /> {uploading ? 'Lädt hoch …' : 'Hochladen'}</Button
+		>
 	</div>
 </div>
 
@@ -87,16 +97,37 @@
 	{#each data.media.items as m (m.id)}
 		<div class="border-border bg-card rounded-lg border p-3">
 			{#if m.kind === 'image'}
-				<img src={mediaUrl(m, 'md')} alt={m.alt} class="aspect-[4/3] w-full rounded object-cover" loading="lazy" />
+				<img
+					src={mediaUrl(m, 'md')}
+					alt={m.alt}
+					class="aspect-[4/3] w-full rounded object-cover"
+					loading="lazy"
+				/>
 			{:else}
-				<div class="bg-muted text-muted-foreground flex aspect-[4/3] items-center justify-center rounded text-sm">{m.mime}</div>
+				<div
+					class="bg-muted text-muted-foreground flex aspect-[4/3] items-center justify-center rounded text-sm"
+				>
+					{m.mime}
+				</div>
 			{/if}
 			<div class="mt-2 truncate text-sm font-medium" title={m.originalName}>{m.originalName}</div>
-			<div class="text-muted-foreground text-xs">{fmtSize(m.size)}{#if m.width} · {m.width}×{m.height}{/if} · {new Date(m.createdAt).toLocaleDateString('de-DE')}</div>
-			<Input class="mt-2" value={m.alt} placeholder="Alternativtext" onchange={(e) => saveAlt(m, e.currentTarget.value)} />
+			<div class="text-muted-foreground text-xs">
+				{fmtSize(m.size)}{#if m.width}
+					· {m.width}×{m.height}{/if} · {new Date(m.createdAt).toLocaleDateString('de-DE')}
+			</div>
+			<Input
+				class="mt-2"
+				value={m.alt}
+				placeholder="Alternativtext"
+				onchange={(e) => saveAlt(m, e.currentTarget.value)}
+			/>
 			<div class="mt-2 flex gap-1">
-				<Button size="sm" variant="ghost" onclick={() => copyUrl(m)}><CopyIcon aria-hidden="true" /> URL</Button>
-				<Button size="sm" variant="ghost" class="text-destructive" onclick={() => (toDelete = m)}><TrashIcon aria-hidden="true" /> Löschen</Button>
+				<Button size="sm" variant="ghost" onclick={() => copyUrl(m)}
+					><CopyIcon aria-hidden="true" /> URL</Button
+				>
+				<Button size="sm" variant="ghost" class="text-destructive" onclick={() => (toDelete = m)}
+					><TrashIcon aria-hidden="true" /> Löschen</Button
+				>
 			</div>
 		</div>
 	{/each}

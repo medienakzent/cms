@@ -14,18 +14,29 @@ export const GET = (event: RequestEvent) =>
 	api(async () => {
 		const p = event.url.searchParams;
 		const unknown = [...p.keys()].filter((k) => !ALLOWED.includes(k));
-		if (unknown.length) throw new CmsError(400, 'Unbekannte Parameter', unknown.map((k) => ({ path: k, message: `Erlaubt: ${ALLOWED.join(', ')}` })));
+		if (unknown.length)
+			throw new CmsError(
+				400,
+				'Unbekannte Parameter',
+				unknown.map((k) => ({ path: k, message: `Erlaubt: ${ALLOWED.join(', ')}` }))
+			);
 		const status = p.get('status') ?? 'all';
 		if (!STATUS.includes(status)) throw new CmsError(400, 'status: all, sent, failed oder spam');
 		const template = p.get('template') ?? undefined;
-		if (template && !mail.templates[template]) throw new CmsError(404, `Mail-Vorlage „${template}" nicht gefunden`);
+		if (template && !mail.templates[template])
+			throw new CmsError(404, `Mail-Vorlage „${template}" nicht gefunden`);
 		const num = (k: string, d: number) => {
 			const v = p.get(k);
 			if (v === null) return d;
 			if (!/^\d+$/.test(v)) throw new CmsError(400, `${k}: Ganzzahl erwartet`);
 			return Number(v);
 		};
-		return mail.submissions({ template, status: status as MailSubmission['status'] | 'all', limit: num('limit', 50), offset: num('offset', 0) });
+		return mail.submissions({
+			template,
+			status: status as MailSubmission['status'] | 'all',
+			limit: num('limit', 50),
+			offset: num('offset', 0)
+		});
 	});
 
 /** GET /api/v1/submissions/<id> */

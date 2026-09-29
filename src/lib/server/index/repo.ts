@@ -139,8 +139,10 @@ const COLUMN_SORT: Record<string, string> = {
 
 /** Eine Filterbedingung als EXISTS-Unterabfrage auf den Facetten-Index (portables SQL). */
 function filterSql(f: Filter, params: unknown[]): string {
-	const col = f.mode === 'num' ? 'f.value_num' : f.mode === 'itext' ? 'LOWER(f.value_text)' : 'f.value_text';
-	const wrap = (v: string | number) => (f.mode === 'itext' && typeof v === 'string' ? v.toLowerCase() : v);
+	const col =
+		f.mode === 'num' ? 'f.value_num' : f.mode === 'itext' ? 'LOWER(f.value_text)' : 'f.value_text';
+	const wrap = (v: string | number) =>
+		f.mode === 'itext' && typeof v === 'string' ? v.toLowerCase() : v;
 	let cond: string;
 	let negate = false;
 	switch (f.op) {
@@ -183,7 +185,9 @@ export function createIndexRepo(db: DbDriver) {
 		/** Legt Tabellen an; liefert `reset: true`, wenn der Dokument-Index neu aufgebaut werden muss. */
 		async ensureSchema(): Promise<{ reset: boolean }> {
 			await db.exec(META);
-			const row = await db.get<{ value: string }>('SELECT value FROM cms_meta WHERE key = ?', ['index_schema']);
+			const row = await db.get<{ value: string }>('SELECT value FROM cms_meta WHERE key = ?', [
+				'index_schema'
+			]);
 			const current = row ? Number(row.value) : 0;
 			let reset = false;
 			if (current !== INDEX_SCHEMA_VERSION) {
@@ -210,9 +214,27 @@ export function createIndexRepo(db: DbDriver) {
 						   search = excluded.search, refs = excluded.refs,
 						   created_at = excluded.created_at, updated_at = excluded.updated_at,
 						   updated_by = excluded.updated_by, published_at = excluded.published_at`,
-						[r.collection, r.slug, r.lang, r.id, r.status, r.title, r.excerpt, r.search, JSON.stringify(r.refs), r.createdAt, r.updatedAt, r.updatedBy, r.publishedAt]
+						[
+							r.collection,
+							r.slug,
+							r.lang,
+							r.id,
+							r.status,
+							r.title,
+							r.excerpt,
+							r.search,
+							JSON.stringify(r.refs),
+							r.createdAt,
+							r.updatedAt,
+							r.updatedBy,
+							r.publishedAt
+						]
 					);
-					await db.run('DELETE FROM cms_facets WHERE collection = ? AND slug = ? AND lang = ?', [r.collection, r.slug, r.lang]);
+					await db.run('DELETE FROM cms_facets WHERE collection = ? AND slug = ? AND lang = ?', [
+						r.collection,
+						r.slug,
+						r.lang
+					]);
 					for (const f of r.facets) {
 						await db.run(
 							'INSERT INTO cms_facets (collection, slug, lang, field, value_text, value_num) VALUES (?, ?, ?, ?, ?, ?)',
@@ -224,7 +246,9 @@ export function createIndexRepo(db: DbDriver) {
 		},
 
 		async removeDocument(collection: string, slug: string, lang?: string) {
-			const where = lang ? 'collection = ? AND slug = ? AND lang = ?' : 'collection = ? AND slug = ?';
+			const where = lang
+				? 'collection = ? AND slug = ? AND lang = ?'
+				: 'collection = ? AND slug = ?';
 			const params = lang ? [collection, slug, lang] : [collection, slug];
 			await db.run(`DELETE FROM cms_documents WHERE ${where}`, params);
 			await db.run(`DELETE FROM cms_facets WHERE ${where}`, params);
@@ -232,8 +256,12 @@ export function createIndexRepo(db: DbDriver) {
 
 		/** Sprachen entfernen, die nicht mehr im Storage existieren. */
 		async pruneLangs(collection: string, slug: string, keep: string[]) {
-			const rows = await db.all<{ lang: string }>('SELECT lang FROM cms_documents WHERE collection = ? AND slug = ?', [collection, slug]);
-			for (const r of rows) if (!keep.includes(r.lang)) await this.removeDocument(collection, slug, r.lang);
+			const rows = await db.all<{ lang: string }>(
+				'SELECT lang FROM cms_documents WHERE collection = ? AND slug = ?',
+				[collection, slug]
+			);
+			for (const r of rows)
+				if (!keep.includes(r.lang)) await this.removeDocument(collection, slug, r.lang);
 		},
 
 		async clearDocuments() {
@@ -259,7 +287,10 @@ export function createIndexRepo(db: DbDriver) {
 			for (const f of query.filters) where.push(filterSql(f, params));
 			const w = where.join(' AND ');
 
-			const total = await db.get<{ n: number }>(`SELECT COUNT(*) AS n FROM cms_documents d WHERE ${w}`, params);
+			const total = await db.get<{ n: number }>(
+				`SELECT COUNT(*) AS n FROM cms_documents d WHERE ${w}`,
+				params
+			);
 
 			let join = '';
 			let orderCol: string;
@@ -267,10 +298,16 @@ export function createIndexRepo(db: DbDriver) {
 			if (query.sort.kind === 'column') {
 				orderCol = COLUMN_SORT[query.sort.field] ?? 'd.updated_at';
 			} else {
-				join = 'LEFT JOIN cms_facets s ON s.collection = d.collection AND s.slug = d.slug AND s.lang = d.lang AND s.field = ?';
+				join =
+					'LEFT JOIN cms_facets s ON s.collection = d.collection AND s.slug = d.slug AND s.lang = d.lang AND s.field = ?';
 				// JOIN-Parameter kommen in der SQL-Reihenfolge VOR den WHERE-Parametern.
 				listParams.unshift(query.sort.field);
-				orderCol = query.sort.mode === 'num' ? 's.value_num' : query.sort.mode === 'itext' ? 'LOWER(s.value_text)' : 's.value_text';
+				orderCol =
+					query.sort.mode === 'num'
+						? 's.value_num'
+						: query.sort.mode === 'itext'
+							? 'LOWER(s.value_text)'
+							: 's.value_text';
 			}
 			const dir = query.sort.direction === 'asc' ? 'ASC' : 'DESC';
 			const rows = await db.all<DocRow>(
@@ -281,12 +318,17 @@ export function createIndexRepo(db: DbDriver) {
 		},
 
 		async getLangs(collection: string, slug: string): Promise<IndexRow[]> {
-			const rows = await db.all<DocRow>('SELECT * FROM cms_documents WHERE collection = ? AND slug = ? ORDER BY lang', [collection, slug]);
+			const rows = await db.all<DocRow>(
+				'SELECT * FROM cms_documents WHERE collection = ? AND slug = ? ORDER BY lang',
+				[collection, slug]
+			);
 			return rows.map(toIndexRow);
 		},
 
 		async countByCollection(): Promise<Record<string, number>> {
-			const rows = await db.all<{ collection: string; n: number }>('SELECT collection, COUNT(DISTINCT slug) AS n FROM cms_documents GROUP BY collection');
+			const rows = await db.all<{ collection: string; n: number }>(
+				'SELECT collection, COUNT(DISTINCT slug) AS n FROM cms_documents GROUP BY collection'
+			);
 			return Object.fromEntries(rows.map((r) => [r.collection, Number(r.n)]));
 		},
 
@@ -298,7 +340,20 @@ export function createIndexRepo(db: DbDriver) {
 				 ON CONFLICT (id) DO UPDATE SET src = excluded.src, mime = excluded.mime, kind = excluded.kind,
 				   width = excluded.width, height = excluded.height, alt = excluded.alt, variants = excluded.variants,
 				   original_name = excluded.original_name, size = excluded.size`,
-				[m.id, m.src, m.mime, m.kind, m.width, m.height, m.alt, JSON.stringify(m.variants), m.originalName, m.size, m.createdAt, m.createdBy]
+				[
+					m.id,
+					m.src,
+					m.mime,
+					m.kind,
+					m.width,
+					m.height,
+					m.alt,
+					JSON.stringify(m.variants),
+					m.originalName,
+					m.size,
+					m.createdAt,
+					m.createdBy
+				]
 			);
 		},
 
@@ -323,8 +378,14 @@ export function createIndexRepo(db: DbDriver) {
 				params.push(`%${opts.q.toLowerCase()}%`, `%${opts.q.toLowerCase()}%`);
 			}
 			const w = where.join(' AND ');
-			const total = await db.get<{ n: number }>(`SELECT COUNT(*) AS n FROM cms_media WHERE ${w}`, params);
-			const rows = await db.all<MediaRow>(`SELECT * FROM cms_media WHERE ${w} ORDER BY created_at DESC LIMIT ? OFFSET ?`, [...params, Math.min(opts.limit ?? 60, 500), opts.offset ?? 0]);
+			const total = await db.get<{ n: number }>(
+				`SELECT COUNT(*) AS n FROM cms_media WHERE ${w}`,
+				params
+			);
+			const rows = await db.all<MediaRow>(
+				`SELECT * FROM cms_media WHERE ${w} ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+				[...params, Math.min(opts.limit ?? 60, 500), opts.offset ?? 0]
+			);
 			return { items: rows.map(toMediaItem), total: Number(total?.n ?? 0) };
 		},
 

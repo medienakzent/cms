@@ -9,7 +9,12 @@ export default defineCollection({
 		title: f.text({ label: 'Titel', localized: true, required: true }),
 		seo: f.group(
 			{
-				description: f.textarea({ label: 'Meta-Beschreibung', localized: true, rows: 2, maxLength: 160 }),
+				description: f.textarea({
+					label: 'Meta-Beschreibung',
+					localized: true,
+					rows: 2,
+					maxLength: 160
+				}),
 				noindex: f.boolean({ label: 'Von Suchmaschinen ausschließen' })
 			},
 			{ label: 'SEO' }

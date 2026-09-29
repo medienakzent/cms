@@ -13,9 +13,15 @@
 	const altLangs = $derived(
 		config.languages.map((l) => {
 			const available = (page.data.doc?.langs ?? []) as { lang: string; status: string }[];
-			const exists = available.some((a) => a.lang === l.code && (a.status === 'published' || data.preview));
+			const exists = available.some(
+				(a) => a.lang === l.code && (a.status === 'published' || data.preview)
+			);
 			const path = (page.data.docPath as string | undefined) ?? '/';
-			return { ...l, href: localizePath(config, l.code, exists ? path : '/'), current: l.code === data.lang };
+			return {
+				...l,
+				href: localizePath(config, l.code, exists ? path : '/'),
+				current: l.code === data.lang
+			};
 		})
 	);
 </script>
@@ -34,12 +40,16 @@
 			{#if config.languages.length > 1}
 				<span class="text-muted-foreground flex gap-2 border-s ps-4">
 					{#each altLangs as l (l.code)}
-						<a href={l.href} hreflang={l.code} class={l.current ? 'font-medium' : ''}>{l.code.toUpperCase()}</a>
+						<a href={l.href} hreflang={l.code} class={l.current ? 'font-medium' : ''}
+							>{l.code.toUpperCase()}</a
+						>
 					{/each}
 				</span>
 			{/if}
 			{#if data.preview}
-				<a href="/admin" class="bg-primary text-primary-foreground rounded px-2 py-1 text-xs">Admin</a>
+				<a href="/admin" class="bg-primary text-primary-foreground rounded px-2 py-1 text-xs"
+					>Admin</a
+				>
 			{/if}
 		</nav>
 	</div>
@@ -52,7 +62,9 @@
 <footer class="text-muted-foreground border-border mt-16 border-t py-8 text-center text-sm">
 	{data.siteName}
 	{#if config.consent}
-		· <button type="button" class="underline" onclick={openConsent}>Datenschutz-Einstellungen</button>
+		· <button type="button" class="underline" onclick={openConsent}
+			>Datenschutz-Einstellungen</button
+		>
 	{/if}
 </footer>
 

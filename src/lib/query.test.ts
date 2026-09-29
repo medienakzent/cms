@@ -31,7 +31,9 @@ const issuesOf = (fn: () => unknown) => {
 
 describe('parseListQuery', () => {
 	it('typisiert Filter nach Feldart und setzt Vergleichsmodus', () => {
-		const q = parse('lang=de&filter[year][gte]=2024&filter[category]=news&filter[tags][in]=a,b&filter[seo.noindex]=false&sort=-year&limit=10');
+		const q = parse(
+			'lang=de&filter[year][gte]=2024&filter[category]=news&filter[tags][in]=a,b&filter[seo.noindex]=false&sort=-year&limit=10'
+		);
 		expect(q.filters).toEqual([
 			{ field: 'year', op: 'gte', value: 2024, mode: 'num' },
 			{ field: 'category', op: 'eq', value: 'news', mode: 'text' },
@@ -44,7 +46,12 @@ describe('parseListQuery', () => {
 	});
 
 	it('nutzt die Standardsortierung der Collection', () => {
-		expect(parse('').sort).toEqual({ field: 'published', direction: 'desc', kind: 'facet', mode: 'num' });
+		expect(parse('').sort).toEqual({
+			field: 'published',
+			direction: 'desc',
+			kind: 'facet',
+			mode: 'num'
+		});
 	});
 
 	it('lehnt Unbekanntes und falsche Typen mit Pfadangabe ab', () => {
@@ -55,11 +62,24 @@ describe('parseListQuery', () => {
 		expect(issuesOf(() => parse('filter[title][gt]=a'))).toEqual(['filter[title][gt]']);
 		expect(issuesOf(() => parse('filter[year][contains]=1'))).toEqual(['filter[year][contains]']);
 		expect(issuesOf(() => parse('sort=tags'))).toEqual(['sort']);
-		expect(issuesOf(() => parse('lang=fr&limit=999&status=x'))).toEqual(['lang', 'status', 'limit']);
+		expect(issuesOf(() => parse('lang=fr&limit=999&status=x'))).toEqual([
+			'lang',
+			'status',
+			'limit'
+		]);
 	});
 
 	it('akzeptiert Bibliotheks-Eingaben mit nativen Typen', () => {
-		const q = buildListQuery(articles, { filters: [{ field: 'seo.noindex', value: true }, { field: 'year', op: 'in', value: [2024, 2025] }] }, langs);
+		const q = buildListQuery(
+			articles,
+			{
+				filters: [
+					{ field: 'seo.noindex', value: true },
+					{ field: 'year', op: 'in', value: [2024, 2025] }
+				]
+			},
+			langs
+		);
 		expect(q.filters[0].value).toBe(1);
 		expect(q.filters[1].value).toEqual([2024, 2025]);
 	});
@@ -76,8 +96,20 @@ describe('extractFacets', () => {
 			seo: { noindex: true },
 			body: 'nicht indiziert'
 		});
-		expect(facets.map((x) => x.field)).toEqual(['title', 'year', 'published', 'category', 'tags', 'tags', 'seo.noindex']);
+		expect(facets.map((x) => x.field)).toEqual([
+			'title',
+			'year',
+			'published',
+			'category',
+			'tags',
+			'tags',
+			'seo.noindex'
+		]);
 		expect(facets.find((x) => x.field === 'published')?.num).toBe(Date.parse('2025-03-01'));
-		expect(facets.find((x) => x.field === 'seo.noindex')).toEqual({ field: 'seo.noindex', text: 'true', num: 1 });
+		expect(facets.find((x) => x.field === 'seo.noindex')).toEqual({
+			field: 'seo.noindex',
+			text: 'true',
+			num: 1
+		});
 	});
 });

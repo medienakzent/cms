@@ -22,7 +22,9 @@
 	const byTitle = $derived(new Map(rows.map((r) => [r.slug, r.title || r.slug])));
 	const options = $derived([
 		...(multiple ? [] : [{ value: '', label: '— keine Auswahl —' }]),
-		...rows.filter((r) => !multiple || !selected.includes(r.slug)).map((r) => ({ value: r.slug, label: r.title || r.slug }))
+		...rows
+			.filter((r) => !multiple || !selected.includes(r.slug))
+			.map((r) => ({ value: r.slug, label: r.title || r.slug }))
 	]);
 
 	$effect(() => {
@@ -54,11 +56,28 @@
 		{#each selected as slug (slug)}
 			<Badge variant="neutral" class="gap-1">
 				{byTitle.get(slug) ?? slug}
-				<button type="button" onclick={() => remove(slug)} aria-label="Entfernen"><XIcon class="size-3" /></button>
+				<button type="button" onclick={() => remove(slug)} aria-label="Entfernen"
+					><XIcon class="size-3" /></button
+				>
 			</Badge>
 		{/each}
-		<SearchableSelect {id} {options} value={null} onSelect={select} placeholder="Hinzufügen …" searchable class="w-56" />
+		<SearchableSelect
+			{id}
+			{options}
+			value={null}
+			onSelect={select}
+			placeholder="Hinzufügen …"
+			searchable
+			class="w-56"
+		/>
 	</div>
 {:else}
-	<SearchableSelect {id} {options} value={selected[0] ?? null} onSelect={select} placeholder="Auswählen …" searchable />
+	<SearchableSelect
+		{id}
+		{options}
+		value={selected[0] ?? null}
+		onSelect={select}
+		placeholder="Auswählen …"
+		searchable
+	/>
 {/if}

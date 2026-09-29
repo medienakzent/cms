@@ -2,34 +2,57 @@
 
 Alle relevanten Änderungen. Format: Datum, Version, Abschnitte Neu / Geändert / Breaking.
 
+## 0.3.0 — 2026-09-29
+
+Härtung für den Produktivbetrieb.
+
+### Neu
+
+- **Nutzerverwaltung** unter `/admin/users` (nur Rolle admin): Konten anlegen, Rolle setzen, Passwort setzen, entfernen. API `POST /api/v1/users`, `PATCH|DELETE /api/v1/users/<id>` — nur mit Admin-Sitzung, nicht per API-Token.
+- **Passwort vergessen** auf der Login-Seite; Link per Mail über den CMS-Transport, Seite `/admin/reset`.
+- **Registrierung**: der erste Nutzer kann sich immer registrieren und wird Admin; danach nur mit `ALLOW_SIGNUP=1`. Ein vergessener Schalter öffnet die Registrierung nicht mehr.
+- `GET /api/health` für Docker-Healthchecks, `GET /sitemap.xml` (alle veröffentlichten Dokumente mit hreflang) und `GET /llms.txt` (Überblick für KI-Suchsysteme). Vorlage `static/robots.txt`.
+
+### Geändert
+
+- Sicherheits-Header auf Admin und API (`X-Frame-Options: DENY`, `nosniff`, Referrer-Policy); Medien mit `nosniff` und CSP-Sandbox (keine Skripte aus SVG).
+- API-Token wird zeitkonstant verglichen; Slugs werden an allen Einstiegen geprüft (400 statt 500).
+- Rollen laufen über das Admin-Plugin von Better Auth (`admin`, `editor`).
+
 ## 0.2.1 — 2026-09-29
 
 ### Geändert
+
 - Nur noch ALTCHA als Captcha; Turnstile entfernt. `CAPTCHA_PROVIDER` entfällt, stattdessen `CAPTCHA=1|0` (Default an). Client-Konfiguration ist jetzt `{ enabled, challengeUrl, fieldName }`.
 
 ## 0.2.0 — 2026-09-29
 
 ### Neu
+
 - **Captcha für alle Formulare.** Prüfung zentral in `mail.send`; Provider per `CAPTCHA_PROVIDER`: `altcha` (Default, selbst gehostetes Proof-of-Work ohne Drittanbieter und Cookies), `turnstile` (Cloudflare) oder `none`. Widget `<Captcha config={data.captcha} />` aus `@medienakzent/cms/forms`, Konfiguration über `cms.forms.captcha()` im Layout-Load. Route `GET /api/captcha/challenge` mit eigenem Rate-Limit, Replay-Schutz. Pro Vorlage abschaltbar mit `captcha: false`.
 - **Datenschutz-Banner und Tracking.** `consent: defineConsent({ categories, services, texts })` in `cms.config.ts`; Komponente `<Consent config={config.consent} lang />` im Layout; Zustand in Cookie und localStorage mit Versionsnummer; Dienste laden erst nach Einwilligung, Seitenwechsel werden gemeldet. Adapter `ga4()` (Consent Mode), `matomo()`, `script()`; `openConsent()` für Footer-Links, `track()` für Ereignisse. Ohne optionale Dienste erscheint kein Banner.
 
 ### Geändert
+
 - Neues Paket-Entry `@medienakzent/cms/forms`. Neue Umgebungsvariablen (alle mit Defaults): `CAPTCHA_PROVIDER`, `CAPTCHA_SECRET`, `ALTCHA_COST`, `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY`, `RATE_LIMIT_CAPTCHA_PER_MINUTE`.
 - Formulare bestehender Projekte brauchen das Widget, sonst antwortet die API mit 422 (`_captcha`). Übergangsweise `CAPTCHA_PROVIDER=none`.
 
 ## 0.1.2 — 2026-09-29
 
 ### Neu
+
 - Bereich „Einsendungen" im Admin (`/admin/submissions`): Liste mit Filter nach Formular und Status, Seitenwechsel, Detailansicht mit allen Angaben, Dateien, Versand- und Herkunftsdaten, Löschen samt Dateien.
 - Geschützte REST-API `GET /api/v1/submissions`, `GET|DELETE /api/v1/submissions/<id>` — nur mit Anmeldung oder API-Token, nie öffentlich.
 - Einsendungen merken sich ihren Upload-Ordner (`uploadToken`).
 
 ### Geändert
+
 - Ersetzt die frühere Seite „Anfragen" (`/admin/mail`); die Stubs werden per `cms sync` ausgetauscht.
 
 ## 0.1.1 — 2026-09-29
 
 ### Geändert
+
 - Anmeldung hinter einem Proxy: Better Auth akzeptiert die Origin aus `X-Forwarded-Proto`/`X-Forwarded-Host`; in der Entwicklung beide Schemata des Hosts. Behebt „Invalid origin" über `https://<projekt>.test`.
 
 ## 0.1.0 — 2026-09-29
@@ -37,6 +60,7 @@ Alle relevanten Änderungen. Format: Datum, Version, Abschnitte Neu / Geändert 
 Erste Version als Paket.
 
 ### Neu
+
 - Feld-Builder `f.*`, `defineBlock`, `defineCollection`, `defineContent`, `defineMail`, `defineConfig`, `defineRegistry`.
 - Storage als Wahrheit (Basis + Sprach-Overlay je Dokument), Versionshistorie, Medien mit WebP-Varianten.
 - Index mit Facetten, strikte Abfragesprache (Filter, Sortierung), REST-API unter `/api/v1` mit Rate-Limit.

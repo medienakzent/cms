@@ -27,7 +27,9 @@ export function initRuntime(registry: Registry, env: Env): Runtime {
 
 export function getRuntime(): Runtime {
 	if (!runtime) {
-		throw new Error('CMS-Laufzeit nicht initialisiert: createHandle(registry, { env }) in hooks.server.ts fehlt.');
+		throw new Error(
+			'CMS-Laufzeit nicht initialisiert: createHandle(registry, { env }) in hooks.server.ts fehlt.'
+		);
 	}
 	return runtime;
 }

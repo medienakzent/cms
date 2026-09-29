@@ -5,11 +5,19 @@ import { fieldLabel } from '../../fields';
 /** Markdown-/HTML-relevante Zeichen in Nutzereingaben neutralisieren. */
 export function escapeValue(v: unknown): string {
 	const s = v === null || v === undefined ? '' : Array.isArray(v) ? v.join(', ') : String(v);
-	return s.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c] ?? c).replace(/([\\`*_{}[\]()#+!|~])/g, '\\$1');
+	return s
+		.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c] ?? c)
+		.replace(/([\\`*_{}[\]()#+!|~])/g, '\\$1');
 }
 
 function lookup(data: Record<string, unknown>, path: string): unknown {
-	return path.split('.').reduce<unknown>((acc, key) => (acc && typeof acc === 'object' ? (acc as Record<string, unknown>)[key] : undefined), data);
+	return path
+		.split('.')
+		.reduce<unknown>(
+			(acc, key) =>
+				acc && typeof acc === 'object' ? (acc as Record<string, unknown>)[key] : undefined,
+			data
+		);
 }
 
 function isFileRef(v: unknown): v is { name: string; size: number; url: string } {
@@ -18,7 +26,9 @@ function isFileRef(v: unknown): v is { name: string; size: number; url: string }
 
 export function formatSize(bytes: number): string {
 	const mb = bytes / 1048576;
-	return mb < 0.1 ? `${Math.max(1, Math.round(bytes / 1024))} KB` : `${mb.toFixed(1).replace('.', ',')} MB`;
+	return mb < 0.1
+		? `${Math.max(1, Math.round(bytes / 1024))} KB`
+		: `${mb.toFixed(1).replace('.', ',')} MB`;
 }
 
 /** Datei als Markdown-Link: Name (Größe). */
@@ -29,18 +39,29 @@ function fileMarkdown(v: { name: string; size: number; url: string }): string {
 function valueToText(field: Field, v: unknown): string {
 	if (field.kind === 'boolean') return v ? 'Ja' : 'Nein';
 	if (field.kind === 'file') return isFileRef(v) ? `${v.name} (${formatSize(v.size)})` : '';
-	if (Array.isArray(v)) return v.map((x) => (typeof x === 'object' && x ? JSON.stringify(x) : String(x))).join(', ');
+	if (Array.isArray(v))
+		return v.map((x) => (typeof x === 'object' && x ? JSON.stringify(x) : String(x))).join(', ');
 	if (v && typeof v === 'object') return JSON.stringify(v);
 	return v === null || v === undefined ? '' : String(v);
 }
 
 /** Alle Felder als Markdown-Liste — für `{{all}}`. */
-export function renderAllFields(fields: FieldMap, data: Record<string, unknown>, prefix = ''): string {
+export function renderAllFields(
+	fields: FieldMap,
+	data: Record<string, unknown>,
+	prefix = ''
+): string {
 	const lines: string[] = [];
 	for (const [key, field] of Object.entries(fields)) {
 		const v = data?.[key];
 		if (field.kind === 'group') {
-			lines.push(renderAllFields(field.fields, (v as Record<string, unknown>) ?? {}, `${prefix}${fieldLabel(key, field)} › `));
+			lines.push(
+				renderAllFields(
+					field.fields,
+					(v as Record<string, unknown>) ?? {},
+					`${prefix}${fieldLabel(key, field)} › `
+				)
+			);
 			continue;
 		}
 		if (field.kind === 'file') {
@@ -50,13 +71,22 @@ export function renderAllFields(fields: FieldMap, data: Record<string, unknown>,
 		const text = valueToText(field, v);
 		if (!text) continue;
 		const multiline = text.includes('\n');
-		lines.push(multiline ? `**${prefix}${fieldLabel(key, field)}**\n\n${escapeValue(text).replace(/\n/g, '  \n')}\n` : `**${prefix}${fieldLabel(key, field)}:** ${escapeValue(text)}`);
+		lines.push(
+			multiline
+				? `**${prefix}${fieldLabel(key, field)}**\n\n${escapeValue(text).replace(/\n/g, '  \n')}\n`
+				: `**${prefix}${fieldLabel(key, field)}:** ${escapeValue(text)}`
+		);
 	}
 	return lines.join('\n');
 }
 
 /** Ersetzt `{{pfad}}` in einer Vorlage; Werte werden escaped, `{{all}}` listet alle Felder. */
-export function renderTemplate(template: string, fields: FieldMap, data: Record<string, unknown>, extra: Record<string, string> = {}): string {
+export function renderTemplate(
+	template: string,
+	fields: FieldMap,
+	data: Record<string, unknown>,
+	extra: Record<string, string> = {}
+): string {
 	return template.replace(/\{\{\s*([a-zA-Z0-9_.]+)\s*\}\}/g, (_, path: string) => {
 		if (path === 'all') return renderAllFields(fields, data);
 		if (path === 'files') return renderFiles(fields, data);
@@ -68,7 +98,8 @@ export function renderTemplate(template: string, fields: FieldMap, data: Record<
 			if ('kind' in acc) return acc.kind === 'group' ? acc.fields[key] : undefined;
 			return (acc as FieldMap)[key];
 		}, fields);
-		if (field && 'kind' in field && (field as Field).kind === 'file') return isFileRef(v) ? fileMarkdown(v) : '';
+		if (field && 'kind' in field && (field as Field).kind === 'file')
+			return isFileRef(v) ? fileMarkdown(v) : '';
 		const text = field && 'kind' in field ? valueToText(field as Field, v) : String(v);
 		return escapeValue(text).replace(/\n/g, '  \n');
 	});

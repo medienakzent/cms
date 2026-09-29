@@ -30,6 +30,7 @@ export { api, actorOf, requireAdmin, readJsonBody, parseDocumentBody } from './a
 export { adminCollections, adminBlocks, toAdminCollection, toAdminBlock } from './admin';
 export { createHandle } from './hooks';
 export { captchaClientConfig, verifyCaptcha } from './captcha';
+export { sendSystemMail } from './mail';
 export type { HandleOptions } from './hooks';
 
 export const cms = {

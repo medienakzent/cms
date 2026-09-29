@@ -15,15 +15,30 @@ const MAGIC: Record<string, (b: Buffer) => boolean> = {
 	'application/pdf': (b) => b.subarray(0, 4).toString('latin1') === '%PDF',
 	'image/png': (b) => b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4e && b[3] === 0x47,
 	'image/jpeg': (b) => b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff,
-	'image/webp': (b) => b.subarray(0, 4).toString('latin1') === 'RIFF' && b.subarray(8, 12).toString('latin1') === 'WEBP',
+	'image/webp': (b) =>
+		b.subarray(0, 4).toString('latin1') === 'RIFF' &&
+		b.subarray(8, 12).toString('latin1') === 'WEBP',
 	'image/gif': (b) => b.subarray(0, 3).toString('latin1') === 'GIF'
 };
 
-const EXT: Record<string, string> = { 'application/pdf': '.pdf', 'image/png': '.png', 'image/jpeg': '.jpg', 'image/webp': '.webp', 'image/gif': '.gif' };
+const EXT: Record<string, string> = {
+	'application/pdf': '.pdf',
+	'image/png': '.png',
+	'image/jpeg': '.jpg',
+	'image/webp': '.webp',
+	'image/gif': '.gif'
+};
 
 export function safeFileName(name: string, mime: string): string {
-	const base = String(name || 'datei').split(/[\\/]/).pop() ?? 'datei';
-	let cleaned = base.replace(/[^\w.\- ]+/g, '_').replace(/\s+/g, '_').replace(/_{2,}/g, '_').slice(-120);
+	const base =
+		String(name || 'datei')
+			.split(/[\\/]/)
+			.pop() ?? 'datei';
+	let cleaned = base
+		.replace(/[^\w.\- ]+/g, '_')
+		.replace(/\s+/g, '_')
+		.replace(/_{2,}/g, '_')
+		.slice(-120);
 	const ext = EXT[mime];
 	if (ext && !cleaned.toLowerCase().endsWith(ext)) cleaned += ext;
 	return cleaned || `datei${ext ?? ''}`;
@@ -31,7 +46,9 @@ export function safeFileName(name: string, mime: string): string {
 
 export function formatBytes(bytes: number): string {
 	const mb = bytes / 1048576;
-	return mb < 0.1 ? `${Math.max(1, Math.round(bytes / 1024))} KB` : `${mb.toFixed(1).replace('.', ',')} MB`;
+	return mb < 0.1
+		? `${Math.max(1, Math.round(bytes / 1024))} KB`
+		: `${mb.toFixed(1).replace('.', ',')} MB`;
 }
 
 export interface CheckedFile {
@@ -42,7 +59,12 @@ export interface CheckedFile {
 }
 
 /** Prüft eine hochgeladene Datei gegen die Felddefinition (Typ, Signatur, Größe). */
-export async function checkFile(key: string, field: FileField, file: File, issues: ValidationIssue[]): Promise<CheckedFile | null> {
+export async function checkFile(
+	key: string,
+	field: FileField,
+	file: File,
+	issues: ValidationIssue[]
+): Promise<CheckedFile | null> {
 	if (file.size <= 0) return null;
 	if (field.maxSize && file.size > field.maxSize) {
 		issues.push({ path: key, message: `Maximal ${formatBytes(field.maxSize)} je Datei` });
@@ -51,7 +73,10 @@ export async function checkFile(key: string, field: FileField, file: File, issue
 	const accept = field.accept ?? [];
 	const mime = file.type || 'application/octet-stream';
 	if (accept.length && !accept.includes(mime)) {
-		issues.push({ path: key, message: `Erlaubte Dateitypen: ${accept.map((m) => EXT[m] ?? m).join(', ')}` });
+		issues.push({
+			path: key,
+			message: `Erlaubte Dateitypen: ${accept.map((m) => EXT[m] ?? m).join(', ')}`
+		});
 		return null;
 	}
 	const bytes = Buffer.from(await file.arrayBuffer());
@@ -64,7 +89,10 @@ export async function checkFile(key: string, field: FileField, file: File, issue
 }
 
 /** Legt die Dateien einer Sendung ab und liefert die Referenzen mit Download-URLs. */
-export async function storeFiles(files: CheckedFile[], origin: string): Promise<{ token: string; refs: Record<string, FileRef> }> {
+export async function storeFiles(
+	files: CheckedFile[],
+	origin: string
+): Promise<{ token: string; refs: Record<string, FileRef> }> {
 	const token = nanoid(24);
 	const storage = getStorage();
 	const refs: Record<string, FileRef> = {};
@@ -80,19 +108,38 @@ export async function storeFiles(files: CheckedFile[], origin: string): Promise<
 			url: `${origin}/api/mail/download/${token}/${encodeURIComponent(stored)}`
 		};
 	}
-	await storage.write(`mail/uploads/${token}/meta.json`, JSON.stringify({ token, storedAt: new Date().toISOString(), files: Object.values(refs) }, null, 2));
+	await storage.write(
+		`mail/uploads/${token}/meta.json`,
+		JSON.stringify(
+			{ token, storedAt: new Date().toISOString(), files: Object.values(refs) },
+			null,
+			2
+		)
+	);
 	return { token, refs };
 }
 
 /** Datei für den Download auflösen — nur mit gültigem Token, nur innerhalb des Ordners. */
-export async function resolveUpload(token: string, name: string): Promise<{ bytes: Buffer; mime: string; name: string } | null> {
-	if (!TOKEN_RE.test(token) || name.includes('/') || name.includes('\\') || name.startsWith('.') || name === 'meta.json') return null;
+export async function resolveUpload(
+	token: string,
+	name: string
+): Promise<{ bytes: Buffer; mime: string; name: string } | null> {
+	if (
+		!TOKEN_RE.test(token) ||
+		name.includes('/') ||
+		name.includes('\\') ||
+		name.startsWith('.') ||
+		name === 'meta.json'
+	)
+		return null;
 	const storage = getStorage();
 	const path = `mail/uploads/${token}/${name}`;
 	const bytes = await storage.readBytes(path);
 	if (!bytes) return null;
 	const meta = await storage.read(`mail/uploads/${token}/meta.json`);
-	const entry = meta ? (JSON.parse(meta).files as FileRef[]).find((f) => f.path === path) : undefined;
+	const entry = meta
+		? (JSON.parse(meta).files as FileRef[]).find((f) => f.path === path)
+		: undefined;
 	return { bytes, mime: entry?.mime ?? 'application/octet-stream', name: entry?.name ?? name };
 }
 

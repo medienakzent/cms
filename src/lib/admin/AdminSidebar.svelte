@@ -6,6 +6,7 @@
 	import LayoutDashboardIcon from '@lucide/svelte/icons/layout-dashboard';
 	import ImagesIcon from '@lucide/svelte/icons/images';
 	import InboxIcon from '@lucide/svelte/icons/inbox';
+	import UsersIcon from '@lucide/svelte/icons/users';
 	import RefreshCwIcon from '@lucide/svelte/icons/refresh-cw';
 	import LayersIcon from '@lucide/svelte/icons/layers';
 	import { authClient } from './auth-client';
@@ -23,21 +24,39 @@
 
 	const navMain = $derived<ShellNavItem[]>([
 		{ id: 'dashboard', href: '/admin', label: 'Übersicht', icon: LayoutDashboardIcon },
-		...collections.map((c) => ({ id: c.name, href: `/admin/${c.name}`, label: c.labelPlural, icon: iconFor(c.icon) })),
+		...collections.map((c) => ({
+			id: c.name,
+			href: `/admin/${c.name}`,
+			label: c.labelPlural,
+			icon: iconFor(c.icon)
+		})),
 		{ id: 'media', href: '/admin/media', label: 'Medien', icon: ImagesIcon },
-		{ id: 'submissions', href: '/admin/submissions', label: 'Einsendungen', icon: InboxIcon }
+		{ id: 'submissions', href: '/admin/submissions', label: 'Einsendungen', icon: InboxIcon },
+		...(user.role === 'admin'
+			? [{ id: 'users', href: '/admin/users', label: 'Nutzer', icon: UsersIcon }]
+			: [])
 	]);
 
 	const navSecondary = $derived<ShellNavItem[]>([
 		{ id: 'site', href: '/', label: 'Website', icon: LayersIcon, external: true },
 		...(user.role === 'admin'
-			? [{ id: 'reindex', href: '#', label: 'Index neu aufbauen', icon: RefreshCwIcon, onClick: reindex }]
+			? [
+					{
+						id: 'reindex',
+						href: '#',
+						label: 'Index neu aufbauen',
+						icon: RefreshCwIcon,
+						onClick: reindex
+					}
+				]
 			: [])
 	]);
 
 	async function reindex() {
 		try {
-			const r = await apiFetch<{ documents: number; media: number }>('/api/v1/reindex', { method: 'POST' });
+			const r = await apiFetch<{ documents: number; media: number }>('/api/v1/reindex', {
+				method: 'POST'
+			});
 			toast.success(`Index: ${r.documents} Dokumente, ${r.media} Medien`);
 		} catch (e) {
 			toast.error((e as Error).message);
@@ -64,7 +83,9 @@
 	homeHref="/admin"
 >
 	{#snippet logo()}
-		<div class="bg-primary text-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
+		<div
+			class="bg-primary text-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg"
+		>
 			<LayersIcon class="size-4" />
 		</div>
 	{/snippet}

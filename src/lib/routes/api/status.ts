@@ -10,7 +10,16 @@ export const POST = (event: RequestEvent) =>
 		const { languages, config } = getRuntime();
 		const body = await readJsonBody(event, ['lang', 'status']);
 		const status = body.status;
-		if (status !== 'draft' && status !== 'published') throw new CmsError(400, 'Ungültiger Status', [{ path: 'status', message: 'draft oder published' }]);
-		if (body.lang !== undefined && !languages.includes(String(body.lang))) throw new CmsError(400, 'Unbekannte Sprache');
-		return collection(event.params.collection ?? '').setStatus(event.params.slug ?? '', (body.lang as string | undefined) ?? config.defaultLanguage, status, actorOf(event));
+		if (status !== 'draft' && status !== 'published')
+			throw new CmsError(400, 'Ungültiger Status', [
+				{ path: 'status', message: 'draft oder published' }
+			]);
+		if (body.lang !== undefined && !languages.includes(String(body.lang)))
+			throw new CmsError(400, 'Unbekannte Sprache');
+		return collection(event.params.collection ?? '').setStatus(
+			event.params.slug ?? '',
+			(body.lang as string | undefined) ?? config.defaultLanguage,
+			status,
+			actorOf(event)
+		);
 	});

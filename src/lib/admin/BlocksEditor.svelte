@@ -26,12 +26,19 @@
 		expanded?: Set<string>;
 	};
 
-	let { blocks, allowed, blockDefs, lang, errors, path = 'blocks', onchange, expanded = $bindable(new Set<string>()) }: Props = $props();
+	let {
+		blocks,
+		allowed,
+		blockDefs,
+		lang,
+		errors,
+		path = 'blocks',
+		onchange,
+		expanded = $bindable(new Set<string>())
+	}: Props = $props();
 
 	const options = $derived(
-		allowed
-			.filter((n) => blockDefs[n])
-			.map((n) => ({ value: n, label: blockDefs[n].label }))
+		allowed.filter((n) => blockDefs[n]).map((n) => ({ value: n, label: blockDefs[n].label }))
 	);
 
 	function add(type: string) {
@@ -58,7 +65,11 @@
 	}
 	function duplicate(i: number) {
 		const src = blocks[i];
-		const copy = { id: nanoid(8), type: src.type, data: structuredClone($state.snapshot(src.data)) };
+		const copy = {
+			id: nanoid(8),
+			type: src.type,
+			data: structuredClone($state.snapshot(src.data))
+		};
 		onchange([...blocks.slice(0, i + 1), copy, ...blocks.slice(i + 1)]);
 	}
 	function toggle(id: string) {
@@ -74,7 +85,11 @@
 		const def = blockDefs[block.type];
 		if (!def) return '';
 		for (const [k, f] of Object.entries(def.fields)) {
-			if ((f.kind === 'text' || f.kind === 'textarea') && typeof block.data[k] === 'string' && block.data[k]) {
+			if (
+				(f.kind === 'text' || f.kind === 'textarea') &&
+				typeof block.data[k] === 'string' &&
+				block.data[k]
+			) {
 				return String(block.data[k]).slice(0, 60);
 			}
 		}
@@ -88,23 +103,59 @@
 		{@const Icon = iconFor(def?.icon)}
 		{@const blockPath = `${path}[${i}]`}
 		{@const open = expanded.has(block.id)}
-		<div class="border-border bg-card rounded-lg border {hasError(blockPath) ? 'border-destructive' : ''}">
+		<div
+			class="border-border bg-card rounded-lg border {hasError(blockPath)
+				? 'border-destructive'
+				: ''}"
+		>
 			<div class="flex items-center gap-2 px-3 py-2">
-				<button type="button" class="flex flex-1 items-center gap-2 text-start" onclick={() => toggle(block.id)}>
-					<ChevronRightIcon class="size-4 transition-transform {open ? 'rotate-90' : ''}" aria-hidden="true" />
+				<button
+					type="button"
+					class="flex flex-1 items-center gap-2 text-start"
+					onclick={() => toggle(block.id)}
+				>
+					<ChevronRightIcon
+						class="size-4 transition-transform {open ? 'rotate-90' : ''}"
+						aria-hidden="true"
+					/>
 					<Icon class="text-muted-foreground size-4" />
 					<span class="font-medium">{def?.label ?? block.type}</span>
-					{#if !open}<span class="text-muted-foreground truncate text-sm">{summary(block)}</span>{/if}
+					{#if !open}<span class="text-muted-foreground truncate text-sm">{summary(block)}</span
+						>{/if}
 					{#if !def}<span class="text-destructive text-xs">Unbekannter Block-Typ</span>{/if}
 				</button>
-				<Button size="icon-sm" variant="ghost" onclick={() => move(i, -1)} disabled={i === 0} aria-label="Nach oben"><ChevronUpIcon aria-hidden="true" /></Button>
-				<Button size="icon-sm" variant="ghost" onclick={() => move(i, 1)} disabled={i === blocks.length - 1} aria-label="Nach unten"><ChevronDownIcon aria-hidden="true" /></Button>
-				<Button size="icon-sm" variant="ghost" onclick={() => duplicate(i)} aria-label="Duplizieren"><CopyIcon aria-hidden="true" /></Button>
-				<Button size="icon-sm" variant="ghost" onclick={() => remove(i)} aria-label="Entfernen"><TrashIcon aria-hidden="true" /></Button>
+				<Button
+					size="icon-sm"
+					variant="ghost"
+					onclick={() => move(i, -1)}
+					disabled={i === 0}
+					aria-label="Nach oben"><ChevronUpIcon aria-hidden="true" /></Button
+				>
+				<Button
+					size="icon-sm"
+					variant="ghost"
+					onclick={() => move(i, 1)}
+					disabled={i === blocks.length - 1}
+					aria-label="Nach unten"><ChevronDownIcon aria-hidden="true" /></Button
+				>
+				<Button size="icon-sm" variant="ghost" onclick={() => duplicate(i)} aria-label="Duplizieren"
+					><CopyIcon aria-hidden="true" /></Button
+				>
+				<Button size="icon-sm" variant="ghost" onclick={() => remove(i)} aria-label="Entfernen"
+					><TrashIcon aria-hidden="true" /></Button
+				>
 			</div>
 			{#if open && def}
 				<div class="border-border border-t p-4">
-					<FieldsForm fields={def.fields} value={block.data} onchange={(v) => update(i, v)} path={`${blockPath}.`} {errors} {lang} {blockDefs} />
+					<FieldsForm
+						fields={def.fields}
+						value={block.data}
+						onchange={(v) => update(i, v)}
+						path={`${blockPath}.`}
+						{errors}
+						{lang}
+						{blockDefs}
+					/>
 				</div>
 			{/if}
 		</div>
@@ -112,7 +163,15 @@
 
 	{#if options.length}
 		<div class="flex items-center gap-2">
-			<SearchableSelect {options} value={null} onSelect={add} placeholder="Block hinzufügen …" searchable={options.length > 6} ariaLabel="Block hinzufügen" class="w-64" />
+			<SearchableSelect
+				{options}
+				value={null}
+				onSelect={add}
+				placeholder="Block hinzufügen …"
+				searchable={options.length > 6}
+				ariaLabel="Block hinzufügen"
+				class="w-64"
+			/>
 		</div>
 	{/if}
 </div>

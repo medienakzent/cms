@@ -26,7 +26,11 @@ function loadScript(src: string, attrs: Record<string, string> = {}): Promise<vo
  * Google Analytics 4 mit Consent Mode: Einwilligung wird vor dem Laden gesetzt,
  * IP-Anonymisierung ist bei GA4 Standard. Seitenwechsel werden manuell gemeldet.
  */
-export function ga4(opts: { measurementId: string; category?: string; name?: string }): ConsentService {
+export function ga4(opts: {
+	measurementId: string;
+	category?: string;
+	name?: string;
+}): ConsentService {
 	return {
 		id: `ga4-${opts.measurementId}`,
 		name: opts.name ?? 'Google Analytics',
@@ -37,10 +41,17 @@ export function ga4(opts: { measurementId: string; category?: string; name?: str
 				// eslint-disable-next-line prefer-rest-params
 				window.dataLayer!.push(arguments);
 			};
-			window.gtag('consent', 'default', { ad_storage: 'denied', ad_user_data: 'denied', ad_personalization: 'denied', analytics_storage: 'granted' });
+			window.gtag('consent', 'default', {
+				ad_storage: 'denied',
+				ad_user_data: 'denied',
+				ad_personalization: 'denied',
+				analytics_storage: 'granted'
+			});
 			window.gtag('js', new Date());
 			window.gtag('config', opts.measurementId, { send_page_view: false });
-			void loadScript(`https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(opts.measurementId)}`);
+			void loadScript(
+				`https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(opts.measurementId)}`
+			);
 		},
 		pageview(url) {
 			window.gtag?.('event', 'page_view', { page_location: url, page_title: document.title });
@@ -52,7 +63,12 @@ export function ga4(opts: { measurementId: string; category?: string; name?: str
 }
 
 /** Matomo (selbst gehostet). `url` mit abschließendem Slash, z. B. https://stats.example.de/ */
-export function matomo(opts: { url: string; siteId: string | number; category?: string; name?: string }): ConsentService {
+export function matomo(opts: {
+	url: string;
+	siteId: string | number;
+	category?: string;
+	name?: string;
+}): ConsentService {
 	const base = opts.url.replace(/\/+$/, '') + '/';
 	return {
 		id: `matomo-${opts.siteId}`,
@@ -60,20 +76,40 @@ export function matomo(opts: { url: string; siteId: string | number; category?: 
 		category: opts.category ?? 'analytics',
 		load() {
 			window._paq = window._paq ?? [];
-			window._paq.push(['setTrackerUrl', `${base}matomo.php`], ['setSiteId', String(opts.siteId)], ['enableLinkTracking']);
+			window._paq.push(
+				['setTrackerUrl', `${base}matomo.php`],
+				['setSiteId', String(opts.siteId)],
+				['enableLinkTracking']
+			);
 			void loadScript(`${base}matomo.js`);
 		},
 		pageview(url) {
-			window._paq?.push(['setCustomUrl', url], ['setDocumentTitle', document.title], ['trackPageView']);
+			window._paq?.push(
+				['setCustomUrl', url],
+				['setDocumentTitle', document.title],
+				['trackPageView']
+			);
 		},
 		event(name, props) {
-			window._paq?.push(['trackEvent', String(props?.category ?? 'site'), name, props?.label !== undefined ? String(props.label) : undefined]);
+			window._paq?.push([
+				'trackEvent',
+				String(props?.category ?? 'site'),
+				name,
+				props?.label !== undefined ? String(props.label) : undefined
+			]);
 		}
 	};
 }
 
 /** Beliebiges Skript (z. B. Chat-Widget, Karten), erst nach Einwilligung. */
-export function script(opts: { id: string; name: string; category: string; src?: string; inline?: string; attrs?: Record<string, string> }): ConsentService {
+export function script(opts: {
+	id: string;
+	name: string;
+	category: string;
+	src?: string;
+	inline?: string;
+	attrs?: Record<string, string>;
+}): ConsentService {
 	return {
 		id: opts.id,
 		name: opts.name,

@@ -67,9 +67,15 @@ export class FsStorage implements StorageAdapter {
 		const out: string[] = [];
 		for (const entry of entries) {
 			if (!entry.isFile() || entry.name.endsWith('.tmp') || entry.name.startsWith('.')) continue;
-			const parent = (entry as { parentPath?: string; path?: string }).parentPath ?? entry.path ?? base;
+			const parent =
+				(entry as { parentPath?: string; path?: string }).parentPath ?? entry.path ?? base;
 			const full = join(parent, entry.name);
-			out.push(full.slice(this.root.length + 1).split(sep).join('/'));
+			out.push(
+				full
+					.slice(this.root.length + 1)
+					.split(sep)
+					.join('/')
+			);
 		}
 		return out.sort();
 	}

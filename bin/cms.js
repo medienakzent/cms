@@ -14,7 +14,15 @@
  * an und fasst sie nie wieder an.
  */
 import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import {
+	existsSync,
+	mkdirSync,
+	readdirSync,
+	readFileSync,
+	rmSync,
+	statSync,
+	writeFileSync
+} from 'node:fs';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -126,21 +134,31 @@ function sync(root, { force = false } = {}) {
 }
 
 function report(result, previousVersion) {
-	if (previousVersion && previousVersion !== PKG.version) log(`@medienakzent/cms: Stubs von ${previousVersion} auf ${PKG.version} aktualisiert.`);
+	if (previousVersion && previousVersion !== PKG.version)
+		log(`@medienakzent/cms: Stubs von ${previousVersion} auf ${PKG.version} aktualisiert.`);
 	for (const f of result.written) log(`  + ${f}`);
 	for (const f of result.removed) log(`  - ${f}`);
-	for (const f of result.skipped) console.warn(`  ! ${f} wurde geändert und bleibt stehen — mit \`npx cms sync --force\` ersetzen`);
-	if (!result.written.length && !result.removed.length && !result.skipped.length) log('@medienakzent/cms: Stubs sind aktuell.');
+	for (const f of result.skipped)
+		console.warn(
+			`  ! ${f} wurde geändert und bleibt stehen — mit \`npx cms sync --force\` ersetzen`
+		);
+	if (!result.written.length && !result.removed.length && !result.skipped.length)
+		log('@medienakzent/cms: Stubs sind aktuell.');
 }
 
 function copyProject(root, { name }) {
 	const dir = join(TEMPLATES, 'project');
 	const created = [];
 	for (const rel of walk(dir)) {
-		const target = join(root, rel.replace(/^_gitignore$/, '.gitignore').replace(/^_npmrc$/, '.npmrc'));
+		const target = join(
+			root,
+			rel.replace(/^_gitignore$/, '.gitignore').replace(/^_npmrc$/, '.npmrc')
+		);
 		if (existsSync(target)) continue;
 		let content = readFileSync(join(dir, rel), 'utf8');
-		content = content.replaceAll('__PROJECT_NAME__', name).replaceAll('__CMS_VERSION__', PKG.version);
+		content = content
+			.replaceAll('__PROJECT_NAME__', name)
+			.replaceAll('__CMS_VERSION__', PKG.version);
 		mkdirSync(dirname(target), { recursive: true });
 		writeFileSync(target, content);
 		created.push(relative(root, target));
@@ -151,7 +169,13 @@ function copyProject(root, { name }) {
 switch (cmd) {
 	case 'init': {
 		const root = resolve(positional[0] ?? '.');
-		const name = flagValue('--name') ?? root.split(sep).pop().toLowerCase().replace(/[^a-z0-9-]+/g, '-');
+		const name =
+			flagValue('--name') ??
+			root
+				.split(sep)
+				.pop()
+				.toLowerCase()
+				.replace(/[^a-z0-9-]+/g, '-');
 		mkdirSync(root, { recursive: true });
 		const created = copyProject(root, { name });
 		const result = sync(root);
@@ -183,7 +207,9 @@ Eigene Inhaltstypen: src/blocks, src/collections, src/mail — siehe AGENTS.md.`
 		const stubsDir = join(TEMPLATES, 'stubs');
 		let problems = 0;
 		if (manifest.version !== PKG.version) {
-			console.warn(`Stubs stammen von ${manifest.version ?? 'unbekannt'}, installiert ist ${PKG.version} — npx cms sync ausführen.`);
+			console.warn(
+				`Stubs stammen von ${manifest.version ?? 'unbekannt'}, installiert ist ${PKG.version} — npx cms sync ausführen.`
+			);
 			problems++;
 		}
 		for (const rel of walk(stubsDir)) {
@@ -191,7 +217,10 @@ Eigene Inhaltstypen: src/blocks, src/collections, src/mail — siehe AGENTS.md.`
 			if (!existsSync(target)) {
 				console.warn(`fehlt: ${rel}`);
 				problems++;
-			} else if (manifest.files[rel] && sha1(readFileSync(target, 'utf8')) !== manifest.files[rel]) {
+			} else if (
+				manifest.files[rel] &&
+				sha1(readFileSync(target, 'utf8')) !== manifest.files[rel]
+			) {
 				console.warn(`geändert: ${rel}`);
 				problems++;
 			}
@@ -206,10 +235,13 @@ Eigene Inhaltstypen: src/blocks, src/collections, src/mail — siehe AGENTS.md.`
 		if (!root || resolve(root) === PKG_DIR || !isProject(root)) break;
 		const prev = readManifest(root).version;
 		const result = sync(root);
-		if (result.written.length || result.removed.length || result.skipped.length) report(result, prev);
+		if (result.written.length || result.removed.length || result.skipped.length)
+			report(result, prev);
 		break;
 	}
 	default:
-		console.log(`@medienakzent/cms ${PKG.version}\n\n  cms init [verzeichnis] [--name paketname]\n  cms sync [--force]\n  cms check`);
+		console.log(
+			`@medienakzent/cms ${PKG.version}\n\n  cms init [verzeichnis] [--name paketname]\n  cms sync [--force]\n  cms check`
+		);
 		process.exit(cmd ? 1 : 0);
 }

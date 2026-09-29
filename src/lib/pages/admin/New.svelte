@@ -28,8 +28,19 @@
 	</div>
 	<div class="space-y-1">
 		<Label for="slug">Slug</Label>
-		<Input id="slug" name="slug" value={suggested} oninput={(e) => { slug = slugify(e.currentTarget.value); slugTouched = true; }} pattern="[a-z0-9]([a-z0-9-]*[a-z0-9])?" />
-		<p class="text-muted-foreground text-xs">Teil der URL, für alle Sprachen gleich. Nur Kleinbuchstaben, Ziffern, Bindestriche.</p>
+		<Input
+			id="slug"
+			name="slug"
+			value={suggested}
+			oninput={(e) => {
+				slug = slugify(e.currentTarget.value);
+				slugTouched = true;
+			}}
+			pattern="[a-z0-9]([a-z0-9-]*[a-z0-9])?"
+		/>
+		<p class="text-muted-foreground text-xs">
+			Teil der URL, für alle Sprachen gleich. Nur Kleinbuchstaben, Ziffern, Bindestriche.
+		</p>
 	</div>
 	{#if form?.error}<p class="text-destructive text-sm">{form.error}</p>{/if}
 	<div class="flex gap-2">

@@ -8,7 +8,14 @@ import { getStorage, paths } from './storage';
 import { getIndex } from './index/index';
 import type { Actor } from './content';
 
-const RASTER = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/avif', 'image/tiff', 'image/gif']);
+const RASTER = new Set([
+	'image/jpeg',
+	'image/png',
+	'image/webp',
+	'image/avif',
+	'image/tiff',
+	'image/gif'
+]);
 
 function kindOf(mime: string): MediaItem['kind'] {
 	if (mime.startsWith('image/')) return 'image';
@@ -17,7 +24,9 @@ function kindOf(mime: string): MediaItem['kind'] {
 }
 
 function safeExt(name: string, mime: string): string {
-	const ext = extname(name).toLowerCase().replace(/[^a-z0-9.]/g, '');
+	const ext = extname(name)
+		.toLowerCase()
+		.replace(/[^a-z0-9.]/g, '');
 	if (ext && ext.length <= 6) return ext;
 	const byMime: Record<string, string> = {
 		'image/jpeg': '.jpg',

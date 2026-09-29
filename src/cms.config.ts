@@ -24,7 +24,20 @@ export default defineConfig({
 	consent: defineConsent({
 		version: 1,
 		privacyHref: '/datenschutz',
-		categories: [{ id: 'analytics', label: { de: 'Statistik', en: 'Analytics' }, description: { de: 'Anonyme Reichweitenmessung.', en: 'Anonymous usage statistics.' } }],
-		services: [script({ id: 'demo', name: 'Demo-Statistik', category: 'analytics', inline: "console.log('[demo] Statistik geladen')" })]
+		categories: [
+			{
+				id: 'analytics',
+				label: { de: 'Statistik', en: 'Analytics' },
+				description: { de: 'Anonyme Reichweitenmessung.', en: 'Anonymous usage statistics.' }
+			}
+		],
+		services: [
+			script({
+				id: 'demo',
+				name: 'Demo-Statistik',
+				category: 'analytics',
+				inline: "console.log('[demo] Statistik geladen')"
+			})
+		]
 	})
 });

@@ -38,7 +38,8 @@
 		previewHref: string | null;
 	};
 
-	let { collection, blockDefs, doc, exists, lang, languages, versions, previewHref }: Props = $props();
+	let { collection, blockDefs, doc, exists, lang, languages, versions, previewHref }: Props =
+		$props();
 
 	// Initialwerte bewusst einmalig übernommen — die Seite remountet den Editor per {#key}.
 	// svelte-ignore state_referenced_locally
@@ -76,11 +77,15 @@
 
 	/** Einstellungen = alle Felder außer dem Titel; der steht prominent oben. */
 	const settingsFields = $derived(
-		Object.fromEntries(Object.entries(collection.fields).filter(([k]) => k !== collection.titleField)) as FieldMap
+		Object.fromEntries(
+			Object.entries(collection.fields).filter(([k]) => k !== collection.titleField)
+		) as FieldMap
 	);
 	const titleField = $derived(collection.fields[collection.titleField]);
 	const settingsErrorCount = $derived(
-		Object.keys(errors).filter((k) => !k.startsWith('blocks') && !k.startsWith(collection.titleField)).length
+		Object.keys(errors).filter(
+			(k) => !k.startsWith('blocks') && !k.startsWith(collection.titleField)
+		).length
 	);
 
 	const base = $derived(`/api/v1/${collection.name}/${doc.slug}`);
@@ -113,7 +118,11 @@
 		try {
 			const saved = await apiFetch<Document>(`${base}?lang=${lang}`, {
 				method: 'PUT',
-				json: { fields: $state.snapshot(fields), blocks: $state.snapshot(blocks), status: nextStatus ?? status }
+				json: {
+					fields: $state.snapshot(fields),
+					blocks: $state.snapshot(blocks),
+					status: nextStatus ?? status
+				}
 			});
 			status = saved.status;
 			dirty = false;
@@ -173,7 +182,8 @@
 		}
 	}
 
-	const fmt = (iso: string) => new Date(iso).toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' });
+	const fmt = (iso: string) =>
+		new Date(iso).toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' });
 </script>
 
 <div class="space-y-6">
@@ -183,21 +193,36 @@
 			<h1 class="truncate text-2xl font-semibold">{title}</h1>
 			<div class="text-muted-foreground mt-1 flex flex-wrap items-center gap-2 text-sm">
 				<code class="text-xs">{collection.name}/{doc.slug}</code>
-				{#if status === 'published'}<Badge variant="positive">Veröffentlicht</Badge>{:else}<Badge variant="warning">Entwurf</Badge>{/if}
+				{#if status === 'published'}<Badge variant="positive">Veröffentlicht</Badge>{:else}<Badge
+						variant="warning">Entwurf</Badge
+					>{/if}
 				{#if !exists}<Badge variant="info">Neue Übersetzung</Badge>{/if}
 				{#if dirty}<Badge variant="signal">Ungespeichert</Badge>{/if}
 			</div>
 		</div>
 		<div class="flex flex-wrap gap-2">
-			<Button variant={preview ? 'secondary' : 'ghost'} size="sm" onclick={togglePreview} title="Live-Vorschau neben dem Editor">
+			<Button
+				variant={preview ? 'secondary' : 'ghost'}
+				size="sm"
+				onclick={togglePreview}
+				title="Live-Vorschau neben dem Editor"
+			>
 				{#if preview}<EyeOffIcon aria-hidden="true" />{:else}<EyeIcon aria-hidden="true" />{/if} Vorschau
 			</Button>
-			<Button variant="ghost" size="sm" onclick={() => (historyOpen = true)}><HistoryIcon aria-hidden="true" /> Versionen ({versions.length})</Button>
-			<Button variant="outline" size="sm" onclick={() => save()} disabled={busy}><SaveIcon aria-hidden="true" /> Speichern</Button>
+			<Button variant="ghost" size="sm" onclick={() => (historyOpen = true)}
+				><HistoryIcon aria-hidden="true" /> Versionen ({versions.length})</Button
+			>
+			<Button variant="outline" size="sm" onclick={() => save()} disabled={busy}
+				><SaveIcon aria-hidden="true" /> Speichern</Button
+			>
 			{#if status === 'published'}
-				<Button variant="secondary" size="sm" onclick={unpublish} disabled={busy}>Zurück auf Entwurf</Button>
+				<Button variant="secondary" size="sm" onclick={unpublish} disabled={busy}
+					>Zurück auf Entwurf</Button
+				>
 			{:else}
-				<Button size="sm" onclick={() => save('published')} disabled={busy}><GlobeIcon aria-hidden="true" /> Veröffentlichen</Button>
+				<Button size="sm" onclick={() => save('published')} disabled={busy}
+					><GlobeIcon aria-hidden="true" /> Veröffentlichen</Button
+				>
 			{/if}
 		</div>
 	</div>
@@ -208,7 +233,9 @@
 			{@const meta = langMeta.get(l.code)}
 			<a
 				href="/admin/{collection.name}/{doc.slug}?lang={l.code}"
-				class="rounded-md border px-3 py-1.5 text-sm {l.code === lang ? 'border-primary bg-primary/10 font-medium' : 'border-border hover:bg-accent'}"
+				class="rounded-md border px-3 py-1.5 text-sm {l.code === lang
+					? 'border-primary bg-primary/10 font-medium'
+					: 'border-border hover:bg-accent'}"
 			>
 				{l.label}
 				{#if !meta}<span class="text-muted-foreground"> · fehlt</span>
@@ -224,7 +251,16 @@
 			<!-- Titel -->
 			{#if titleField}
 				<div class="[&_input]:h-11 [&_input]:text-lg [&_input]:font-medium">
-					<FieldEditor field={titleField} name={collection.titleField} value={fields[collection.titleField]} onchange={(v) => setFields({ ...fields, [collection.titleField]: v })} path={collection.titleField} {errors} {lang} {blockDefs} />
+					<FieldEditor
+						field={titleField}
+						name={collection.titleField}
+						value={fields[collection.titleField]}
+						onchange={(v) => setFields({ ...fields, [collection.titleField]: v })}
+						path={collection.titleField}
+						{errors}
+						{lang}
+						{blockDefs}
+					/>
 				</div>
 			{/if}
 
@@ -232,37 +268,81 @@
 			{#if collection.blocks.length}
 				<section class="space-y-3">
 					<div class="flex items-center justify-between">
-						<h2 class="text-lg font-semibold">Inhalt <span class="text-muted-foreground text-sm font-normal">({blocks.length})</span></h2>
+						<h2 class="text-lg font-semibold">
+							Inhalt <span class="text-muted-foreground text-sm font-normal">({blocks.length})</span
+							>
+						</h2>
 						{#if blocks.length}
 							{#if allExpanded}
-								<Button variant="ghost" size="sm" onclick={() => (expandedBlocks = new Set())}><ChevronsDownUpIcon aria-hidden="true" /> Alle zuklappen</Button>
+								<Button variant="ghost" size="sm" onclick={() => (expandedBlocks = new Set())}
+									><ChevronsDownUpIcon aria-hidden="true" /> Alle zuklappen</Button
+								>
 							{:else}
-								<Button variant="ghost" size="sm" onclick={() => (expandedBlocks = new Set(blocks.map((b) => b.id)))}><ChevronsUpDownIcon aria-hidden="true" /> Alle aufklappen</Button>
+								<Button
+									variant="ghost"
+									size="sm"
+									onclick={() => (expandedBlocks = new Set(blocks.map((b) => b.id)))}
+									><ChevronsUpDownIcon aria-hidden="true" /> Alle aufklappen</Button
+								>
 							{/if}
 						{/if}
 					</div>
-					<BlocksEditor {blocks} allowed={collection.blocks} {blockDefs} {lang} {errors} onchange={setBlocks} bind:expanded={expandedBlocks} />
+					<BlocksEditor
+						{blocks}
+						allowed={collection.blocks}
+						{blockDefs}
+						{lang}
+						{errors}
+						onchange={setBlocks}
+						bind:expanded={expandedBlocks}
+					/>
 				</section>
 			{/if}
 
 			<!-- Einstellungen (eingeklappt) -->
 			{#if Object.keys(settingsFields).length}
 				<section class="border-border rounded-lg border">
-					<button type="button" class="flex w-full items-center gap-2 px-4 py-3 text-start" onclick={() => (settingsOpen = !settingsOpen)} aria-expanded={settingsOpen}>
+					<button
+						type="button"
+						class="flex w-full items-center gap-2 px-4 py-3 text-start"
+						onclick={() => (settingsOpen = !settingsOpen)}
+						aria-expanded={settingsOpen}
+					>
 						<Settings2Icon class="text-muted-foreground size-4" aria-hidden="true" />
 						<span class="font-medium">Einstellungen</span>
-						{#if settingsErrorCount}<Badge variant="signal">{settingsErrorCount} Problem(e)</Badge>{/if}
-						<span class="text-muted-foreground ms-auto text-xs">{Object.keys(settingsFields).length} Felder</span>
-						<ChevronDownIcon class="size-4 transition-transform {settingsOpen ? 'rotate-180' : ''}" aria-hidden="true" />
+						{#if settingsErrorCount}<Badge variant="signal">{settingsErrorCount} Problem(e)</Badge
+							>{/if}
+						<span class="text-muted-foreground ms-auto text-xs"
+							>{Object.keys(settingsFields).length} Felder</span
+						>
+						<ChevronDownIcon
+							class="size-4 transition-transform {settingsOpen ? 'rotate-180' : ''}"
+							aria-hidden="true"
+						/>
 					</button>
 					{#if settingsOpen}
 						<div class="border-border space-y-6 border-t p-4">
-							<FieldsForm fields={settingsFields} value={fields} onchange={setFields} {errors} {lang} {blockDefs} />
+							<FieldsForm
+								fields={settingsFields}
+								value={fields}
+								onchange={setFields}
+								{errors}
+								{lang}
+								{blockDefs}
+							/>
 							<div class="border-border flex flex-wrap gap-2 border-t pt-4">
 								{#if exists && doc.langs.length > 1}
-									<Button variant="ghost" size="sm" onclick={() => (confirm = 'delete-lang')}><TrashIcon aria-hidden="true" /> Sprachfassung {lang.toUpperCase()} löschen</Button>
+									<Button variant="ghost" size="sm" onclick={() => (confirm = 'delete-lang')}
+										><TrashIcon aria-hidden="true" /> Sprachfassung {lang.toUpperCase()} löschen</Button
+									>
 								{/if}
-								<Button variant="ghost" size="sm" class="text-destructive" onclick={() => (confirm = 'delete-doc')}><TrashIcon aria-hidden="true" /> Dokument löschen</Button>
+								<Button
+									variant="ghost"
+									size="sm"
+									class="text-destructive"
+									onclick={() => (confirm = 'delete-doc')}
+									><TrashIcon aria-hidden="true" /> Dokument löschen</Button
+								>
 							</div>
 						</div>
 					{/if}
@@ -273,13 +353,23 @@
 		<!-- Live-Vorschau: rendert den aktuellen Zustand direkt mit dem Block-Renderer, ohne Speichern. -->
 		{#if preview}
 			<aside class="min-w-0 2xl:sticky 2xl:top-4 2xl:max-h-[calc(100vh-2rem)]">
-				<div class="border-border bg-background flex h-full flex-col overflow-hidden rounded-lg border">
+				<div
+					class="border-border bg-background flex h-full flex-col overflow-hidden rounded-lg border"
+				>
 					<div class="border-border bg-muted/40 flex items-center gap-2 border-b px-3 py-2 text-xs">
 						<span class="font-medium">Live-Vorschau</span>
 						<span class="text-muted-foreground">{lang.toUpperCase()} · ohne Seitenrahmen</span>
 						{#if previewHref}
-							<a href={previewHref} target="_blank" rel="noopener" class="text-primary ms-auto inline-flex items-center gap-1 hover:underline">
-								Gespeicherten Stand im Tab öffnen <ExternalLinkIcon class="size-3" aria-hidden="true" />
+							<a
+								href={previewHref}
+								target="_blank"
+								rel="noopener"
+								class="text-primary ms-auto inline-flex items-center gap-1 hover:underline"
+							>
+								Gespeicherten Stand im Tab öffnen <ExternalLinkIcon
+									class="size-3"
+									aria-hidden="true"
+								/>
 							</a>
 						{/if}
 					</div>
@@ -314,19 +404,29 @@
 	<Sheet.Content side="right">
 		<Sheet.Header>
 			<Sheet.Title>Versionen</Sheet.Title>
-			<Sheet.Description>Jeder Speichervorgang sichert den vorherigen Stand. Wiederherstellen legt selbst wieder eine Version an.</Sheet.Description>
+			<Sheet.Description
+				>Jeder Speichervorgang sichert den vorherigen Stand. Wiederherstellen legt selbst wieder
+				eine Version an.</Sheet.Description
+			>
 		</Sheet.Header>
 		<div class="space-y-2 px-4 pb-4">
 			{#if versions.length === 0}
 				<p class="text-muted-foreground text-sm">Noch keine Versionen.</p>
 			{/if}
 			{#each versions as v (v.id)}
-				<div class="border-border flex items-center justify-between gap-2 rounded-md border p-2 text-sm">
+				<div
+					class="border-border flex items-center justify-between gap-2 rounded-md border p-2 text-sm"
+				>
 					<div>
-						<div>{fmt(v.savedAt)} <Badge variant="id">{v.part === 'base' ? 'Struktur' : v.part.toUpperCase()}</Badge></div>
+						<div>
+							{fmt(v.savedAt)}
+							<Badge variant="id">{v.part === 'base' ? 'Struktur' : v.part.toUpperCase()}</Badge>
+						</div>
 						<div class="text-muted-foreground text-xs">{v.savedBy}</div>
 					</div>
-					<Button size="sm" variant="outline" onclick={() => restore(v)} disabled={busy}>Wiederherstellen</Button>
+					<Button size="sm" variant="outline" onclick={() => restore(v)} disabled={busy}
+						>Wiederherstellen</Button
+					>
 				</div>
 			{/each}
 		</div>

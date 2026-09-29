@@ -1,3 +1,4 @@
+import { timingSafeEqual } from 'node:crypto';
 import type { Handle } from '@sveltejs/kit';
 import type { Registry } from '../registry';
 import { getAuth, getSessionUser } from './auth';
@@ -15,8 +16,26 @@ export interface HandleOptions {
 	adminPath?: string;
 }
 
+/** Konstantzeit-Vergleich für Geheimnisse. */
+function safeEqual(a: string, b: string): boolean {
+	const x = Buffer.from(a);
+	const y = Buffer.from(b);
+	return x.length === y.length && timingSafeEqual(x, y);
+}
+
+/** Schutz-Header für Admin und API — die Website bleibt unberührt (Kundensache). */
+function harden(response: Response): Response {
+	response.headers.set('x-content-type-options', 'nosniff');
+	response.headers.set('x-frame-options', 'DENY');
+	response.headers.set('referrer-policy', 'strict-origin-when-cross-origin');
+	return response;
+}
+
 const jsonError = (status: number, error: string, headers: Record<string, string> = {}) =>
-	new Response(JSON.stringify({ error }), { status, headers: { 'content-type': 'application/json', ...headers } });
+	new Response(JSON.stringify({ error }), {
+		status,
+		headers: { 'content-type': 'application/json', ...headers }
+	});
 
 /**
  * SvelteKit-Handle des CMS: Laufzeit initialisieren, Auth-Endpunkte bedienen,
@@ -46,20 +65,27 @@ export function createHandle(registry: Registry, options: HandleOptions): Handle
 		// Captcha-Aufgaben: öffentlich, eigenes (großzügigeres) Rate-Limit je IP.
 		if (pathname.startsWith('/api/captcha/')) {
 			const r = captchaLimiter.check(`ip:${event.getClientAddress()}`);
-			if (!r.ok) return jsonError(429, 'Zu viele Anfragen', { 'retry-after': String(r.retryAfter) });
+			if (!r.ok)
+				return jsonError(429, 'Zu viele Anfragen', { 'retry-after': String(r.retryAfter) });
 			return resolve(event);
 		}
 
 		// Öffentliche Formular-API: nur Rate-Limit je IP, keine Anmeldung.
 		if (pathname.startsWith('/api/mail/') && !pathname.startsWith('/api/mail/download/')) {
 			const r = mailLimiter.check(`ip:${event.getClientAddress()}`);
-			if (!r.ok) return jsonError(429, 'Zu viele Anfragen', { 'retry-after': String(r.retryAfter) });
+			if (!r.ok)
+				return jsonError(429, 'Zu viele Anfragen', { 'retry-after': String(r.retryAfter) });
 			return resolve(event);
 		}
 
 		// API-Token für Skripte/CI — nur für /api/v1.
 		const bearer = event.request.headers.get('authorization')?.replace(/^Bearer\s+/i, '');
-		if (pathname.startsWith('/api/v1/') && bearer && runtime.server.apiToken && bearer === runtime.server.apiToken) {
+		if (
+			pathname.startsWith('/api/v1/') &&
+			bearer &&
+			runtime.server.apiToken &&
+			safeEqual(bearer, runtime.server.apiToken)
+		) {
 			event.locals.user = { id: 'api', name: 'API', email: '', image: '', role: 'admin' };
 		} else {
 			event.locals.user = await getSessionUser(event.request.headers);
@@ -67,18 +93,35 @@ export function createHandle(registry: Registry, options: HandleOptions): Handle
 
 		if (pathname.startsWith('/api/v1/')) {
 			const user = event.locals.user;
-			const r = user ? userLimiter.check(`u:${user.id}`) : anonLimiter.check(`ip:${event.getClientAddress()}`);
-			const rlHeaders = { 'x-ratelimit-limit': String(r.limit), 'x-ratelimit-remaining': String(r.remaining) };
-			if (!r.ok) return jsonError(429, 'Zu viele Anfragen', { ...rlHeaders, 'retry-after': String(r.retryAfter) });
+			const r = user
+				? userLimiter.check(`u:${user.id}`)
+				: anonLimiter.check(`ip:${event.getClientAddress()}`);
+			const rlHeaders = {
+				'x-ratelimit-limit': String(r.limit),
+				'x-ratelimit-remaining': String(r.remaining)
+			};
+			if (!r.ok)
+				return jsonError(429, 'Zu viele Anfragen', {
+					...rlHeaders,
+					'retry-after': String(r.retryAfter)
+				});
 			if (!user) return jsonError(401, 'Nicht angemeldet', rlHeaders);
-			const response = await resolve(event);
+			const response = harden(await resolve(event));
 			for (const [k, v] of Object.entries(rlHeaders)) response.headers.set(k, v);
 			return response;
 		}
 
-		if (pathname.startsWith(adminPath) && pathname !== `${adminPath}/login` && !event.locals.user) {
-			// Plain Response statt redirect(): funktioniert auch, wenn Kit doppelt aufgelöst wird (lokale Links).
-			return new Response(null, { status: 303, headers: { location: `${adminPath}/login?returnTo=${encodeURIComponent(pathname + event.url.search)}` } });
+		if (pathname.startsWith(adminPath)) {
+			const open = pathname === `${adminPath}/login` || pathname === `${adminPath}/reset`;
+			if (!open && !event.locals.user) {
+				return new Response(null, {
+					status: 303,
+					headers: {
+						location: `${adminPath}/login?returnTo=${encodeURIComponent(pathname + event.url.search)}`
+					}
+				});
+			}
+			return harden(await resolve(event));
 		}
 		return resolve(event);
 	};

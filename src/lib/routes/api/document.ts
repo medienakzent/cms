@@ -8,12 +8,20 @@ const ALLOWED_GET = ['lang', 'fallback', 'status', 'editable'];
 
 function checkParams(p: URLSearchParams, allowed: string[]) {
 	const unknown = [...p.keys()].filter((k) => !allowed.includes(k));
-	if (unknown.length) throw new CmsError(400, 'Unbekannte Parameter', unknown.map((k) => ({ path: k, message: `Erlaubt: ${allowed.join(', ')}` })));
+	if (unknown.length)
+		throw new CmsError(
+			400,
+			'Unbekannte Parameter',
+			unknown.map((k) => ({ path: k, message: `Erlaubt: ${allowed.join(', ')}` }))
+		);
 }
 function langParam(p: URLSearchParams): string {
 	const { languages, config } = getRuntime();
 	const lang = p.get('lang') ?? config.defaultLanguage;
-	if (!languages.includes(lang)) throw new CmsError(400, 'Unbekannte Sprache', [{ path: 'lang', message: `Erlaubt: ${languages.join(', ')}` }]);
+	if (!languages.includes(lang))
+		throw new CmsError(400, 'Unbekannte Sprache', [
+			{ path: 'lang', message: `Erlaubt: ${languages.join(', ')}` }
+		]);
 	return lang;
 }
 
@@ -24,7 +32,8 @@ export const GET = (event: RequestEvent) =>
 		checkParams(p, ALLOWED_GET);
 		const lang = langParam(p);
 		const status = p.get('status') ?? 'all';
-		if (status !== 'draft' && status !== 'published' && status !== 'all') throw new CmsError(400, 'status: draft, published oder all');
+		if (status !== 'draft' && status !== 'published' && status !== 'all')
+			throw new CmsError(400, 'status: draft, published oder all');
 		const c = collection(event.params.collection ?? '');
 		const slug = event.params.slug ?? '';
 		if (p.get('editable') === '1') {
@@ -43,7 +52,12 @@ export const PUT = (event: RequestEvent) =>
 		checkParams(event.url.searchParams, ['lang']);
 		const lang = langParam(event.url.searchParams);
 		const doc = parseDocumentBody(await readJsonBody(event, ['fields', 'blocks', 'status']));
-		return collection(event.params.collection ?? '').save(event.params.slug ?? '', lang, { fields: doc.fields, blocks: doc.blocks }, { actor: actorOf(event), status: doc.status });
+		return collection(event.params.collection ?? '').save(
+			event.params.slug ?? '',
+			lang,
+			{ fields: doc.fields, blocks: doc.blocks },
+			{ actor: actorOf(event), status: doc.status }
+		);
 	});
 
 /** DELETE /api/v1/<collection>/<slug>[?lang=de]  — ohne lang: ganzes Dokument */
@@ -51,6 +65,9 @@ export const DELETE = (event: RequestEvent) =>
 	api(async () => {
 		checkParams(event.url.searchParams, ['lang']);
 		const lang = event.url.searchParams.has('lang') ? langParam(event.url.searchParams) : undefined;
-		await collection(event.params.collection ?? '').remove(event.params.slug ?? '', { lang, actor: actorOf(event) });
+		await collection(event.params.collection ?? '').remove(event.params.slug ?? '', {
+			lang,
+			actor: actorOf(event)
+		});
 		return { ok: true };
 	});

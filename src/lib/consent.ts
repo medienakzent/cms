@@ -75,13 +75,26 @@ export const DEFAULT_CONSENT_TEXTS: Record<string, ConsentTexts> = {
 	}
 };
 
-export function defineConsent(input: Partial<ConsentConfig> & { categories?: ConsentCategory[]; services?: ConsentService[] }): ConsentConfig {
+export function defineConsent(
+	input: Partial<ConsentConfig> & { categories?: ConsentCategory[]; services?: ConsentService[] }
+): ConsentConfig {
 	const categories = input.categories ?? [];
 	if (!categories.some((c) => c.required)) {
-		categories.unshift({ id: 'necessary', label: { de: 'Notwendig', en: 'Necessary' }, description: { de: 'Für den Betrieb der Website erforderlich.', en: 'Required for the website to work.' }, required: true });
+		categories.unshift({
+			id: 'necessary',
+			label: { de: 'Notwendig', en: 'Necessary' },
+			description: {
+				de: 'Für den Betrieb der Website erforderlich.',
+				en: 'Required for the website to work.'
+			},
+			required: true
+		});
 	}
 	for (const s of input.services ?? []) {
-		if (!categories.some((c) => c.id === s.category)) throw new Error(`consent: Dienst „${s.id}" verweist auf unbekannte Kategorie „${s.category}".`);
+		if (!categories.some((c) => c.id === s.category))
+			throw new Error(
+				`consent: Dienst „${s.id}" verweist auf unbekannte Kategorie „${s.category}".`
+			);
 	}
 	return {
 		version: input.version ?? 1,
@@ -95,10 +108,15 @@ export function defineConsent(input: Partial<ConsentConfig> & { categories?: Con
 }
 
 export function consentText(config: ConsentConfig, lang: string, key: keyof ConsentTexts): string {
-	return config.texts[lang]?.[key] ?? DEFAULT_CONSENT_TEXTS[lang]?.[key] ?? DEFAULT_CONSENT_TEXTS.de[key];
+	return (
+		config.texts[lang]?.[key] ?? DEFAULT_CONSENT_TEXTS[lang]?.[key] ?? DEFAULT_CONSENT_TEXTS.de[key]
+	);
 }
 
-export function localized(value: string | Record<string, string> | undefined, lang: string): string {
+export function localized(
+	value: string | Record<string, string> | undefined,
+	lang: string
+): string {
 	if (!value) return '';
 	if (typeof value === 'string') return value;
 	return value[lang] ?? value.de ?? Object.values(value)[0] ?? '';

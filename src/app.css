@@ -9,11 +9,27 @@
 	--color-border: oklch(0.9 0.01 250);
 }
 
-.prose > :first-child { margin-top: 0; }
-.prose h2 { @apply mt-6 mb-2 text-2xl font-semibold; }
-.prose h3 { @apply mt-5 mb-2 text-xl font-semibold; }
-.prose p { @apply my-3; }
-.prose a { @apply text-primary underline underline-offset-4; }
-.prose ul { @apply my-3 list-disc ps-6; }
-.prose ol { @apply my-3 list-decimal ps-6; }
-.prose code { @apply bg-muted rounded px-1.5 py-0.5 font-mono text-[0.9em]; }
+.prose > :first-child {
+	margin-top: 0;
+}
+.prose h2 {
+	@apply mt-6 mb-2 text-2xl font-semibold;
+}
+.prose h3 {
+	@apply mt-5 mb-2 text-xl font-semibold;
+}
+.prose p {
+	@apply my-3;
+}
+.prose a {
+	@apply text-primary underline underline-offset-4;
+}
+.prose ul {
+	@apply my-3 list-disc ps-6;
+}
+.prose ol {
+	@apply my-3 list-decimal ps-6;
+}
+.prose code {
+	@apply bg-muted rounded px-1.5 py-0.5 font-mono text-[0.9em];
+}

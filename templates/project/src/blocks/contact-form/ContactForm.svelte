@@ -57,7 +57,13 @@
 				</label>
 				<label class="grid gap-1 text-sm">
 					E-Mail *
-					<input name="email" type="email" required maxlength="200" class="rounded-md border px-3 py-2" />
+					<input
+						name="email"
+						type="email"
+						required
+						maxlength="200"
+						class="rounded-md border px-3 py-2"
+					/>
 					{#if issues.email}<span class="text-red-600">{issues.email}</span>{/if}
 				</label>
 			</div>
@@ -67,14 +73,24 @@
 			</label>
 			<label class="grid gap-1 text-sm">
 				Nachricht *
-				<textarea name="message" required rows="6" maxlength="5000" class="rounded-md border px-3 py-2"></textarea>
+				<textarea
+					name="message"
+					required
+					rows="6"
+					maxlength="5000"
+					class="rounded-md border px-3 py-2"
+				></textarea>
 				{#if issues.message}<span class="text-red-600">{issues.message}</span>{/if}
 			</label>
 			<!-- Captcha: Konfiguration kommt aus dem Layout-Load (cms.forms.captcha()) -->
 			<Captcha config={page.data.captcha} />
 			{#if issues._captcha}<p class="text-red-600">{issues._captcha}</p>{/if}
 			{#if status === 'error'}<p class="text-red-600">{errorText}</p>{/if}
-			<button type="submit" disabled={status === 'sending'} class="bg-primary text-primary-foreground rounded-md px-5 py-2.5 font-medium disabled:opacity-60">
+			<button
+				type="submit"
+				disabled={status === 'sending'}
+				class="bg-primary text-primary-foreground rounded-md px-5 py-2.5 font-medium disabled:opacity-60"
+			>
 				{status === 'sending' ? 'Wird gesendet …' : 'Absenden'}
 			</button>
 		</form>

@@ -35,7 +35,17 @@
 		showScope?: boolean;
 	};
 
-	let { field, name, value, onchange, path, errors, lang, blockDefs, showScope = true }: Props = $props();
+	let {
+		field,
+		name,
+		value,
+		onchange,
+		path,
+		errors,
+		lang,
+		blockDefs,
+		showScope = true
+	}: Props = $props();
 
 	const label = $derived(fieldLabel(name, field));
 	const error = $derived(errors[path]);
@@ -54,10 +64,14 @@
 			: {}
 	);
 	const media = $derived(
-		typeof value === 'object' && value !== null && 'src' in (value as object) ? (value as MediaRef) : null
+		typeof value === 'object' && value !== null && 'src' in (value as object)
+			? (value as MediaRef)
+			: null
 	);
 	const link = $derived(
-		typeof value === 'object' && value !== null && 'href' in (value as object) ? (value as Link) : null
+		typeof value === 'object' && value !== null && 'href' in (value as object)
+			? (value as Link)
+			: null
 	);
 
 	const blockList = $derived(list as RenderBlock[]);
@@ -92,14 +106,21 @@
 		onchange([...set]);
 	}
 	function setLink(patch: Partial<Link>) {
-		onchange({ href: link?.href ?? '', label: link?.label ?? '', target: link?.target ?? '_self', ...patch });
+		onchange({
+			href: link?.href ?? '',
+			label: link?.label ?? '',
+			target: link?.target ?? '_self',
+			...patch
+		});
 	}
 </script>
 
 <div class="space-y-1.5" data-invalid={!!error}>
 	{#if field.kind !== 'boolean'}
 		<div class="flex items-center gap-2">
-			<Label for={id}>{label}{#if field.required}<span class="text-destructive"> *</span>{/if}</Label>
+			<Label for={id}
+				>{label}{#if field.required}<span class="text-destructive"> *</span>{/if}</Label
+			>
 			{#if showScope}
 				{#if field.localized}
 					<Badge variant="info" title="Wird pro Sprache gespeichert">{lang.toUpperCase()}</Badge>
@@ -111,9 +132,21 @@
 	{/if}
 
 	{#if field.kind === 'text'}
-		<Input {id} value={str} placeholder={field.placeholder} maxlength={field.maxLength} oninput={(e) => onchange(e.currentTarget.value)} />
+		<Input
+			{id}
+			value={str}
+			placeholder={field.placeholder}
+			maxlength={field.maxLength}
+			oninput={(e) => onchange(e.currentTarget.value)}
+		/>
 	{:else if field.kind === 'textarea'}
-		<Textarea {id} value={str} rows={field.rows ?? 3} maxlength={field.maxLength} oninput={(e) => onchange(e.currentTarget.value)} />
+		<Textarea
+			{id}
+			value={str}
+			rows={field.rows ?? 3}
+			maxlength={field.maxLength}
+			oninput={(e) => onchange(e.currentTarget.value)}
+		/>
 	{:else if field.kind === 'richtext'}
 		<MarkdownEditor {id} value={str} onchange={(v) => onchange(v)} />
 	{:else if field.kind === 'number'}
@@ -156,7 +189,10 @@
 			{#each field.options as o (optionValue(o))}
 				{@const v = optionValue(o)}
 				<label class="flex items-center gap-2 text-sm">
-					<Checkbox checked={strList.includes(v)} onCheckedChange={(on) => toggleMulti(v, on === true)} />
+					<Checkbox
+						checked={strList.includes(v)}
+						onCheckedChange={(on) => toggleMulti(v, on === true)}
+					/>
 					{optionLabel(o)}
 				</label>
 			{/each}
@@ -165,67 +201,175 @@
 		<div class="border-border flex items-start gap-4 rounded-md border p-3">
 			{#if media}
 				{#if media.kind === 'image'}
-					<img src={mediaUrl(media, 'thumb')} alt={media.alt} class="size-24 rounded object-cover" />
+					<img
+						src={mediaUrl(media, 'thumb')}
+						alt={media.alt}
+						class="size-24 rounded object-cover"
+					/>
 				{:else}
-					<div class="bg-muted text-muted-foreground flex size-24 items-center justify-center rounded text-xs">{media.mime}</div>
+					<div
+						class="bg-muted text-muted-foreground flex size-24 items-center justify-center rounded text-xs"
+					>
+						{media.mime}
+					</div>
 				{/if}
 				<div class="flex-1 space-y-2">
 					<div class="text-muted-foreground truncate text-xs">{media.src}</div>
-					<Input value={media.alt} placeholder="Alternativtext" oninput={(e) => onchange({ ...media, alt: e.currentTarget.value })} />
+					<Input
+						value={media.alt}
+						placeholder="Alternativtext"
+						oninput={(e) => onchange({ ...media, alt: e.currentTarget.value })}
+					/>
 					<div class="flex gap-2">
 						<Button size="sm" variant="outline" onclick={() => (mediaOpen = true)}>Ersetzen</Button>
-						<Button size="sm" variant="ghost" onclick={() => onchange(null)}><TrashIcon aria-hidden="true" /> Entfernen</Button>
+						<Button size="sm" variant="ghost" onclick={() => onchange(null)}
+							><TrashIcon aria-hidden="true" /> Entfernen</Button
+						>
 					</div>
 				</div>
 			{:else}
-				<Button size="sm" variant="outline" onclick={() => (mediaOpen = true)}><PlusIcon aria-hidden="true" /> Medium auswählen</Button>
+				<Button size="sm" variant="outline" onclick={() => (mediaOpen = true)}
+					><PlusIcon aria-hidden="true" /> Medium auswählen</Button
+				>
 			{/if}
 		</div>
-		<MediaPicker bind:open={mediaOpen} accept={field.accept ?? 'any'} onselect={(ref) => onchange(ref)} />
+		<MediaPicker
+			bind:open={mediaOpen}
+			accept={field.accept ?? 'any'}
+			onselect={(ref) => onchange(ref)}
+		/>
 	{:else if field.kind === 'link'}
 		<div class="grid gap-2 md:grid-cols-[1fr_1fr_auto]">
-			<Input {id} value={link?.href ?? ''} placeholder="https://… oder /pfad" oninput={(e) => setLink({ href: e.currentTarget.value })} />
-			<Input value={link?.label ?? ''} placeholder="Beschriftung" oninput={(e) => setLink({ label: e.currentTarget.value })} />
+			<Input
+				{id}
+				value={link?.href ?? ''}
+				placeholder="https://… oder /pfad"
+				oninput={(e) => setLink({ href: e.currentTarget.value })}
+			/>
+			<Input
+				value={link?.label ?? ''}
+				placeholder="Beschriftung"
+				oninput={(e) => setLink({ label: e.currentTarget.value })}
+			/>
 			<label class="flex items-center gap-2 text-sm whitespace-nowrap">
-				<Checkbox checked={link?.target === '_blank'} onCheckedChange={(v) => setLink({ target: v === true ? '_blank' : '_self' })} />
+				<Checkbox
+					checked={link?.target === '_blank'}
+					onCheckedChange={(v) => setLink({ target: v === true ? '_blank' : '_self' })}
+				/>
 				Neuer Tab
 			</label>
 		</div>
 	{:else if field.kind === 'reference'}
-		<ReferencePicker {id} collection={field.collection} {lang} value={str || null} onchange={(v) => onchange(v)} />
+		<ReferencePicker
+			{id}
+			collection={field.collection}
+			{lang}
+			value={str || null}
+			onchange={(v) => onchange(v)}
+		/>
 	{:else if field.kind === 'references'}
-		<ReferencePicker {id} collection={field.collection} {lang} multiple value={strList} onchange={(v) => onchange(v)} />
+		<ReferencePicker
+			{id}
+			collection={field.collection}
+			{lang}
+			multiple
+			value={strList}
+			onchange={(v) => onchange(v)}
+		/>
 	{:else if field.kind === 'list'}
 		<div class="space-y-3">
 			{#each list as item, i (i)}
 				<div class="border-border rounded-md border p-3">
 					<div class="mb-2 flex items-center justify-between">
-						<span class="text-muted-foreground text-xs font-medium">{field.itemLabel ?? 'Eintrag'} {i + 1}</span>
+						<span class="text-muted-foreground text-xs font-medium"
+							>{field.itemLabel ?? 'Eintrag'} {i + 1}</span
+						>
 						<div class="flex gap-1">
-							<Button size="icon-sm" variant="ghost" onclick={() => listMove(i, -1)} disabled={i === 0} aria-label="Nach oben"><ChevronUpIcon aria-hidden="true" /></Button>
-							<Button size="icon-sm" variant="ghost" onclick={() => listMove(i, 1)} disabled={i === list.length - 1} aria-label="Nach unten"><ChevronDownIcon aria-hidden="true" /></Button>
-							<Button size="icon-sm" variant="ghost" onclick={() => listRemove(i)} aria-label="Entfernen"><TrashIcon aria-hidden="true" /></Button>
+							<Button
+								size="icon-sm"
+								variant="ghost"
+								onclick={() => listMove(i, -1)}
+								disabled={i === 0}
+								aria-label="Nach oben"><ChevronUpIcon aria-hidden="true" /></Button
+							>
+							<Button
+								size="icon-sm"
+								variant="ghost"
+								onclick={() => listMove(i, 1)}
+								disabled={i === list.length - 1}
+								aria-label="Nach unten"><ChevronDownIcon aria-hidden="true" /></Button
+							>
+							<Button
+								size="icon-sm"
+								variant="ghost"
+								onclick={() => listRemove(i)}
+								aria-label="Entfernen"><TrashIcon aria-hidden="true" /></Button
+							>
 						</div>
 					</div>
 					{#if field.of.kind === 'group'}
-						<FieldsForm fields={field.of.fields} value={asObj(item)} onchange={(v) => listSet(i, v)} path={`${path}[${i}].`} {errors} {lang} {blockDefs} showScope={false} />
+						<FieldsForm
+							fields={field.of.fields}
+							value={asObj(item)}
+							onchange={(v) => listSet(i, v)}
+							path={`${path}[${i}].`}
+							{errors}
+							{lang}
+							{blockDefs}
+							showScope={false}
+						/>
 					{:else}
-						<FieldEditor field={field.of} name={field.itemLabel ?? name} value={item} onchange={(v) => listSet(i, v)} path={`${path}[${i}]`} {errors} {lang} {blockDefs} showScope={false} />
+						<FieldEditor
+							field={field.of}
+							name={field.itemLabel ?? name}
+							value={item}
+							onchange={(v) => listSet(i, v)}
+							path={`${path}[${i}]`}
+							{errors}
+							{lang}
+							{blockDefs}
+							showScope={false}
+						/>
 					{/if}
 				</div>
 			{/each}
-			<Button size="sm" variant="outline" onclick={listAdd} disabled={field.max !== undefined && list.length >= field.max}>
-				<PlusIcon aria-hidden="true" /> {field.itemLabel ?? 'Eintrag'} hinzufügen
+			<Button
+				size="sm"
+				variant="outline"
+				onclick={listAdd}
+				disabled={field.max !== undefined && list.length >= field.max}
+			>
+				<PlusIcon aria-hidden="true" />
+				{field.itemLabel ?? 'Eintrag'} hinzufügen
 			</Button>
 		</div>
 	{:else if field.kind === 'group'}
 		<div class="border-border rounded-md border p-3">
-			<FieldsForm fields={field.fields} value={obj} onchange={(v) => onchange(v)} path={`${path}.`} {errors} {lang} {blockDefs} showScope={scopeBelow} />
+			<FieldsForm
+				fields={field.fields}
+				value={obj}
+				onchange={(v) => onchange(v)}
+				path={`${path}.`}
+				{errors}
+				{lang}
+				{blockDefs}
+				showScope={scopeBelow}
+			/>
 		</div>
 	{:else if field.kind === 'file'}
-		<p class="text-muted-foreground text-sm">Datei-Upload — nur in Formularen (Mail-Vorlagen) nutzbar.</p>
+		<p class="text-muted-foreground text-sm">
+			Datei-Upload — nur in Formularen (Mail-Vorlagen) nutzbar.
+		</p>
 	{:else if field.kind === 'blocks'}
-		<BlocksEditor blocks={blockList} allowed={field.allow ? [...field.allow] : Object.keys(blockDefs)} {blockDefs} {lang} {errors} {path} onchange={(v) => onchange(v)} />
+		<BlocksEditor
+			blocks={blockList}
+			allowed={field.allow ? [...field.allow] : Object.keys(blockDefs)}
+			{blockDefs}
+			{lang}
+			{errors}
+			{path}
+			onchange={(v) => onchange(v)}
+		/>
 	{/if}
 
 	{#if field.help}<p class="text-muted-foreground text-xs">{field.help}</p>{/if}

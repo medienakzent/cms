@@ -83,6 +83,17 @@ Konfiguration, Website-Layout) und laufen als ein Node-Prozess in einem Containe
 - Releases: Version in `package.json` erhöhen, CHANGELOG ergänzen, Tag `vX.Y.Z`. Kundenprojekte
   pinnen den Tag (`github:medienakzent/cms#vX.Y.Z`).
 
+## Sicherheitsregeln
+
+- Alles unter `/api/v1` bleibt hinter Sitzung oder API-Token (Hook). Öffentlich sind nur
+  `/api/mail/<vorlage>`, `/api/mail/download/<token>/…`, `/api/captcha/challenge`, `/api/health`,
+  `/sitemap.xml`, `/llms.txt` und `/media/…`. Neue öffentliche Routen sind eine bewusste Entscheidung
+  mit Rate-Limit und ohne Personendaten.
+- Nutzerverwaltung nur mit Admin-Sitzung, nie per API-Token.
+- Besucher-Eingaben (Formulare) werden escaped; Pfade aus URLs laufen durch `isValidSlug`, Tokens
+  durch feste Muster; der Storage verweigert Pfade außerhalb seiner Wurzel.
+- Geheimnisse zeitkonstant vergleichen, nie loggen.
+
 ## Was bewusst nicht im Paket liegt
 
 - Website-Layout, Design, Fonts: Kundendateien unter `src/routes/(site)` und `src/app.css`.

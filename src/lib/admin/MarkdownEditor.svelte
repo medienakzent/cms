@@ -39,7 +39,13 @@
 	let mediaOpen = $state(false);
 
 	/** Ersetzt den Bereich [start, end) und setzt die Auswahl neu. */
-	async function replace(start: number, end: number, text: string, selectStart: number, selectEnd: number) {
+	async function replace(
+		start: number,
+		end: number,
+		text: string,
+		selectStart: number,
+		selectEnd: number
+	) {
 		onchange(value.slice(0, start) + text + value.slice(end));
 		await tick();
 		textarea?.focus();
@@ -49,7 +55,11 @@
 	function selection() {
 		const el = textarea;
 		if (!el) return { start: value.length, end: value.length, text: '' };
-		return { start: el.selectionStart, end: el.selectionEnd, text: value.slice(el.selectionStart, el.selectionEnd) };
+		return {
+			start: el.selectionStart,
+			end: el.selectionEnd,
+			text: value.slice(el.selectionStart, el.selectionEnd)
+		};
 	}
 
 	/** Auswahl mit Markern umschließen; ist sie schon umschlossen, Marker entfernen (Toggle). */
@@ -57,17 +67,31 @@
 		const { start, end, text } = selection();
 		const outerStart = start - before.length;
 		const outerEnd = end + after.length;
-		if (outerStart >= 0 && value.slice(outerStart, start) === before && value.slice(end, outerEnd) === after) {
+		if (
+			outerStart >= 0 &&
+			value.slice(outerStart, start) === before &&
+			value.slice(end, outerEnd) === after
+		) {
 			void replace(outerStart, outerEnd, text, outerStart, outerStart + text.length);
 			return;
 		}
-		if (text.startsWith(before) && text.endsWith(after) && text.length >= before.length + after.length) {
+		if (
+			text.startsWith(before) &&
+			text.endsWith(after) &&
+			text.length >= before.length + after.length
+		) {
 			const inner = text.slice(before.length, text.length - after.length);
 			void replace(start, end, inner, start, start + inner.length);
 			return;
 		}
 		const inner = text || placeholderText;
-		void replace(start, end, before + inner + after, start + before.length, start + before.length + inner.length);
+		void replace(
+			start,
+			end,
+			before + inner + after,
+			start + before.length,
+			start + before.length + inner.length
+		);
 	}
 
 	/** Zeilenpräfix für alle Zeilen der Auswahl setzen oder entfernen (Toggle). */
@@ -78,7 +102,11 @@
 		const lineEnd = lineEndIdx === -1 ? value.length : lineEndIdx;
 		const lines = value.slice(lineStart, lineEnd).split('\n');
 		const allPrefixed = lines.every((l) => matcher.test(l));
-		const next = lines.map((l, i) => (allPrefixed ? l.replace(matcher, '') : (typeof prefix === 'function' ? prefix(i) : prefix) + l.replace(matcher, '')));
+		const next = lines.map((l, i) =>
+			allPrefixed
+				? l.replace(matcher, '')
+				: (typeof prefix === 'function' ? prefix(i) : prefix) + l.replace(matcher, '')
+		);
 		const text = next.join('\n');
 		void replace(lineStart, lineEnd, text, lineStart, lineStart + text.length);
 	}
@@ -128,7 +156,11 @@
 		{ icon: Heading3Icon, label: 'Überschrift 3', run: () => heading(3) },
 		'sep',
 		{ icon: ListIcon, label: 'Aufzählung', run: () => prefixLines('- ', /^[-*] /) },
-		{ icon: ListOrderedIcon, label: 'Nummerierung', run: () => prefixLines((i) => `${i + 1}. `, /^\d+\. /) },
+		{
+			icon: ListOrderedIcon,
+			label: 'Nummerierung',
+			run: () => prefixLines((i) => `${i + 1}. `, /^\d+\. /)
+		},
 		{ icon: QuoteIcon, label: 'Zitat', run: () => prefixLines('> ', /^> /) },
 		'sep',
 		{ icon: LinkIcon, label: 'Link (Strg+K)', run: link },
@@ -139,12 +171,24 @@
 </script>
 
 <div class="border-border focus-within:border-ring rounded-md border">
-	<div class="border-border bg-muted/40 flex flex-wrap items-center gap-0.5 border-b px-1.5 py-1" role="toolbar" aria-label="Formatierung">
+	<div
+		class="border-border bg-muted/40 flex flex-wrap items-center gap-0.5 border-b px-1.5 py-1"
+		role="toolbar"
+		aria-label="Formatierung"
+	>
 		{#each tools as tool, i (i)}
 			{#if tool === 'sep'}
 				<span class="bg-border mx-1 h-5 w-px" aria-hidden="true"></span>
 			{:else}
-				<Button size="icon-sm" variant="ghost" title={tool.label} aria-label={tool.label} disabled={preview} onclick={tool.run} onmousedown={(e) => e.preventDefault()}>
+				<Button
+					size="icon-sm"
+					variant="ghost"
+					title={tool.label}
+					aria-label={tool.label}
+					disabled={preview}
+					onclick={tool.run}
+					onmousedown={(e) => e.preventDefault()}
+				>
 					<tool.icon aria-hidden="true" />
 				</Button>
 			{/if}

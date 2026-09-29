@@ -11,7 +11,11 @@ export async function load() {
 		counts,
 		mediaCount: media.total,
 		submissionCount: submissions.total,
-		blocks: Object.values(getRuntime().registry.blocks).map((b) => ({ name: b.name, label: b.label, version: b.version })),
+		blocks: Object.values(getRuntime().registry.blocks).map((b) => ({
+			name: b.name,
+			label: b.label,
+			version: b.version
+		})),
 		breadcrumbs: [{ label: 'Übersicht' }]
 	};
 }

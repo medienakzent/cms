@@ -59,6 +59,7 @@ export function defineConfig(input: CmsConfigInput): CmsConfig {
 /** Öffentlicher Pfad mit Sprachpräfix gemäß `routing.localePrefix`. */
 export function localizePath(config: CmsConfig, lang: string, path: string): string {
 	const clean = path.startsWith('/') ? path : `/${path}`;
-	if (config.routing.localePrefix === 'except-default' && lang === config.defaultLanguage) return clean;
+	if (config.routing.localePrefix === 'except-default' && lang === config.defaultLanguage)
+		return clean;
 	return clean === '/' ? `/${lang}` : `/${lang}${clean}`;
 }

@@ -10,6 +10,7 @@ export function setCmsContext(registry: Registry): Registry {
 
 export function getCmsContext(): Registry {
 	const r = getContext<Registry | undefined>(KEY);
-	if (!r) throw new Error('CMS-Registry fehlt im Kontext: setCmsContext(registry) im Layout aufrufen.');
+	if (!r)
+		throw new Error('CMS-Registry fehlt im Kontext: setCmsContext(registry) im Layout aufrufen.');
 	return r;
 }
