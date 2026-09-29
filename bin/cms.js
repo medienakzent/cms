@@ -175,6 +175,7 @@ function copyProject(root, { name }) {
 		}
 		const content = readFileSync(join(projectDir, file), 'utf8')
 			.replaceAll('__PROJECT_NAME__', name)
+			.replaceAll('__DEV_HOST__', `${name.replace(/^cms[.-]/, '')}.test`)
 			.replaceAll('__CMS_VERSION__', PACKAGE.version);
 		mkdirSync(dirname(target), { recursive: true });
 		writeFileSync(target, content);
@@ -229,7 +230,7 @@ Nächste Schritte:
   cd ${relative(process.cwd(), root) || '.'}
   cp .env.example .env            # AUTH_SECRET und Mail-Einstellungen setzen
   docker compose -f docker-compose.dev.yml up -d --build
-  → http://localhost:5173 und /admin (erster Nutzer wird Admin)
+  → http://localhost:5173 bzw. https://${name.replace(/^cms[.-]/, '')}.test über den lokalen Proxy; /admin (erster Nutzer wird Admin)
 Eigene Inhaltstypen: src/blocks, src/collections, src/mail — siehe AGENTS.md.`);
 		break;
 	}

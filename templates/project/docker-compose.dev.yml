@@ -14,7 +14,7 @@ services:
     env_file:
       - .env
     environment:
-      VIRTUAL_HOST: ${PROJECT:-cms}.test
+      VIRTUAL_HOST: ${DEV_HOST:-cms.test}
       VIRTUAL_PORT: '5173'
       DATA_DIR: /app/data
       STORAGE_DIR: /app/storage

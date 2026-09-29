@@ -1,6 +1,6 @@
 {
 	"name": "@medienakzent/cms",
-	"version": "0.5.4",
+	"version": "0.5.5",
 	"description": "Block-basiertes CMS für SvelteKit: Übersetzung pro Feld, Versionierung, Storage als Wahrheit, Formulare mit Mail-Versand — Kundenprojekte erweitern nur um eigene Dateien.",
 	"license": "MIT",
 	"repository": {

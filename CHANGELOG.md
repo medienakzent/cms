@@ -2,6 +2,13 @@
 
 Alle relevanten Änderungen. Format: Datum, Version, Abschnitte Neu / Geändert / Breaking.
 
+## 0.5.5 — 2026-09-29
+
+### Geändert
+
+- Entwicklung: `DEV_HOST` in `.env` legt den Hostnamen im lokalen Proxy fest (Default `<PROJECT>.test`),
+  damit ein Projekt `cms.<kunde>` unter `<kunde>.test` erreichbar ist.
+
 ## 0.5.4 — 2026-09-29
 
 ### Geändert
