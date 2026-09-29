@@ -44,16 +44,3 @@
 		</Card.Root>
 	</a>
 </div>
-
-<h2 class="mt-10 mb-3 text-lg font-semibold">Registrierte Blocks</h2>
-<ul class="text-muted-foreground flex flex-wrap gap-2 text-sm">
-	{#each data.blocks as block (block.name)}
-		<li class="border-border rounded-md border px-2 py-1">
-			<span class="text-foreground">{block.label}</span> · {block.name} v{block.version}
-		</li>
-	{/each}
-</ul>
-<p class="text-muted-foreground mt-6 text-sm">
-	Struktur ändern: <code>src/blocks/&lt;name&gt;/block.ts</code> und
-	<code>src/collections/&lt;name&gt;.ts</code> — siehe die README-Dateien dort.
-</p>

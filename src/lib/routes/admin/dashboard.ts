@@ -1,6 +1,5 @@
 import { getIndex } from '../../server/index/index';
 import { mail } from '../../server/mail';
-import { getRuntime } from '../../server/runtime';
 
 export async function load() {
 	const index = await getIndex();
@@ -11,11 +10,6 @@ export async function load() {
 		counts,
 		mediaCount: media.total,
 		submissionCount: submissions.total,
-		blocks: Object.values(getRuntime().registry.blocks).map((block) => ({
-			name: block.name,
-			label: block.label,
-			version: block.version
-		})),
 		breadcrumbs: [{ label: 'Übersicht' }]
 	};
 }

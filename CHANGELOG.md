@@ -2,6 +2,12 @@
 
 Alle relevanten Änderungen. Format: Datum, Version, Abschnitte Neu / Geändert / Breaking.
 
+## 0.5.3 — 2026-09-29
+
+### Geändert
+
+- Übersicht ohne die Liste registrierter Blocks und den Entwicklerhinweis; sie zeigt nur noch die Kacheln.
+
 ## 0.5.2 — 2026-09-29
 
 ### Geändert
