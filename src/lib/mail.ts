@@ -34,7 +34,7 @@ export interface MailTemplateDefinition<F extends FieldMap = FieldMap> {
 	honeypot: string;
 	/** Obergrenze aller Datei-Uploads zusammen (Bytes). Default 32 MB. */
 	maxTotalSize: number;
-	/** Captcha verlangen (Default true; Provider über CAPTCHA_PROVIDER). */
+	/** Captcha (ALTCHA) verlangen — Default true. */
 	captcha: boolean;
 }
 

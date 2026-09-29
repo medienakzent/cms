@@ -116,7 +116,7 @@ export async function sendMail(
 	// Captcha zuerst: ohne gültige Antwort wird nichts weiter angefasst.
 	const issues: ValidationIssue[] = [];
 	if (def.captcha) {
-		const captchaError = await verifyCaptcha(input, opts.meta?.ip ?? '');
+		const captchaError = await verifyCaptcha(input);
 		if (captchaError) issues.push({ path: '_captcha', message: captchaError });
 	}
 	input = stripCaptchaFields(input);

@@ -2,6 +2,11 @@
 
 Alle relevanten Änderungen. Format: Datum, Version, Abschnitte Neu / Geändert / Breaking.
 
+## 0.2.1 — 2026-09-29
+
+### Geändert
+- Nur noch ALTCHA als Captcha; Turnstile entfernt. `CAPTCHA_PROVIDER` entfällt, stattdessen `CAPTCHA=1|0` (Default an). Client-Konfiguration ist jetzt `{ enabled, challengeUrl, fieldName }`.
+
 ## 0.2.0 — 2026-09-29
 
 ### Neu

@@ -217,10 +217,9 @@ escaped, Markdown wird zu HTML plus Textfassung.
 
 ## Captcha
 
-Jedes Formular ist geschützt; die Prüfung sitzt in `mail.send`. Standard ist **ALTCHA**:
+Jedes Formular ist geschützt; die Prüfung sitzt in `mail.send`. Eingesetzt wird **ALTCHA**:
 selbst gehostetes Proof-of-Work, keine Drittanbieter, keine Cookies, keine Einwilligung nötig.
-Alternativ `CAPTCHA_PROVIDER=turnstile` mit `TURNSTILE_SITE_KEY`/`TURNSTILE_SECRET_KEY`,
-oder `none` für Tests. Einbau im Formular:
+`CAPTCHA=0` schaltet es nur für Tests ab, `ALTCHA_COST` steuert den Rechenaufwand. Einbau im Formular:
 
 ```svelte
 <script>
