@@ -3,9 +3,8 @@ import { error, redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 
 /**
- * Öffentliche Auslieferung: Pfad → Collection + Slug. Projektspezifisch anpassen,
- * z. B. `/blog/<slug>` → eine Collection `articles`. Angemeldete Nutzer sehen
- * mit `?preview=1` auch Entwürfe.
+ * Public delivery: path -> collection + slug. Adjust per project, e.g. `/blog/<slug>` -> a
+ * collection `articles`. Signed-in users also see drafts with `?preview=1`.
  */
 export const load: PageServerLoad = async ({ params, url, locals }) => {
 	const config = cms.config;
@@ -23,11 +22,11 @@ export const load: PageServerLoad = async ({ params, url, locals }) => {
 		.collection(collection)
 		.get(slug, { lang, status: preview ? 'all' : 'published' });
 	if (!doc) error(404, 'Seite nicht gefunden');
-	const def = cms.collections[collection];
+	const definition = cms.collections[collection];
 	return {
 		doc,
-		title: String(doc.fields[def.titleField] ?? ''),
-		docPath: def.path(slug, lang) ?? '/',
+		title: String(doc.fields[definition.titleField] ?? ''),
+		docPath: definition.path(slug, lang) ?? '/',
 		preview
 	};
 };

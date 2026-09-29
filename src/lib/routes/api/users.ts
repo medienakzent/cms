@@ -1,22 +1,17 @@
 import type { RequestEvent } from '@sveltejs/kit';
-import { api, readJsonBody } from '../../server/api';
+import { api, readJsonBody, requireSessionAdmin } from '../../server/api';
 import { getAuth } from '../../server/auth';
 import { CmsError } from '../../server/errors';
+import { isEmail } from '../../server/mail/transport';
 
 const ROLES = ['admin', 'editor'];
-
-function requireSessionAdmin(event: RequestEvent) {
-	// Nutzerverwaltung nur mit echter Sitzung eines Administrators — nicht per API-Token.
-	if (event.locals.user?.role !== 'admin' || event.locals.user.api)
-		throw new CmsError(403, 'Nur für angemeldete Administratoren');
-}
 
 /** POST /api/v1/users  { name, email, password, role } */
 export const POST = (event: RequestEvent) =>
 	api(async () => {
 		requireSessionAdmin(event);
 		const body = await readJsonBody(event, ['name', 'email', 'password', 'role']);
-		if (typeof body.email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.email))
+		if (typeof body.email !== 'string' || !isEmail(body.email))
 			throw new CmsError(400, 'Gültige E-Mail-Adresse erwartet');
 		if (typeof body.password !== 'string' || body.password.length < 8)
 			throw new CmsError(400, 'Passwort: mindestens 8 Zeichen');

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatDateTime } from '../../format';
 	import { goto } from '$app/navigation';
 	import { Button } from '@compdata/ui/button';
 	import { Badge } from '@compdata/ui/badge';
@@ -12,16 +13,15 @@
 
 	let { data }: { data: AdminLayoutData & Awaited<ReturnType<typeof load>> } = $props();
 
-	const tabs = $derived(data.languages.map((l) => ({ id: l.code, label: l.label })));
+	const tabs = $derived(
+		data.languages.map((language) => ({ id: language.code, label: language.label }))
+	);
 	// svelte-ignore state_referenced_locally
 	let active = $state(data.lang);
 	$effect(() => {
 		if (active !== data.lang)
 			goto(`/admin/${data.def.name}?lang=${active}&q=${encodeURIComponent(data.q)}`);
 	});
-
-	const fmt = (iso: string) =>
-		new Date(iso).toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' });
 </script>
 
 <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -57,7 +57,7 @@
 		</Table.TableHeader>
 		<Table.TableBody>
 			{#each data.rows as { row, langs } (row.slug)}
-				{@const inLang = langs.find((l) => l.lang === data.lang)}
+				{@const inLang = langs.find((entry) => entry.lang === data.lang)}
 				<Table.TableRow>
 					<Table.TableCell
 						><a
@@ -73,15 +73,16 @@
 					</Table.TableCell>
 					<Table.TableCell>
 						<span class="flex gap-1">
-							{#each langs as l (l.lang)}
-								<Badge variant={l.status === 'published' ? 'positive' : 'neutral'}
-									>{l.lang.toUpperCase()}</Badge
+							{#each langs as entry (entry.lang)}
+								<Badge variant={entry.status === 'published' ? 'positive' : 'neutral'}
+									>{entry.lang.toUpperCase()}</Badge
 								>
 							{/each}
 						</span>
 					</Table.TableCell>
 					<Table.TableCell class="text-muted-foreground text-sm"
-						>{fmt((inLang ?? row).updatedAt)} · {(inLang ?? row).updatedBy}</Table.TableCell
+						>{formatDateTime((inLang ?? row).updatedAt)} · {(inLang ?? row)
+							.updatedBy}</Table.TableCell
 					>
 				</Table.TableRow>
 			{/each}

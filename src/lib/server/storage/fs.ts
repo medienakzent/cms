@@ -9,7 +9,7 @@ export class FsStorage implements StorageAdapter {
 		this.root = resolve(root);
 	}
 
-	private abs(path: string): string {
+	private absolutePath(path: string): string {
 		const full = resolve(this.root, normalize(path));
 		if (full !== this.root && !full.startsWith(this.root + sep)) {
 			throw new Error(`Storage: Pfad außerhalb des Wurzelverzeichnisses: ${path}`);
@@ -19,28 +19,28 @@ export class FsStorage implements StorageAdapter {
 
 	async read(path: string): Promise<string | null> {
 		try {
-			return await readFile(this.abs(path), 'utf8');
-		} catch (e) {
-			if ((e as NodeJS.ErrnoException).code === 'ENOENT') return null;
-			throw e;
+			return await readFile(this.absolutePath(path), 'utf8');
+		} catch (error) {
+			if ((error as NodeJS.ErrnoException).code === 'ENOENT') return null;
+			throw error;
 		}
 	}
 
 	async readBytes(path: string): Promise<Buffer | null> {
 		try {
-			return await readFile(this.abs(path));
-		} catch (e) {
-			if ((e as NodeJS.ErrnoException).code === 'ENOENT') return null;
-			throw e;
+			return await readFile(this.absolutePath(path));
+		} catch (error) {
+			if ((error as NodeJS.ErrnoException).code === 'ENOENT') return null;
+			throw error;
 		}
 	}
 
 	async write(path: string, data: string | Buffer): Promise<void> {
-		const full = this.abs(path);
+		const full = this.absolutePath(path);
 		await mkdir(dirname(full), { recursive: true });
-		const tmp = `${full}.${process.pid}.${Date.now()}.tmp`;
-		await writeFile(tmp, data);
-		await rename(tmp, full);
+		const temporaryPath = `${full}.${process.pid}.${Date.now()}.tmp`;
+		await writeFile(temporaryPath, data);
+		await rename(temporaryPath, full);
 	}
 
 	async exists(path: string): Promise<boolean> {
@@ -48,45 +48,45 @@ export class FsStorage implements StorageAdapter {
 	}
 
 	async remove(path: string): Promise<void> {
-		await rm(this.abs(path), { force: true });
+		await rm(this.absolutePath(path), { force: true });
 	}
 
 	async removeDir(prefix: string): Promise<void> {
-		await rm(this.abs(prefix), { recursive: true, force: true });
+		await rm(this.absolutePath(prefix), { recursive: true, force: true });
 	}
 
 	async list(prefix: string): Promise<string[]> {
-		const base = this.abs(prefix);
+		const base = this.absolutePath(prefix);
 		let entries: import('node:fs').Dirent[];
 		try {
 			entries = await readdir(base, { withFileTypes: true, recursive: true });
-		} catch (e) {
-			if ((e as NodeJS.ErrnoException).code === 'ENOENT') return [];
-			throw e;
+		} catch (error) {
+			if ((error as NodeJS.ErrnoException).code === 'ENOENT') return [];
+			throw error;
 		}
-		const out: string[] = [];
+		const files: string[] = [];
 		for (const entry of entries) {
 			if (!entry.isFile() || entry.name.endsWith('.tmp') || entry.name.startsWith('.')) continue;
 			const parent =
 				(entry as { parentPath?: string; path?: string }).parentPath ?? entry.path ?? base;
 			const full = join(parent, entry.name);
-			out.push(
+			files.push(
 				full
 					.slice(this.root.length + 1)
 					.split(sep)
 					.join('/')
 			);
 		}
-		return out.sort();
+		return files.sort();
 	}
 
 	async stat(path: string): Promise<{ size: number; mtime: string } | null> {
 		try {
-			const s = await stat(this.abs(path));
-			return s.isFile() ? { size: s.size, mtime: s.mtime.toISOString() } : null;
-		} catch (e) {
-			if ((e as NodeJS.ErrnoException).code === 'ENOENT') return null;
-			throw e;
+			const stats = await stat(this.absolutePath(path));
+			return stats.isFile() ? { size: stats.size, mtime: stats.mtime.toISOString() } : null;
+		} catch (error) {
+			if ((error as NodeJS.ErrnoException).code === 'ENOENT') return null;
+			throw error;
 		}
 	}
 }

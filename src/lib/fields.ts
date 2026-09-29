@@ -1,28 +1,21 @@
 /**
- * Feld-Definitionen — die EINZIGE Quelle der Wahrheit für einen Inhaltstyp.
+ * Field definitions are the single source of truth for a content type: the component
+ * props (types.ts), validation (validate.ts), the admin form (admin/FieldEditor.svelte)
+ * and the base/overlay split (localize.ts) are all derived from a `FieldMap`.
  *
- * Aus einer `FieldMap` werden abgeleitet (ohne weiteren Code):
- *   - der TypeScript-Typ der Svelte-Komponente     → `InferFields` in types.ts
- *   - die Validierung beim Speichern (API + Admin) → validate.ts
- *   - das Admin-Formular                           → admin/FieldEditor.svelte
- *   - die Aufteilung in Basis + Sprach-Overlay     → localize.ts
- *
- * Regel für `localized`: Ein Feld ist entweder komplett übersetzbar oder gar
- * nicht. Innerhalb einer `group` dürfen einzelne Blätter `localized` sein;
- * innerhalb einer `list` NICHT (die ganze Liste ist dann übersetzbar).
+ * `localized` is all-or-nothing per field. Leaves inside a `group` may be localized
+ * individually; inside a `list` they may not (the whole list is localized instead).
  */
 
 export interface FieldBase {
 	kind: string;
-	/** Beschriftung im Admin. Ohne Angabe wird der Schlüssel benutzt. */
+	/** Falls back to the key when missing. */
 	label?: string;
-	/** Hilfetext unter dem Feld. */
 	help?: string;
-	/** Pflichtfeld — wird nur beim Veröffentlichen erzwungen, Entwürfe dürfen leer sein. */
+	/** Enforced only on publish; drafts may stay empty. */
 	required?: boolean;
-	/** Wert wird pro Sprache gespeichert (Overlay-Datei). */
+	/** Stored per language in the overlay file. */
 	localized?: boolean;
-	/** Formularbreite im Admin. */
 	width?: 'full' | 'half';
 }
 
@@ -38,7 +31,7 @@ export interface TextareaField extends FieldBase {
 	rows?: number;
 	maxLength?: number;
 }
-/** Markdown. Gerendert wird mit `<Richtext>` aus `@medienakzent/cms/render`. */
+/** Markdown, rendered with `<Richtext>` from `@medienakzent/cms/render`. */
 export interface RichtextField extends FieldBase {
 	kind: 'richtext';
 	default?: string;
@@ -55,22 +48,23 @@ export interface BooleanField extends FieldBase {
 	kind: 'boolean';
 	default?: boolean;
 }
-/** ISO-Datum (`YYYY-MM-DD`) oder mit `withTime` ISO-Zeitstempel. */
+/** ISO date (`YYYY-MM-DD`), or an ISO timestamp with `withTime`. */
 export interface DateField extends FieldBase {
 	kind: 'date';
 	default?: string;
 	withTime?: boolean;
 }
-export type SelectOption<O extends string = string> = O | { value: O; label: string };
-export interface SelectField<O extends string = string> extends FieldBase {
+export type SelectOption<Option extends string = string> =
+	Option | { value: Option; label: string };
+export interface SelectField<Option extends string = string> extends FieldBase {
 	kind: 'select';
-	options: readonly SelectOption<O>[];
-	default?: O | null;
+	options: readonly SelectOption<Option>[];
+	default?: Option | null;
 }
-export interface MultiselectField<O extends string = string> extends FieldBase {
+export interface MultiselectField<Option extends string = string> extends FieldBase {
 	kind: 'multiselect';
-	options: readonly SelectOption<O>[];
-	default?: O[];
+	options: readonly SelectOption<Option>[];
+	default?: Option[];
 }
 export interface MediaField extends FieldBase {
 	kind: 'media';
@@ -79,38 +73,37 @@ export interface MediaField extends FieldBase {
 export interface LinkField extends FieldBase {
 	kind: 'link';
 }
-/** Verweis auf genau ein Dokument einer Collection (gespeichert wird der Slug). */
+/** Reference to one document of a collection; the slug is stored. */
 export interface ReferenceField extends FieldBase {
 	kind: 'reference';
 	collection: string;
 }
-/** Verweise auf mehrere Dokumente einer Collection (z. B. Tags). */
+/** References to several documents of a collection (tags, for example). */
 export interface ReferencesField extends FieldBase {
 	kind: 'references';
 	collection: string;
 }
-export interface ListField<I extends Field = Field> extends FieldBase {
+export interface ListField<Item extends Field = Field> extends FieldBase {
 	kind: 'list';
-	of: I;
+	of: Item;
 	min?: number;
 	max?: number;
-	/** Beschriftung eines Eintrags („Frage", „Bild", …). */
 	itemLabel?: string;
 }
-export interface GroupField<G extends FieldMap = FieldMap> extends FieldBase {
+export interface GroupField<Fields extends FieldMap = FieldMap> extends FieldBase {
 	kind: 'group';
-	fields: G;
+	fields: Fields;
 }
 /**
- * Datei-Upload — nur in Mail-Vorlagen (Formulare). Die Datei wird im Storage abgelegt,
- * die Mail enthält einen Download-Link. `accept`: MIME-Typen, `maxSize` in Bytes.
+ * File upload, only in mail templates. The file is stored in the storage and the mail
+ * carries a download link. `accept`: MIME types, `maxSize` in bytes.
  */
 export interface FileField extends FieldBase {
 	kind: 'file';
 	accept?: readonly string[];
 	maxSize?: number;
 }
-/** Verschachtelte Blocks (z. B. Spalten). Ohne `allow` sind alle Blocks erlaubt. */
+/** Nested blocks (columns, for example). Without `allow` every block is permitted. */
 export interface BlocksField extends FieldBase {
 	kind: 'blocks';
 	allow?: readonly string[];
@@ -137,60 +130,72 @@ export type Field =
 
 export type FieldMap = Record<string, Field>;
 
-type Opts<F extends Field> = Omit<F, 'kind'>;
+type Options<FieldType extends Field> = Omit<FieldType, 'kind'>;
 
-/** Feld-Builder — `f.text({ localized: true, required: true })`. */
-export const f = {
-	text: (o: Opts<TextField> = {}): TextField => ({ kind: 'text', ...o }),
-	textarea: (o: Opts<TextareaField> = {}): TextareaField => ({ kind: 'textarea', ...o }),
-	richtext: (o: Opts<RichtextField> = {}): RichtextField => ({ kind: 'richtext', ...o }),
-	number: (o: Opts<NumberField> = {}): NumberField => ({ kind: 'number', ...o }),
-	boolean: (o: Opts<BooleanField> = {}): BooleanField => ({ kind: 'boolean', ...o }),
-	date: (o: Opts<DateField> = {}): DateField => ({ kind: 'date', ...o }),
-	select: <const O extends string>(
-		options: readonly SelectOption<O>[],
-		o: Omit<SelectField<O>, 'kind' | 'options'> = {}
-	): SelectField<O> => ({ kind: 'select', options, ...o }),
-	multiselect: <const O extends string>(
-		options: readonly SelectOption<O>[],
-		o: Omit<MultiselectField<O>, 'kind' | 'options'> = {}
-	): MultiselectField<O> => ({ kind: 'multiselect', options, ...o }),
-	media: (o: Opts<MediaField> = {}): MediaField => ({ kind: 'media', ...o }),
-	link: (o: Opts<LinkField> = {}): LinkField => ({ kind: 'link', ...o }),
+/** Field builder: `field.text({ localized: true, required: true })`. */
+export const field = {
+	text: (options: Options<TextField> = {}): TextField => ({ kind: 'text', ...options }),
+	textarea: (options: Options<TextareaField> = {}): TextareaField => ({
+		kind: 'textarea',
+		...options
+	}),
+	richtext: (options: Options<RichtextField> = {}): RichtextField => ({
+		kind: 'richtext',
+		...options
+	}),
+	number: (options: Options<NumberField> = {}): NumberField => ({ kind: 'number', ...options }),
+	boolean: (options: Options<BooleanField> = {}): BooleanField => ({
+		kind: 'boolean',
+		...options
+	}),
+	date: (options: Options<DateField> = {}): DateField => ({ kind: 'date', ...options }),
+	select: <const Option extends string>(
+		choices: readonly SelectOption<Option>[],
+		options: Omit<SelectField<Option>, 'kind' | 'options'> = {}
+	): SelectField<Option> => ({ kind: 'select', options: choices, ...options }),
+	multiselect: <const Option extends string>(
+		choices: readonly SelectOption<Option>[],
+		options: Omit<MultiselectField<Option>, 'kind' | 'options'> = {}
+	): MultiselectField<Option> => ({ kind: 'multiselect', options: choices, ...options }),
+	media: (options: Options<MediaField> = {}): MediaField => ({ kind: 'media', ...options }),
+	link: (options: Options<LinkField> = {}): LinkField => ({ kind: 'link', ...options }),
 	reference: (
 		collection: string,
-		o: Omit<ReferenceField, 'kind' | 'collection'> = {}
+		options: Omit<ReferenceField, 'kind' | 'collection'> = {}
 	): ReferenceField => ({
 		kind: 'reference',
 		collection,
-		...o
+		...options
 	}),
 	references: (
 		collection: string,
-		o: Omit<ReferencesField, 'kind' | 'collection'> = {}
-	): ReferencesField => ({ kind: 'references', collection, ...o }),
-	list: <const I extends Field>(
-		of: I,
-		o: Omit<ListField<I>, 'kind' | 'of'> = {}
-	): ListField<I> => ({
+		options: Omit<ReferencesField, 'kind' | 'collection'> = {}
+	): ReferencesField => ({ kind: 'references', collection, ...options }),
+	list: <const Item extends Field>(
+		of: Item,
+		options: Omit<ListField<Item>, 'kind' | 'of'> = {}
+	): ListField<Item> => ({
 		kind: 'list',
 		of,
-		...o
+		...options
 	}),
-	group: <const G extends FieldMap>(
-		fields: G,
-		o: Omit<GroupField<G>, 'kind' | 'fields'> = {}
-	): GroupField<G> => ({ kind: 'group', fields, ...o }),
-	blocks: (o: Opts<BlocksField> = {}): BlocksField => ({ kind: 'blocks', ...o }),
-	file: (o: Opts<FileField> = {}): FileField => ({ kind: 'file', ...o })
+	group: <const Fields extends FieldMap>(
+		fields: Fields,
+		options: Omit<GroupField<Fields>, 'kind' | 'fields'> = {}
+	): GroupField<Fields> => ({ kind: 'group', fields, ...options }),
+	blocks: (options: Options<BlocksField> = {}): BlocksField => ({ kind: 'blocks', ...options }),
+	file: (options: Options<FileField> = {}): FileField => ({ kind: 'file', ...options })
 };
 
-export function optionValue(o: SelectOption): string {
-	return typeof o === 'string' ? o : o.value;
+export function optionValue(option: SelectOption): string {
+	return typeof option === 'string' ? option : option.value;
 }
-export function optionLabel(o: SelectOption): string {
-	return typeof o === 'string' ? o : o.label;
+export function optionLabel(option: SelectOption): string {
+	return typeof option === 'string' ? option : option.label;
 }
-export function fieldLabel(key: string, field: FieldBase): string {
-	return field.label ?? key.replace(/[_-]+/g, ' ').replace(/^\w/, (c) => c.toUpperCase());
+export function fieldLabel(key: string, fieldDefinition: FieldBase): string {
+	return (
+		fieldDefinition.label ??
+		key.replace(/[_-]+/g, ' ').replace(/^\w/, (character) => character.toUpperCase())
+	);
 }

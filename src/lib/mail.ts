@@ -1,85 +1,86 @@
 /**
- * Mail-Vorlagen — je Kunde in `src/mail/<name>.ts` definiert, mit demselben
- * Feldsystem wie Blocks: Felder werden validiert, Betreff und Text sind
- * Markdown mit Platzhaltern (`{{name}}`, `{{seo.title}}`, `{{all}}`).
+ * Mail templates, defined per customer in `src/mail/<name>.ts` with the same field
+ * system as blocks: fields are validated, subject and body are Markdown with
+ * placeholders (`{{name}}`, `{{seo.title}}`, `{{all}}`).
  *
- * Versand: `cms.mail.send('contact', data, { lang })` oder öffentlich
- * `POST /api/mail/contact` (Kontakt-/Anfrageformulare, mit Rate-Limit + Honeypot).
+ * Sending: `cms.mail.send('contact', data, { lang })` or publicly via
+ * `POST /api/mail/contact` (contact/request forms, with rate limit and honeypot).
  */
 import type { FieldMap } from './fields';
+import { isValidName } from './name';
 import type { InferFields } from './types';
 
-/** Text je Sprache oder ein Text für alle Sprachen. */
+/** Text per language, or one text for all languages. */
 export type LocalizedText = string | Record<string, string>;
 
-export interface MailTemplateDefinition<F extends FieldMap = FieldMap> {
-	/** Muss dem Dateinamen unter `src/mail/` entsprechen. */
+export interface MailTemplateDefinition<Fields extends FieldMap = FieldMap> {
+	/** Must match the file name under `src/mail/`. */
 	name: string;
 	label: string;
-	fields: F;
-	/** Empfänger — fest oder abhängig von den Daten. Leer = `MAIL_TO_DEFAULT`. */
-	to?: string[] | ((data: InferFields<F>) => string[]);
-	/** Feld mit der E-Mail-Adresse des Absenders (wird Reply-To). */
-	replyToField?: keyof F & string;
+	fields: Fields;
+	/** Recipients, fixed or derived from the data. Empty = `MAIL_TO_DEFAULT`. */
+	to?: string[] | ((data: InferFields<Fields>) => string[]);
+	/** Field holding the sender's e-mail address (becomes Reply-To). */
+	replyToField?: keyof Fields & string;
 	subject: LocalizedText;
-	/** Markdown mit Platzhaltern. `{{all}}` listet alle Felder auf. */
+	/** Markdown with placeholders; `{{all}}` lists every field. */
 	body: LocalizedText;
-	/** Automatische Bestätigung an den Absender. */
+	/** Automatic confirmation to the sender. */
 	autoReply?: {
-		toField: keyof F & string;
+		toField: keyof Fields & string;
 		subject: LocalizedText;
 		body: LocalizedText;
 	};
-	/** Name des unsichtbaren Formularfelds, das leer bleiben muss (Spam-Schutz). */
+	/** Name of the invisible form field that must stay empty (spam protection). */
 	honeypot: string;
-	/** Obergrenze aller Datei-Uploads zusammen (Bytes). Default 32 MB. */
+	/** Upper bound for all file uploads together (bytes). Default 32 MB. */
 	maxTotalSize: number;
-	/** Captcha (ALTCHA) verlangen — Default true. */
+	/** Require a captcha (ALTCHA). Default true. */
 	captcha: boolean;
 }
 
-export interface MailTemplateOptions<F extends FieldMap> {
+export interface MailTemplateOptions<Fields extends FieldMap> {
 	name: string;
 	label?: string;
-	fields: F;
-	to?: string[] | ((data: InferFields<F>) => string[]);
-	replyToField?: keyof F & string;
+	fields: Fields;
+	to?: string[] | ((data: InferFields<Fields>) => string[]);
+	replyToField?: keyof Fields & string;
 	subject: LocalizedText;
 	body: LocalizedText;
-	autoReply?: MailTemplateDefinition<F>['autoReply'];
+	autoReply?: MailTemplateDefinition<Fields>['autoReply'];
 	honeypot?: string;
 	maxTotalSize?: number;
 	captcha?: boolean;
 }
 
-export function defineMail<const F extends FieldMap>(
-	def: MailTemplateOptions<F>
-): MailTemplateDefinition<F> {
-	if (!/^[a-z][a-z0-9-]*$/.test(def.name)) {
-		throw new Error(`Mail-Vorlage „${def.name}": Name nur a-z, 0-9, -`);
+export function defineMail<const Fields extends FieldMap>(
+	options: MailTemplateOptions<Fields>
+): MailTemplateDefinition<Fields> {
+	if (!isValidName(options.name)) {
+		throw new Error(`Mail-Vorlage „${options.name}": Name nur a-z, 0-9, -`);
 	}
-	if (def.replyToField && !def.fields[def.replyToField]) {
+	if (options.replyToField && !options.fields[options.replyToField]) {
 		throw new Error(
-			`Mail-Vorlage „${def.name}": replyToField „${def.replyToField}" fehlt in fields.`
+			`Mail-Vorlage „${options.name}": replyToField „${options.replyToField}" fehlt in fields.`
 		);
 	}
-	if (def.autoReply && !def.fields[def.autoReply.toField]) {
+	if (options.autoReply && !options.fields[options.autoReply.toField]) {
 		throw new Error(
-			`Mail-Vorlage „${def.name}": autoReply.toField „${def.autoReply.toField}" fehlt in fields.`
+			`Mail-Vorlage „${options.name}": autoReply.toField „${options.autoReply.toField}" fehlt in fields.`
 		);
 	}
 	return {
-		name: def.name,
-		label: def.label ?? def.name,
-		fields: def.fields,
-		to: def.to,
-		replyToField: def.replyToField,
-		subject: def.subject,
-		body: def.body,
-		autoReply: def.autoReply,
-		honeypot: def.honeypot ?? 'website',
-		maxTotalSize: def.maxTotalSize ?? 32 * 1024 * 1024,
-		captcha: def.captcha ?? true
+		name: options.name,
+		label: options.label ?? options.name,
+		fields: options.fields,
+		to: options.to,
+		replyToField: options.replyToField,
+		subject: options.subject,
+		body: options.body,
+		autoReply: options.autoReply,
+		honeypot: options.honeypot ?? 'website',
+		maxTotalSize: options.maxTotalSize ?? 32 * 1024 * 1024,
+		captcha: options.captcha ?? true
 	};
 }
 

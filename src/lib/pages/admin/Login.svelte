@@ -24,14 +24,17 @@
 		microsoft: 'Microsoft'
 	};
 
-	async function submit(e: SubmitEvent) {
-		e.preventDefault();
+	async function submit(event: SubmitEvent) {
+		event.preventDefault();
 		busy = true;
 		error = '';
 		if (mode === 'forgot') {
-			const r = await authClient.requestPasswordReset({ email, redirectTo: '/admin/reset' });
+			const resetResult = await authClient.requestPasswordReset({
+				email,
+				redirectTo: '/admin/reset'
+			});
 			busy = false;
-			if (r.error) error = r.error.message ?? 'Anfrage fehlgeschlagen';
+			if (resetResult.error) error = resetResult.error.message ?? 'Anfrage fehlgeschlagen';
 			else info = 'Falls ein Konto existiert, ist eine E-Mail mit dem Link unterwegs.';
 			return;
 		}
@@ -67,9 +70,9 @@
 		<Card.Content class="space-y-4">
 			{#if data.auth.providers.length}
 				<div class="grid gap-2">
-					{#each data.auth.providers as p (p)}
-						<Button variant="outline" onclick={() => social(p)}
-							>Mit {providerLabel[p]} anmelden</Button
+					{#each data.auth.providers as provider (provider)}
+						<Button variant="outline" onclick={() => social(provider)}
+							>Mit {providerLabel[provider]} anmelden</Button
 						>
 					{/each}
 				</div>

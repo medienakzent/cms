@@ -9,14 +9,17 @@ import { getRuntime } from '../../server/runtime';
 /**
  * GET /api/v1/<collection>
  *   ?lang=de&status=published|draft|all&q=text&limit=50&offset=0&sort=-updatedAt
- *   &filter[feld]=wert  &filter[feld][op]=wert   (op: eq ne in nin lt lte gt gte contains)
+ *   &filter[field]=value  &filter[field][op]=value   (op: eq ne in nin lt lte gt gte contains)
  */
 export const GET = (event: RequestEvent) =>
 	api(async () => {
 		const { registry, languages } = getRuntime();
-		const def = registry.collections[event.params.collection ?? ''];
-		if (!def) throw new CmsError(404, `Collection „${event.params.collection}" nicht gefunden`);
-		return collection(def.name).list(parseListQuery(def, event.url.searchParams, languages));
+		const definition = registry.collections[event.params.collection ?? ''];
+		if (!definition)
+			throw new CmsError(404, `Collection „${event.params.collection}" nicht gefunden`);
+		return collection(definition.name).list(
+			parseListQuery(definition, event.url.searchParams, languages)
+		);
 	});
 
 /** POST /api/v1/<collection>  { slug, lang?, status?, fields?, blocks? } */
@@ -35,12 +38,12 @@ export const POST = (event: RequestEvent) =>
 			throw new CmsError(400, 'Unbekannte Sprache', [
 				{ path: 'lang', message: `Erlaubt: ${languages.join(', ')}` }
 			]);
-		const doc = parseDocumentBody(body);
+		const documentInput = parseDocumentBody(body);
 		return collection(event.params.collection ?? '').create({
 			slug: body.slug,
 			lang: (body.lang as string | undefined) ?? config.defaultLanguage,
-			status: doc.status,
-			input: { fields: doc.fields, blocks: doc.blocks },
+			status: documentInput.status,
+			input: { fields: documentInput.fields, blocks: documentInput.blocks },
 			actor: actorOf(event)
 		});
 	});

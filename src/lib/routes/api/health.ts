@@ -1,7 +1,7 @@
 import { getIndex } from '../../server/index/index';
 import { getRuntime } from '../../server/runtime';
 
-/** GET /api/health — für Docker-Healthchecks und Monitoring. Keine Anmeldung, keine Details nach außen. */
+/** GET /api/health: for Docker health checks and monitoring; no login, no details exposed */
 export const GET = async () => {
 	let db = 'ok';
 	try {

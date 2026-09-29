@@ -19,34 +19,34 @@
 	let toDelete = $state<MediaItem | null>(null);
 	let busy = $state(false);
 
-	async function upload(e: Event) {
-		const files = (e.currentTarget as HTMLInputElement).files;
+	async function upload(event: Event) {
+		const files = (event.currentTarget as HTMLInputElement).files;
 		if (!files?.length) return;
 		const form = new FormData();
-		for (const f of files) form.append('file', f);
+		for (const file of files) form.append('file', file);
 		uploading = true;
 		try {
-			const r = await apiFetch<{ items: MediaItem[] }>('/api/v1/media', {
+			const result = await apiFetch<{ items: MediaItem[] }>('/api/v1/media', {
 				method: 'POST',
 				body: form
 			});
-			toast.success(`${r.items.length} Datei(en) hochgeladen`);
+			toast.success(`${result.items.length} Datei(en) hochgeladen`);
 			await invalidateAll();
-		} catch (err) {
-			toast.error((err as Error).message);
+		} catch (error) {
+			toast.error((error as Error).message);
 		} finally {
 			uploading = false;
 			if (fileInput) fileInput.value = '';
 		}
 	}
 
-	async function saveAlt(m: MediaItem, alt: string) {
-		if (alt === m.alt) return;
+	async function saveAlt(mediaItem: MediaItem, alt: string) {
+		if (alt === mediaItem.alt) return;
 		try {
-			await apiFetch(`/api/v1/media/${m.id}`, { method: 'PATCH', json: { alt } });
+			await apiFetch(`/api/v1/media/${mediaItem.id}`, { method: 'PATCH', json: { alt } });
 			toast.success('Alternativtext gespeichert');
-		} catch (err) {
-			toast.error((err as Error).message);
+		} catch (error) {
+			toast.error((error as Error).message);
 		}
 	}
 
@@ -57,21 +57,23 @@
 			await apiFetch(`/api/v1/media/${toDelete.id}`, { method: 'DELETE' });
 			toast.success('Gelöscht');
 			await invalidateAll();
-		} catch (err) {
-			toast.error((err as Error).message);
+		} catch (error) {
+			toast.error((error as Error).message);
 		} finally {
 			busy = false;
 			toDelete = null;
 		}
 	}
 
-	function copyUrl(m: MediaItem) {
-		navigator.clipboard.writeText(`${location.origin}${mediaUrl(m)}`);
+	function copyUrl(mediaItem: MediaItem) {
+		navigator.clipboard.writeText(`${location.origin}${mediaUrl(mediaItem)}`);
 		toast.success('URL kopiert');
 	}
 
-	const fmtSize = (n: number) =>
-		n > 1024 * 1024 ? `${(n / 1024 / 1024).toFixed(1)} MB` : `${Math.round(n / 1024)} KB`;
+	const formatSize = (bytes: number) =>
+		bytes > 1024 * 1024
+			? `${(bytes / 1024 / 1024).toFixed(1)} MB`
+			: `${Math.round(bytes / 1024)} KB`;
 </script>
 
 <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
@@ -94,12 +96,12 @@
 {/if}
 
 <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-	{#each data.media.items as m (m.id)}
+	{#each data.media.items as mediaItem (mediaItem.id)}
 		<div class="border-border bg-card rounded-lg border p-3">
-			{#if m.kind === 'image'}
+			{#if mediaItem.kind === 'image'}
 				<img
-					src={mediaUrl(m, 'md')}
-					alt={m.alt}
+					src={mediaUrl(mediaItem, 'md')}
+					alt={mediaItem.alt}
 					class="aspect-[4/3] w-full rounded object-cover"
 					loading="lazy"
 				/>
@@ -107,26 +109,33 @@
 				<div
 					class="bg-muted text-muted-foreground flex aspect-[4/3] items-center justify-center rounded text-sm"
 				>
-					{m.mime}
+					{mediaItem.mime}
 				</div>
 			{/if}
-			<div class="mt-2 truncate text-sm font-medium" title={m.originalName}>{m.originalName}</div>
+			<div class="mt-2 truncate text-sm font-medium" title={mediaItem.originalName}>
+				{mediaItem.originalName}
+			</div>
 			<div class="text-muted-foreground text-xs">
-				{fmtSize(m.size)}{#if m.width}
-					· {m.width}×{m.height}{/if} · {new Date(m.createdAt).toLocaleDateString('de-DE')}
+				{formatSize(mediaItem.size)}{#if mediaItem.width}
+					· {mediaItem.width}×{mediaItem.height}{/if} · {new Date(
+					mediaItem.createdAt
+				).toLocaleDateString('de-DE')}
 			</div>
 			<Input
 				class="mt-2"
-				value={m.alt}
+				value={mediaItem.alt}
 				placeholder="Alternativtext"
-				onchange={(e) => saveAlt(m, e.currentTarget.value)}
+				onchange={(event) => saveAlt(mediaItem, event.currentTarget.value)}
 			/>
 			<div class="mt-2 flex gap-1">
-				<Button size="sm" variant="ghost" onclick={() => copyUrl(m)}
+				<Button size="sm" variant="ghost" onclick={() => copyUrl(mediaItem)}
 					><CopyIcon aria-hidden="true" /> URL</Button
 				>
-				<Button size="sm" variant="ghost" class="text-destructive" onclick={() => (toDelete = m)}
-					><TrashIcon aria-hidden="true" /> Löschen</Button
+				<Button
+					size="sm"
+					variant="ghost"
+					class="text-destructive"
+					onclick={() => (toDelete = mediaItem)}><TrashIcon aria-hidden="true" /> Löschen</Button
 				>
 			</div>
 		</div>

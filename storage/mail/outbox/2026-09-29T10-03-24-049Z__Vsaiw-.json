@@ -1,10 +1,8 @@
 {
-  "id": "2026-09-29T10-03-24-049Z__Vsaiw-",
-  "from": "CMS Dev <noreply@localhost>",
-  "to": [
-    "max@example.com"
-  ],
-  "subject": "Ihre Anfrage ist eingegangen",
-  "text": "Hallo Max Muster,\n\nvielen Dank für Ihre Nachricht. Wir melden uns so schnell wie möglich.\n\n> Hallo,\n*Test* <b>x</b>",
-  "html": "<!doctype html><html><body style=\"font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;font-size:15px;line-height:1.5;color:#111;max-width:640px;margin:0 auto;padding:24px\"><p>Hallo Max Muster,</p>\n<p>vielen Dank für Ihre Nachricht. Wir melden uns so schnell wie möglich.</p>\n<blockquote>\n<p>Hallo,<br>*Test* &lt;b&gt;x&lt;/b&gt;</p>\n</blockquote>\n</body></html>"
+	"id": "2026-09-29T10-03-24-049Z__Vsaiw-",
+	"from": "CMS Dev <noreply@localhost>",
+	"to": ["max@example.com"],
+	"subject": "Ihre Anfrage ist eingegangen",
+	"text": "Hallo Max Muster,\n\nvielen Dank für Ihre Nachricht. Wir melden uns so schnell wie möglich.\n\n> Hallo,\n*Test* <b>x</b>",
+	"html": "<!doctype html><html><body style=\"font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;font-size:15px;line-height:1.5;color:#111;max-width:640px;margin:0 auto;padding:24px\"><p>Hallo Max Muster,</p>\n<p>vielen Dank für Ihre Nachricht. Wir melden uns so schnell wie möglich.</p>\n<blockquote>\n<p>Hallo,<br>*Test* &lt;b&gt;x&lt;/b&gt;</p>\n</blockquote>\n</body></html>"
 }

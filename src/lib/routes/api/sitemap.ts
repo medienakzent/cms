@@ -3,41 +3,47 @@ import { localizePath } from '../../config';
 import { collection } from '../../server/content';
 import { getRuntime } from '../../server/runtime';
 
-const esc = (s: string) =>
-	s.replace(
+const escapeXml = (text: string) =>
+	text.replace(
 		/[<>&'"]/g,
-		(c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', "'": '&apos;', '"': '&quot;' })[c] ?? c
+		(character) =>
+			({ '<': '&lt;', '>': '&gt;', '&': '&amp;', "'": '&apos;', '"': '&quot;' })[character] ??
+			character
 	);
 
 /**
- * GET /sitemap.xml — alle veröffentlichten Dokumente aller Collections mit Pfad,
- * je Sprache mit hreflang-Alternativen. Basis-URL ist ORIGIN.
+ * GET /sitemap.xml: all published documents of all collections that have a path,
+ * per language with hreflang alternates. Base URL is ORIGIN.
  */
 export const GET = async (_event: RequestEvent) => {
 	const { registry, config, server } = getRuntime();
 	const base = server.origin;
 	const entries: string[] = [];
-	for (const def of Object.values(registry.collections)) {
-		const rows = await collection(def.name).list({ status: 'published', limit: 200, sort: 'slug' });
+	for (const definition of Object.values(registry.collections)) {
+		const rows = await collection(definition.name).list({
+			status: 'published',
+			limit: 200,
+			sort: 'slug'
+		});
 		const bySlug = new Map<string, { lang: string; updatedAt: string }[]>();
-		for (const r of rows.items) {
-			const list = bySlug.get(r.slug) ?? [];
-			list.push({ lang: r.lang, updatedAt: r.updatedAt });
-			bySlug.set(r.slug, list);
+		for (const row of rows.items) {
+			const list = bySlug.get(row.slug) ?? [];
+			list.push({ lang: row.lang, updatedAt: row.updatedAt });
+			bySlug.set(row.slug, list);
 		}
 		for (const [slug, langs] of bySlug) {
-			const path = def.path(slug, config.defaultLanguage);
+			const path = definition.path(slug, config.defaultLanguage);
 			if (!path) continue;
 			for (const { lang, updatedAt } of langs) {
-				const loc = base + localizePath(config, lang, def.path(slug, lang) ?? path);
+				const pageUrl = base + localizePath(config, lang, definition.path(slug, lang) ?? path);
 				const alternates = langs
 					.map(
-						(l) =>
-							`<xhtml:link rel="alternate" hreflang="${l.lang}" href="${esc(base + localizePath(config, l.lang, def.path(slug, l.lang) ?? path))}"/>`
+						(alternate) =>
+							`<xhtml:link rel="alternate" hreflang="${alternate.lang}" href="${escapeXml(base + localizePath(config, alternate.lang, definition.path(slug, alternate.lang) ?? path))}"/>`
 					)
 					.join('');
 				entries.push(
-					`<url><loc>${esc(loc)}</loc><lastmod>${updatedAt.slice(0, 10)}</lastmod>${langs.length > 1 ? alternates : ''}</url>`
+					`<url><loc>${escapeXml(pageUrl)}</loc><lastmod>${updatedAt.slice(0, 10)}</lastmod>${langs.length > 1 ? alternates : ''}</url>`
 				);
 			}
 		}

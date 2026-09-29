@@ -14,11 +14,11 @@ export function createSqliteDriver(file: string, dataDir: string): DbDriver {
 	return {
 		dialect: 'sqlite',
 		raw: db,
-		async all<T>(sql: string, params: unknown[] = []) {
-			return db.prepare(sql).all(...params) as T[];
+		async all<Row>(sql: string, params: unknown[] = []) {
+			return db.prepare(sql).all(...params) as Row[];
 		},
-		async get<T>(sql: string, params: unknown[] = []) {
-			return (db.prepare(sql).get(...params) as T | undefined) ?? null;
+		async get<Row>(sql: string, params: unknown[] = []) {
+			return (db.prepare(sql).get(...params) as Row | undefined) ?? null;
 		},
 		async run(sql: string, params: unknown[] = []) {
 			db.prepare(sql).run(...params);
@@ -26,16 +26,16 @@ export function createSqliteDriver(file: string, dataDir: string): DbDriver {
 		async exec(sql: string) {
 			db.exec(sql);
 		},
-		async transaction<T>(fn: () => Promise<T>) {
-			// better-sqlite3 ist synchron; ein asynchrones fn kann nicht in db.transaction laufen.
+		async transaction<Result>(callback: () => Promise<Result>) {
+			// better-sqlite3 is synchronous; an async callback cannot run inside db.transaction.
 			db.exec('BEGIN');
 			try {
-				const result = await fn();
+				const result = await callback();
 				db.exec('COMMIT');
 				return result;
-			} catch (e) {
+			} catch (error) {
 				db.exec('ROLLBACK');
-				throw e;
+				throw error;
 			}
 		}
 	};

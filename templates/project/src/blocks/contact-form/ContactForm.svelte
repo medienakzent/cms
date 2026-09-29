@@ -3,32 +3,32 @@
 	import type { BlockProps } from '@medienakzent/cms';
 	import { Richtext } from '@medienakzent/cms/render';
 	import { Captcha } from '@medienakzent/cms/forms';
-	import type def from './block';
+	import type definition from './block';
 
-	let { title, intro, template, successText, errorText }: BlockProps<typeof def> = $props();
+	let { title, intro, template, successText, errorText }: BlockProps<typeof definition> = $props();
 
 	let status = $state<'idle' | 'sending' | 'sent' | 'error'>('idle');
 	let issues = $state<Record<string, string>>({});
 
-	async function submit(e: SubmitEvent) {
-		e.preventDefault();
-		const form = e.currentTarget as HTMLFormElement;
+	async function submit(event: SubmitEvent) {
+		event.preventDefault();
+		const form = event.currentTarget as HTMLFormElement;
 		const data = Object.fromEntries(new FormData(form).entries());
 		status = 'sending';
 		issues = {};
 		try {
-			const res = await fetch(`/api/mail/${template || 'contact'}`, {
+			const response = await fetch(`/api/mail/${template || 'contact'}`, {
 				method: 'POST',
 				headers: { 'content-type': 'application/json' },
 				body: JSON.stringify({ ...data, _lang: page.data.lang ?? 'de' })
 			});
-			if (res.status === 422) {
-				const body = (await res.json()) as { issues: { path: string; message: string }[] };
-				issues = Object.fromEntries(body.issues.map((i) => [i.path, i.message]));
+			if (response.status === 422) {
+				const body = (await response.json()) as { issues: { path: string; message: string }[] };
+				issues = Object.fromEntries(body.issues.map((issue) => [issue.path, issue.message]));
 				status = 'idle';
 				return;
 			}
-			if (!res.ok) throw new Error(String(res.status));
+			if (!response.ok) throw new Error(String(response.status));
 			status = 'sent';
 			form.reset();
 		} catch {
@@ -45,7 +45,7 @@
 		<p class="rounded-md border border-green-300 bg-green-50 p-4 text-green-900">{successText}</p>
 	{:else}
 		<form onsubmit={submit} class="grid gap-4">
-			<!-- Honeypot: für Menschen unsichtbar, muss leer bleiben -->
+			<!-- Honeypot: invisible to humans, must stay empty -->
 			<div class="absolute -left-[9999px]" aria-hidden="true">
 				<label>Website <input type="text" name="website" tabindex="-1" autocomplete="off" /></label>
 			</div>
@@ -82,7 +82,7 @@
 				></textarea>
 				{#if issues.message}<span class="text-red-600">{issues.message}</span>{/if}
 			</label>
-			<!-- Captcha: Konfiguration kommt aus dem Layout-Load (cms.forms.captcha()) -->
+			<!-- Captcha config comes from the layout load (cms.forms.captcha()) -->
 			<Captcha config={page.data.captcha} />
 			{#if issues._captcha}<p class="text-red-600">{issues._captcha}</p>{/if}
 			{#if status === 'error'}<p class="text-red-600">{errorText}</p>{/if}

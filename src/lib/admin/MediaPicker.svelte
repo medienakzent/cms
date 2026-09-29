@@ -20,7 +20,7 @@
 	let items = $state<MediaItem[]>([]);
 	let loading = $state(false);
 	let error = $state<string | null>(null);
-	let q = $state('');
+	let query = $state('');
 	let uploading = $state(false);
 	let fileInput = $state<HTMLInputElement | null>(null);
 
@@ -33,12 +33,12 @@
 		error = null;
 		try {
 			const kind = accept === 'any' ? '' : `&kind=${accept}`;
-			const r = await apiFetch<{ items: MediaItem[] }>(
-				`/api/v1/media?limit=200${kind}&q=${encodeURIComponent(q)}`
+			const result = await apiFetch<{ items: MediaItem[] }>(
+				`/api/v1/media?limit=200${kind}&q=${encodeURIComponent(query)}`
 			);
-			items = r.items;
-		} catch (e) {
-			error = (e as Error).message;
+			items = result.items;
+		} catch (loadError) {
+			error = (loadError as Error).message;
 		} finally {
 			loading = false;
 		}
@@ -48,40 +48,40 @@
 		if (open) void load();
 	});
 
-	function toRef(m: MediaItem): MediaRef {
+	function toRef(mediaItem: MediaItem): MediaRef {
 		return {
-			id: m.id,
-			src: m.src,
-			mime: m.mime,
-			kind: m.kind,
-			width: m.width,
-			height: m.height,
-			alt: m.alt,
-			variants: m.variants
+			id: mediaItem.id,
+			src: mediaItem.src,
+			mime: mediaItem.mime,
+			kind: mediaItem.kind,
+			width: mediaItem.width,
+			height: mediaItem.height,
+			alt: mediaItem.alt,
+			variants: mediaItem.variants
 		};
 	}
 
-	function choose(m: MediaItem) {
-		onselect(toRef(m));
+	function choose(mediaItem: MediaItem) {
+		onselect(toRef(mediaItem));
 		open = false;
 	}
 
-	async function upload(e: Event) {
-		const files = (e.currentTarget as HTMLInputElement).files;
+	async function upload(event: Event) {
+		const files = (event.currentTarget as HTMLInputElement).files;
 		if (!files?.length) return;
 		const form = new FormData();
-		for (const f of files) form.append('file', f);
+		for (const file of files) form.append('file', file);
 		uploading = true;
 		try {
-			const r = await apiFetch<{ items: MediaItem[] }>('/api/v1/media', {
+			const result = await apiFetch<{ items: MediaItem[] }>('/api/v1/media', {
 				method: 'POST',
 				body: form
 			});
-			toast.success(`${r.items.length} Datei(en) hochgeladen`);
-			if (r.items.length === 1) choose(r.items[0]);
+			toast.success(`${result.items.length} Datei(en) hochgeladen`);
+			if (result.items.length === 1) choose(result.items[0]);
 			else await load();
-		} catch (err) {
-			toast.error((err as Error).message);
+		} catch (uploadError) {
+			toast.error((uploadError as Error).message);
 		} finally {
 			uploading = false;
 			if (fileInput) fileInput.value = '';
@@ -95,9 +95,9 @@
 		<Input
 			type="search"
 			placeholder="Suchen …"
-			value={q}
-			oninput={(e) => {
-				q = e.currentTarget.value;
+			value={query}
+			oninput={(event) => {
+				query = event.currentTarget.value;
 				void load();
 			}}
 			class="w-56"
@@ -124,16 +124,16 @@
 			emptyText="Noch keine Medien — lade eine Datei hoch."
 		>
 			<div class="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6">
-				{#each items as m (m.id)}
+				{#each items as mediaItem (mediaItem.id)}
 					<button
 						type="button"
 						class="group border-border hover:border-primary rounded-md border p-1 text-start"
-						onclick={() => choose(m)}
+						onclick={() => choose(mediaItem)}
 					>
-						{#if m.kind === 'image'}
+						{#if mediaItem.kind === 'image'}
 							<img
-								src={mediaUrl(m, 'thumb')}
-								alt={m.alt}
+								src={mediaUrl(mediaItem, 'thumb')}
+								alt={mediaItem.alt}
 								class="aspect-square w-full rounded object-cover"
 								loading="lazy"
 							/>
@@ -141,10 +141,12 @@
 							<div
 								class="bg-muted text-muted-foreground flex aspect-square items-center justify-center rounded text-xs"
 							>
-								{m.mime}
+								{mediaItem.mime}
 							</div>
 						{/if}
-						<div class="truncate px-1 pt-1 text-xs" title={m.originalName}>{m.originalName}</div>
+						<div class="truncate px-1 pt-1 text-xs" title={mediaItem.originalName}>
+							{mediaItem.originalName}
+						</div>
 					</button>
 				{/each}
 			</div>

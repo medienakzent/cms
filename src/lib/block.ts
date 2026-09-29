@@ -1,70 +1,68 @@
 import type { FieldMap } from './fields';
+import { isValidName } from './name';
 import type { InferFields } from './types';
 
 export type Migration = (data: Record<string, unknown>) => Record<string, unknown>;
 
-export interface BlockDefinition<F extends FieldMap = FieldMap> {
-	/** Muss dem Ordnernamen unter `src/blocks/` entsprechen. */
+export interface BlockDefinition<Fields extends FieldMap = FieldMap> {
+	/** Must match the folder name under `src/blocks/`. */
 	name: string;
 	label: string;
 	description?: string;
-	/** Name eines Lucide-Icons (z. B. `image`, `text`) für den Admin. */
+	/** Lucide icon name for the admin. */
 	icon?: string;
-	/** Schema-Version. Erhöhen, wenn sich `fields` inkompatibel ändert; dazu `migrate[alteVersion]` liefern. */
+	/** Schema version; bump on incompatible `fields` changes and provide `migrate[oldVersion]`. */
 	version: number;
-	fields: F;
-	/**
-	 * Migrationen von Version n → n+1. Schlüssel = Ausgangsversion.
-	 * Bekommt die zusammengeführten Daten EINER Sprache und liefert die neue Form.
-	 */
+	fields: Fields;
+	/** Migrations from version n to n+1, keyed by the source version, applied to the merged data of ONE language. */
 	migrate?: Record<number, Migration>;
 }
 
-export interface BlockOptions<F extends FieldMap> {
+export interface BlockOptions<Fields extends FieldMap> {
 	name: string;
 	label?: string;
 	description?: string;
 	icon?: string;
 	version?: number;
-	fields: F;
+	fields: Fields;
 	migrate?: Record<number, Migration>;
 }
 
-export function defineBlock<const F extends FieldMap>(def: BlockOptions<F>): BlockDefinition<F> {
-	if (!/^[a-z][a-z0-9-]*$/.test(def.name)) {
-		throw new Error(`Block-Name „${def.name}" ist ungültig (nur a-z, 0-9, -).`);
+export function defineBlock<const Fields extends FieldMap>(
+	options: BlockOptions<Fields>
+): BlockDefinition<Fields> {
+	if (!isValidName(options.name)) {
+		throw new Error(`Block-Name „${options.name}" ist ungültig (nur a-z, 0-9, -).`);
 	}
 	return {
-		name: def.name,
-		label: def.label ?? def.name,
-		description: def.description,
-		icon: def.icon,
-		version: def.version ?? 1,
-		fields: def.fields,
-		migrate: def.migrate
+		name: options.name,
+		label: options.label ?? options.name,
+		description: options.description,
+		icon: options.icon,
+		version: options.version ?? 1,
+		fields: options.fields,
+		migrate: options.migrate
 	};
 }
 
-/**
- * Props der Svelte-Komponente eines Blocks:
- *
- *   let { title, image }: BlockProps<typeof def> = $props();
- */
-export type BlockProps<D> = D extends BlockDefinition<infer F> ? InferFields<F> : never;
+/** Props of a block component: `let { title, image }: BlockProps<typeof definition> = $props();` */
+export type BlockProps<Definition> =
+	Definition extends BlockDefinition<infer Fields> ? InferFields<Fields> : never;
 
-/** Migration auf die aktuelle Version anwenden (idempotent). */
+/** Migrates block data up to the current version (idempotent). */
 export function migrateBlockData(
-	def: BlockDefinition,
+	definition: BlockDefinition,
 	version: number,
 	data: Record<string, unknown>
 ): { version: number; data: Record<string, unknown> } {
 	let current = data;
-	let v = version;
-	while (v < def.version) {
-		const step = def.migrate?.[v];
-		if (!step) break; // keine Migration: Daten unverändert, Version bleibt — Validierung meldet Fehler
+	let currentVersion = version;
+	while (currentVersion < definition.version) {
+		const step = definition.migrate?.[currentVersion];
+		// Missing migration: data and version stay as they are; validation reports it.
+		if (!step) break;
 		current = step(current);
-		v += 1;
+		currentVersion += 1;
 	}
-	return { version: v, data: current };
+	return { version: currentVersion, data: current };
 }

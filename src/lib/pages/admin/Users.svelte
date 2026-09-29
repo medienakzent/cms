@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatDate } from '../../format';
 	import { invalidateAll } from '$app/navigation';
 	import { Badge } from '@compdata/ui/badge';
 	import { Button } from '@compdata/ui/button';
@@ -16,69 +17,67 @@
 	import type { AdminLayoutData } from '../../routes/admin/layout';
 	import type { AdminUser, load } from '../../routes/admin/users';
 
-	/** Nutzer und API-Zugänge — nur für Administratoren. */
 	let { data }: { data: AdminLayoutData & Awaited<ReturnType<typeof load>> } = $props();
 
 	const roles = [
 		{ value: 'admin', label: 'Administrator' },
 		{ value: 'editor', label: 'Redakteur' }
 	];
-	const fmt = (iso: string) => new Date(iso).toLocaleDateString('de-DE', { dateStyle: 'medium' });
 
 	let busy = $state(false);
-	// Konto anlegen
+	// Create account
 	let name = $state('');
 	let email = $state('');
 	let password = $state('');
 	let role = $state('editor');
-	// Dialoge
+	// Dialogs
 	let toDelete = $state<AdminUser | null>(null);
-	let pwUser = $state<AdminUser | null>(null);
+	let passwordUser = $state<AdminUser | null>(null);
 	let newPassword = $state('');
-	// API-Zugänge
+	// API keys
 	let keyName = $state('');
 	let keyRole = $state('editor');
 	let createdKey = $state<{ name: string; key: string } | null>(null);
 	let keyToRevoke = $state<{ id: string; name: string } | null>(null);
 
-	async function run(fn: () => Promise<unknown>, ok: string) {
+	async function run(action: () => Promise<unknown>, successMessage: string) {
 		busy = true;
 		try {
-			await fn();
-			toast.success(ok);
+			await action();
+			toast.success(successMessage);
 			await invalidateAll();
-		} catch (e) {
-			toast.error((e as Error).message);
+		} catch (error) {
+			toast.error((error as Error).message);
 		} finally {
 			busy = false;
 		}
 	}
 
-	function create(e: SubmitEvent) {
-		e.preventDefault();
+	function create(event: SubmitEvent) {
+		event.preventDefault();
 		void run(async () => {
 			await apiFetch('/api/v1/users', { method: 'POST', json: { name, email, password, role } });
 			name = email = password = '';
 			role = 'editor';
 		}, 'Konto angelegt');
 	}
-	const setRole = (u: AdminUser, r: string) =>
+	const setRole = (user: AdminUser, newRole: string) =>
 		run(
-			() => apiFetch(`/api/v1/users/${u.id}`, { method: 'PATCH', json: { role: r } }),
+			() => apiFetch(`/api/v1/users/${user.id}`, { method: 'PATCH', json: { role: newRole } }),
 			'Rolle geändert'
 		);
-	const setBanned = (u: AdminUser, banned: boolean) =>
+	const setBanned = (user: AdminUser, banned: boolean) =>
 		run(
-			() => apiFetch(`/api/v1/users/${u.id}`, { method: 'PATCH', json: { banned } }),
+			() => apiFetch(`/api/v1/users/${user.id}`, { method: 'PATCH', json: { banned } }),
 			banned ? 'Konto gesperrt' : 'Konto entsperrt'
 		);
 	const setPassword = () =>
 		run(async () => {
-			await apiFetch(`/api/v1/users/${pwUser!.id}`, {
+			await apiFetch(`/api/v1/users/${passwordUser!.id}`, {
 				method: 'PATCH',
 				json: { password: newPassword }
 			});
-			pwUser = null;
+			passwordUser = null;
 			newPassword = '';
 		}, 'Passwort gesetzt');
 	const remove = () =>
@@ -87,14 +86,14 @@
 			toDelete = null;
 		}, 'Konto entfernt');
 
-	function createKey(e: SubmitEvent) {
-		e.preventDefault();
+	function createKey(event: SubmitEvent) {
+		event.preventDefault();
 		void run(async () => {
-			const r = await apiFetch<{ key: string }>('/api/v1/api-keys', {
+			const result = await apiFetch<{ key: string }>('/api/v1/api-keys', {
 				method: 'POST',
 				json: { name: keyName, role: keyRole }
 			});
-			createdKey = { name: keyName, key: r.key };
+			createdKey = { name: keyName, key: result.key };
 			keyName = '';
 		}, 'API-Zugang angelegt');
 	}
@@ -124,35 +123,37 @@
 		</Table.TableRow>
 	</Table.TableHeader>
 	<Table.TableBody>
-		{#each data.users as u (u.id)}
-			<Table.TableRow class={u.banned ? 'opacity-60' : ''}>
+		{#each data.users as user (user.id)}
+			<Table.TableRow class={user.banned ? 'opacity-60' : ''}>
 				<Table.TableCell class="font-medium">
-					{u.name}
-					{#if u.id === data.user?.id}<Badge variant="id" class="ms-2">Sie</Badge>{/if}
-					{#if u.banned}<Badge variant="signal" class="ms-2">gesperrt</Badge>{/if}
+					{user.name}
+					{#if user.id === data.user?.id}<Badge variant="id" class="ms-2">Sie</Badge>{/if}
+					{#if user.banned}<Badge variant="signal" class="ms-2">gesperrt</Badge>{/if}
 				</Table.TableCell>
-				<Table.TableCell>{u.email}</Table.TableCell>
+				<Table.TableCell>{user.email}</Table.TableCell>
 				<Table.TableCell>
 					<SearchableSelect
 						options={roles}
-						value={u.role}
-						onSelect={(r) => setRole(u, r)}
-						disabled={busy || u.id === data.user?.id}
+						value={user.role}
+						onSelect={(selectedRole) => setRole(user, selectedRole)}
+						disabled={busy || user.id === data.user?.id}
 						class="w-44"
 					/>
 				</Table.TableCell>
-				<Table.TableCell class="text-muted-foreground text-sm">{fmt(u.createdAt)}</Table.TableCell>
+				<Table.TableCell class="text-muted-foreground text-sm"
+					>{formatDate(user.createdAt)}</Table.TableCell
+				>
 				<Table.TableCell class="text-right whitespace-nowrap">
-					<Button size="sm" variant="ghost" onclick={() => (pwUser = u)} disabled={busy}
+					<Button size="sm" variant="ghost" onclick={() => (passwordUser = user)} disabled={busy}
 						><KeyIcon aria-hidden="true" /> Passwort</Button
 					>
 					<Button
 						size="sm"
 						variant="ghost"
-						onclick={() => setBanned(u, !u.banned)}
-						disabled={busy || u.id === data.user?.id}
-						title={u.banned ? 'Entsperren' : 'Sperren'}
-						aria-label={u.banned ? 'Entsperren' : 'Sperren'}
+						onclick={() => setBanned(user, !user.banned)}
+						disabled={busy || user.id === data.user?.id}
+						title={user.banned ? 'Entsperren' : 'Sperren'}
+						aria-label={user.banned ? 'Entsperren' : 'Sperren'}
 					>
 						<BanIcon aria-hidden="true" />
 					</Button>
@@ -160,8 +161,8 @@
 						size="sm"
 						variant="ghost"
 						class="text-destructive"
-						onclick={() => (toDelete = u)}
-						disabled={busy || u.id === data.user?.id}
+						onclick={() => (toDelete = user)}
+						disabled={busy || user.id === data.user?.id}
 						aria-label="Konto entfernen"
 					>
 						<TrashIcon aria-hidden="true" />
@@ -201,7 +202,7 @@
 			<Label>Rolle</Label><SearchableSelect
 				options={roles}
 				value={role}
-				onSelect={(r) => (role = r)}
+				onSelect={(selectedRole) => (role = selectedRole)}
 			/>
 		</div>
 		<div><Button type="submit" disabled={busy}>Anlegen</Button></div>
@@ -250,27 +251,29 @@
 				</Table.TableRow>
 			</Table.TableHeader>
 			<Table.TableBody>
-				{#each data.apiKeys as k (k.id)}
-					<Table.TableRow class={k.revokedAt ? 'opacity-50' : ''}>
+				{#each data.apiKeys as apiKey (apiKey.id)}
+					<Table.TableRow class={apiKey.revokedAt ? 'opacity-50' : ''}>
 						<Table.TableCell class="font-medium">
-							{k.name}
-							{#if k.revokedAt}<Badge variant="neutral" class="ms-2">widerrufen</Badge>{/if}
+							{apiKey.name}
+							{#if apiKey.revokedAt}<Badge variant="neutral" class="ms-2">widerrufen</Badge>{/if}
 						</Table.TableCell>
-						<Table.TableCell><code class="text-xs">{k.prefix}…</code></Table.TableCell>
-						<Table.TableCell>{k.role === 'admin' ? 'Administrator' : 'Redakteur'}</Table.TableCell>
-						<Table.TableCell class="text-muted-foreground text-sm"
-							>{fmt(k.createdAt)} · {k.createdBy}</Table.TableCell
+						<Table.TableCell><code class="text-xs">{apiKey.prefix}…</code></Table.TableCell>
+						<Table.TableCell
+							>{apiKey.role === 'admin' ? 'Administrator' : 'Redakteur'}</Table.TableCell
 						>
 						<Table.TableCell class="text-muted-foreground text-sm"
-							>{k.lastUsedAt ? fmt(k.lastUsedAt) : '—'}</Table.TableCell
+							>{formatDate(apiKey.createdAt)} · {apiKey.createdBy}</Table.TableCell
+						>
+						<Table.TableCell class="text-muted-foreground text-sm"
+							>{apiKey.lastUsedAt ? formatDate(apiKey.lastUsedAt) : '—'}</Table.TableCell
 						>
 						<Table.TableCell class="text-right">
-							{#if !k.revokedAt}
+							{#if !apiKey.revokedAt}
 								<Button
 									size="sm"
 									variant="ghost"
 									class="text-destructive"
-									onclick={() => (keyToRevoke = k)}
+									onclick={() => (keyToRevoke = apiKey)}
 									disabled={busy}>Widerrufen</Button
 								>
 							{/if}
@@ -293,7 +296,7 @@
 			<Label>Rolle</Label><SearchableSelect
 				options={roles}
 				value={keyRole}
-				onSelect={(r) => (keyRole = r)}
+				onSelect={(selectedRole) => (keyRole = selectedRole)}
 				class="w-44"
 			/>
 		</div>
@@ -326,19 +329,19 @@
 />
 
 <ConfirmDialog
-	open={pwUser !== null}
+	open={passwordUser !== null}
 	title="Neues Passwort setzen"
 	confirmLabel="Speichern"
 	cancelLabel="Abbrechen"
 	loading={busy}
 	onConfirm={setPassword}
 	onCancel={() => {
-		pwUser = null;
+		passwordUser = null;
 		newPassword = '';
 	}}
 >
 	<div class="grid gap-2">
-		<Label for="pw-new">Passwort für {pwUser?.email}</Label>
+		<Label for="pw-new">Passwort für {passwordUser?.email}</Label>
 		<Input
 			id="pw-new"
 			type="password"

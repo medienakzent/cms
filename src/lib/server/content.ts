@@ -1,10 +1,9 @@
 /**
- * Bibliotheks-API für Inhalte. Admin-UI, REST-Routen und CLI benutzen
- * ausschließlich diese Funktionen — es gibt keinen zweiten Codepfad.
+ * Library API for content. Admin UI, REST routes and CLI use only these
+ * functions; there is no second code path.
  */
 import { nanoid } from 'nanoid';
 import type { CollectionDefinition } from '../collection';
-export type { ListQueryInput } from '../query';
 import type { Field, FieldMap } from '../fields';
 import { mergeBlocks, mergeFields, splitBlocks, splitFields } from '../localize';
 import { allowedBlocks } from '../registry';
@@ -42,7 +41,7 @@ export interface Actor {
 export const SYSTEM_ACTOR: Actor = { id: 'system', name: 'system' };
 
 const now = () => new Date().toISOString();
-const blockDefs = () => getRuntime().registry.blocks;
+const blockDefinitions = () => getRuntime().registry.blocks;
 const collections = () => getRuntime().registry.collections;
 const languages = () => getRuntime().languages;
 const defaultLanguage = () => getRuntime().config.defaultLanguage;
@@ -51,11 +50,11 @@ function assertLang(lang: string): void {
 	if (!languages().includes(lang)) throw badRequest(`Unbekannte Sprache „${lang}"`);
 }
 
-// ── Sperren pro Dokument (in-process) ───────────────────────────────────────
+// In-process lock per document
 const locks = new Map<string, Promise<unknown>>();
-async function withLock<T>(key: string, fn: () => Promise<T>): Promise<T> {
-	const prev = locks.get(key) ?? Promise.resolve();
-	const next = prev.catch(() => undefined).then(fn);
+async function withLock<Result>(key: string, callback: () => Promise<Result>): Promise<Result> {
+	const previous = locks.get(key) ?? Promise.resolve();
+	const next = previous.catch(() => undefined).then(callback);
 	locks.set(key, next);
 	try {
 		return await next;
@@ -64,12 +63,11 @@ async function withLock<T>(key: string, fn: () => Promise<T>): Promise<T> {
 	}
 }
 
-// ── Storage-Zugriff ─────────────────────────────────────────────────────────
-async function readJson<T>(path: string): Promise<T | null> {
+async function readJson<Value>(path: string): Promise<Value | null> {
 	const raw = await getStorage().read(path);
 	if (raw === null) return null;
 	try {
-		return JSON.parse(raw) as T;
+		return JSON.parse(raw) as Value;
 	} catch {
 		throw new Error(`Storage: ungültiges JSON in ${path}`);
 	}
@@ -83,20 +81,20 @@ async function readBase(collection: string, slug: string) {
 }
 
 async function readOverlays(collection: string, slug: string) {
-	const out: Record<string, OverlayFile> = {};
+	const overlays: Record<string, OverlayFile> = {};
 	for (const lang of languages()) {
-		const o = await readJson<OverlayFile>(paths.overlay(collection, slug, lang));
-		if (o) out[lang] = o;
+		const overlay = await readJson<OverlayFile>(paths.overlay(collection, slug, lang));
+		if (overlay) overlays[lang] = overlay;
 	}
-	return out;
+	return overlays;
 }
 
-/** Vorherigen Stand einer Datei in die Historie kopieren (Versionierung). */
+/** Copies the current state of a file part into the history (versioning). */
 async function archive(collection: string, slug: string, part: string, actor: Actor) {
 	const storage = getStorage();
-	const src =
+	const sourcePath =
 		part === 'base' ? paths.base(collection, slug) : paths.overlay(collection, slug, part);
-	const raw = await storage.read(src);
+	const raw = await storage.read(sourcePath);
 	if (raw === null) return;
 	const savedAt = now();
 	const versionId = `${savedAt.replace(/[:.]/g, '-')}__${part}`;
@@ -106,26 +104,26 @@ async function archive(collection: string, slug: string, part: string, actor: Ac
 	);
 }
 
-// ── Zusammenführen ──────────────────────────────────────────────────────────
-function langMeta(o: OverlayFile): LangMeta {
+function langMeta(overlay: OverlayFile): LangMeta {
 	return {
-		lang: o.lang,
-		status: o.status,
-		updatedAt: o.updatedAt,
-		updatedBy: o.updatedBy,
-		publishedAt: o.publishedAt
+		lang: overlay.lang,
+		status: overlay.status,
+		updatedAt: overlay.updatedAt,
+		updatedBy: overlay.updatedBy,
+		publishedAt: overlay.publishedAt
 	};
 }
 
 function toDocument(
-	def: CollectionDefinition,
+	definition: CollectionDefinition,
 	base: BaseFile,
 	overlays: Record<string, OverlayFile>,
 	lang: string,
 	fallback: boolean
 ): Document {
 	const overlay = overlays[lang];
-	const fb = fallback && lang !== defaultLanguage() ? overlays[defaultLanguage()] : undefined;
+	const fallbackOverlay =
+		fallback && lang !== defaultLanguage() ? overlays[defaultLanguage()] : undefined;
 	return {
 		id: base.id,
 		collection: base.collection,
@@ -137,121 +135,127 @@ function toDocument(
 		updatedBy: overlay?.updatedBy ?? base.updatedBy,
 		publishedAt: overlay?.publishedAt ?? null,
 		langs: Object.values(overlays).map(langMeta),
-		fields: mergeFields(def.fields, base.fields, overlay?.fields, fb?.fields) as Document['fields'],
-		blocks: mergeBlocks(blockDefs(), base.blocks, overlay?.blocks, fb?.blocks)
+		fields: mergeFields(
+			definition.fields,
+			base.fields,
+			overlay?.fields,
+			fallbackOverlay?.fields
+		) as Document['fields'],
+		blocks: mergeBlocks(blockDefinitions(), base.blocks, overlay?.blocks, fallbackOverlay?.blocks)
 	};
 }
 
-// ── Index-Ableitung ─────────────────────────────────────────────────────────
-function collectText(fields: FieldMap, value: Record<string, unknown>, out: string[]) {
-	for (const [key, field] of Object.entries(fields)) collectFieldText(field, value?.[key], out);
+function collectText(fields: FieldMap, value: Record<string, unknown>, texts: string[]) {
+	for (const [key, field] of Object.entries(fields)) collectFieldText(field, value?.[key], texts);
 }
-function collectFieldText(field: Field, v: unknown, out: string[]) {
+function collectFieldText(field: Field, value: unknown, texts: string[]) {
 	switch (field.kind) {
 		case 'text':
 		case 'textarea':
 		case 'richtext':
-			if (typeof v === 'string' && v) out.push(v);
+			if (typeof value === 'string' && value) texts.push(value);
 			break;
 		case 'list':
-			if (Array.isArray(v)) for (const item of v) collectFieldText(field.of, item, out);
+			if (Array.isArray(value)) for (const item of value) collectFieldText(field.of, item, texts);
 			break;
 		case 'group':
-			collectText(field.fields, (v as Record<string, unknown>) ?? {}, out);
+			collectText(field.fields, (value as Record<string, unknown>) ?? {}, texts);
 			break;
 		case 'blocks':
-			collectBlockText((v as RenderBlock[]) ?? [], out);
+			collectBlockText((value as RenderBlock[]) ?? [], texts);
 			break;
 	}
 }
-function collectBlockText(blocks: RenderBlock[], out: string[]) {
-	for (const b of blocks) {
-		const def = blockDefs()[b.type];
-		if (def) collectText(def.fields, b.data, out);
+function collectBlockText(blocks: RenderBlock[], texts: string[]) {
+	for (const block of blocks) {
+		const blockDefinition = blockDefinitions()[block.type];
+		if (blockDefinition) collectText(blockDefinition.fields, block.data, texts);
 	}
 }
 
-function collectRefs(fields: FieldMap, value: Record<string, unknown>, out: Set<string>) {
+function collectRefs(fields: FieldMap, value: Record<string, unknown>, refs: Set<string>) {
 	for (const [key, field] of Object.entries(fields)) {
-		const v = value?.[key];
-		if (field.kind === 'reference' && typeof v === 'string') out.add(`${field.collection}:${v}`);
-		else if (field.kind === 'references' && Array.isArray(v))
-			for (const s of v) out.add(`${field.collection}:${s}`);
+		const fieldValue = value?.[key];
+		if (field.kind === 'reference' && typeof fieldValue === 'string')
+			refs.add(`${field.collection}:${fieldValue}`);
+		else if (field.kind === 'references' && Array.isArray(fieldValue))
+			for (const slug of fieldValue) refs.add(`${field.collection}:${slug}`);
 		else if (field.kind === 'group')
-			collectRefs(field.fields, (v as Record<string, unknown>) ?? {}, out);
-		else if (field.kind === 'list' && Array.isArray(v))
-			for (const item of v) collectRefs({ item: field.of }, { item }, out);
-		else if (field.kind === 'blocks' && Array.isArray(v))
-			for (const b of v as RenderBlock[]) {
-				const def = blockDefs()[b.type];
-				if (def) collectRefs(def.fields, b.data, out);
+			collectRefs(field.fields, (fieldValue as Record<string, unknown>) ?? {}, refs);
+		else if (field.kind === 'list' && Array.isArray(fieldValue))
+			for (const item of fieldValue) collectRefs({ item: field.of }, { item }, refs);
+		else if (field.kind === 'blocks' && Array.isArray(fieldValue))
+			for (const block of fieldValue as RenderBlock[]) {
+				const blockDefinition = blockDefinitions()[block.type];
+				if (blockDefinition) collectRefs(blockDefinition.fields, block.data, refs);
 			}
 	}
 }
 
 function indexRows(
-	def: CollectionDefinition,
+	definition: CollectionDefinition,
 	base: BaseFile,
 	overlays: Record<string, OverlayFile>
 ): IndexDocument[] {
 	return Object.keys(overlays).map((lang) => {
-		const doc = toDocument(def, base, overlays, lang, false);
-		const text: string[] = [];
-		collectText(def.fields, doc.fields, text);
-		collectBlockText(doc.blocks, text);
+		const document = toDocument(definition, base, overlays, lang, false);
+		const texts: string[] = [];
+		collectText(definition.fields, document.fields, texts);
+		collectBlockText(document.blocks, texts);
 		const refs = new Set<string>();
-		collectRefs(def.fields, doc.fields, refs);
-		for (const b of doc.blocks) {
-			const bd = blockDefs()[b.type];
-			if (bd) collectRefs(bd.fields, b.data, refs);
+		collectRefs(definition.fields, document.fields, refs);
+		for (const block of document.blocks) {
+			const blockDefinition = blockDefinitions()[block.type];
+			if (blockDefinition) collectRefs(blockDefinition.fields, block.data, refs);
 		}
 		return {
-			collection: def.name,
+			collection: definition.name,
 			slug: base.slug,
 			lang,
 			id: base.id,
-			status: doc.status,
-			title: String(doc.fields[def.titleField] ?? ''),
-			excerpt: def.excerptField ? String(doc.fields[def.excerptField] ?? '').slice(0, 300) : '',
-			search: `${base.slug} ${text.join(' ')}`.slice(0, 20000),
+			status: document.status,
+			title: String(document.fields[definition.titleField] ?? ''),
+			excerpt: definition.excerptField
+				? String(document.fields[definition.excerptField] ?? '').slice(0, 300)
+				: '',
+			search: `${base.slug} ${texts.join(' ')}`.slice(0, 20000),
 			refs: [...refs],
-			facets: extractFacets(def.fields, doc.fields),
-			createdAt: doc.createdAt,
-			updatedAt: doc.updatedAt,
-			updatedBy: doc.updatedBy,
-			publishedAt: doc.publishedAt
+			facets: extractFacets(definition.fields, document.fields),
+			createdAt: document.createdAt,
+			updatedAt: document.updatedAt,
+			updatedBy: document.updatedBy,
+			publishedAt: document.publishedAt
 		};
 	});
 }
 
 async function reindexDocument(
-	def: CollectionDefinition,
+	definition: CollectionDefinition,
 	base: BaseFile,
 	overlays: Record<string, OverlayFile>
 ) {
 	const index = await getIndex();
-	await index.pruneLangs(def.name, base.slug, Object.keys(overlays));
-	const rows = indexRows(def, base, overlays);
+	await index.pruneLangs(definition.name, base.slug, Object.keys(overlays));
+	const rows = indexRows(definition, base, overlays);
 	if (rows.length) await index.upsertDocument(rows);
 }
 
-// ── Eingaben normalisieren + prüfen ─────────────────────────────────────────
-function prepareInput(def: CollectionDefinition, input: DocumentInput, strict: boolean) {
-	const fields = normalizeFields(def.fields, input.fields);
-	const allowed = allowedBlocks(def);
+function prepareInput(definition: CollectionDefinition, input: DocumentInput, strict: boolean) {
+	const fields = normalizeFields(definition.fields, input.fields);
+	const allowed = allowedBlocks(definition);
 	const blocks = (
-		normalizeField({ kind: 'blocks' }, def.blocks ? input.blocks : []) as RenderBlock[]
-	).map((b) => {
-		const bd = blockDefs()[b.type];
+		normalizeField({ kind: 'blocks' }, definition.blocks ? input.blocks : []) as RenderBlock[]
+	).map((block) => {
+		const blockDefinition = blockDefinitions()[block.type];
 		return {
-			id: b.id || nanoid(8),
-			type: b.type,
-			data: bd ? normalizeFields(bd.fields, b.data) : b.data
+			id: block.id || nanoid(8),
+			type: block.type,
+			data: blockDefinition ? normalizeFields(blockDefinition.fields, block.data) : block.data
 		};
 	});
-	const ctx = { strict, blocks: blockDefs() };
-	const issues = validateFields(def.fields, fields, ctx);
-	validateBlocks(blocks, allowed, ctx, issues);
+	const context = { strict, blocks: blockDefinitions() };
+	const issues = validateFields(definition.fields, fields, context);
+	validateBlocks(blocks, allowed, context, issues);
 	if (issues.length) throw validation(issues);
 	return { fields, blocks };
 }
@@ -260,195 +264,190 @@ function assertSlug(slug: string): void {
 	if (!isValidSlug(slug)) throw badRequest(`Ungültiger Slug „${slug}"`);
 }
 
-function getDef(name: string): CollectionDefinition {
-	const def = collections()[name];
-	if (!def) throw notFound(`Collection „${name}"`);
-	return def;
+function getDefinition(name: string): CollectionDefinition {
+	const definition = collections()[name];
+	if (!definition) throw notFound(`Collection „${name}"`);
+	return definition;
 }
 
-// ── Öffentliche API ─────────────────────────────────────────────────────────
 export interface GetOptions {
 	lang?: string;
-	/** Fehlende Übersetzungen feldweise aus der Standardsprache füllen (Default: true). */
+	/** Fill missing translations field by field from the default language (default: true). */
 	fallback?: boolean;
-	/** `published` (Default) liefert nur veröffentlichte Sprachfassungen. */
+	/** `published` (default) returns only published language versions. */
 	status?: DocumentStatus | 'all';
 }
 
 export function collection(name: string) {
-	const def = getDef(name);
+	const definition = getDefinition(name);
 
 	function toQuery(input: ListQueryInput) {
 		try {
-			return buildListQuery(def, input, languages());
-		} catch (e) {
-			if (e instanceof QueryError) throw new CmsError(400, e.message, e.issues);
-			throw e;
+			return buildListQuery(definition, input, languages());
+		} catch (error) {
+			if (error instanceof QueryError) throw new CmsError(400, error.message, error.issues);
+			throw error;
 		}
 	}
 
 	async function load(slug: string) {
 		assertSlug(slug);
-		const base = await readBase(def.name, slug);
+		const base = await readBase(definition.name, slug);
 		if (!base) return null;
-		return { base, overlays: await readOverlays(def.name, slug) };
+		return { base, overlays: await readOverlays(definition.name, slug) };
 	}
 
 	return {
-		definition: def,
+		definition,
 
-		/**
-		 * Liste aus dem Index. Filter/Sortierung werden strikt gegen die Felddefinition
-		 * geprüft (siehe query.ts); Fehler → CmsError 400 mit Problemliste.
-		 */
+		/** List from the index; filters/sort are validated against the field definitions (CmsError 400). */
 		async list(input: ListQueryInput | ListQuery = {}) {
 			const query = isListQuery(input) ? input : toQuery(input);
-			if (query.collection !== def.name)
+			if (query.collection !== definition.name)
 				throw badRequest('Abfrage gehört zu einer anderen Collection');
 			return (await getIndex()).list(query);
 		},
-		/** Geprüfte Abfrage aus Rohparametern (z. B. URLSearchParams der API). */
+		/** Validated query from raw parameters (e.g. URLSearchParams of the API). */
 		query: toQuery,
 
-		async get(slug: string, opts: GetOptions = {}): Promise<Document | null> {
-			const lang = opts.lang ?? defaultLanguage();
+		async get(slug: string, options: GetOptions = {}): Promise<Document | null> {
+			const lang = options.lang ?? defaultLanguage();
 			assertLang(lang);
 			const loaded = await load(slug);
 			if (!loaded) return null;
 			const overlay = loaded.overlays[lang];
 			if (!overlay) return null;
-			const status = opts.status ?? 'published';
+			const status = options.status ?? 'published';
 			if (status !== 'all' && overlay.status !== status) return null;
-			return toDocument(def, loaded.base, loaded.overlays, lang, opts.fallback ?? true);
+			return toDocument(definition, loaded.base, loaded.overlays, lang, options.fallback ?? true);
 		},
 
-		/** Für den Editor: ohne Fallback, unabhängig vom Status; fehlende Sprache = leere Übersetzung. */
+		/** For the editor: no fallback, any status; a missing language is an empty translation. */
 		async getEditable(slug: string, lang: string) {
 			assertLang(lang);
 			const loaded = await load(slug);
 			if (!loaded) return null;
 			return {
 				exists: !!loaded.overlays[lang],
-				doc: toDocument(def, loaded.base, loaded.overlays, lang, false)
+				doc: toDocument(definition, loaded.base, loaded.overlays, lang, false)
 			};
 		},
 
 		async exists(slug: string) {
 			assertSlug(slug);
-			return getStorage().exists(paths.base(def.name, slug));
+			return getStorage().exists(paths.base(definition.name, slug));
 		},
 
-		async create(opts: {
+		async create(options: {
 			slug: string;
 			lang?: string;
 			input?: Partial<DocumentInput>;
 			status?: DocumentStatus;
 			actor: Actor;
 		}): Promise<Document> {
-			const lang = opts.lang ?? defaultLanguage();
+			const lang = options.lang ?? defaultLanguage();
 			assertLang(lang);
-			if (!isValidSlug(opts.slug)) throw badRequest(`Ungültiger Slug „${opts.slug}"`);
-			return withLock(`${def.name}/${opts.slug}`, async () => {
-				if (await getStorage().exists(paths.base(def.name, opts.slug))) {
-					throw conflict(`„${opts.slug}" existiert bereits in ${def.labelPlural}`);
+			assertSlug(options.slug);
+			return withLock(`${definition.name}/${options.slug}`, async () => {
+				if (await getStorage().exists(paths.base(definition.name, options.slug))) {
+					throw conflict(`„${options.slug}" existiert bereits in ${definition.labelPlural}`);
 				}
-				const status = opts.status ?? 'draft';
+				const status = options.status ?? 'draft';
 				const { fields, blocks } = prepareInput(
-					def,
-					{ fields: opts.input?.fields ?? {}, blocks: opts.input?.blocks ?? [] },
+					definition,
+					{ fields: options.input?.fields ?? {}, blocks: options.input?.blocks ?? [] },
 					status === 'published'
 				);
-				const ts = now();
-				const sf = splitFields(def.fields, fields);
-				const sb = splitBlocks(blockDefs(), blocks);
+				const timestamp = now();
+				const splitFieldValues = splitFields(definition.fields, fields);
+				const splitBlockValues = splitBlocks(blockDefinitions(), blocks);
 				const base: BaseFile = {
 					id: nanoid(12),
-					collection: def.name,
-					slug: opts.slug,
-					schemaVersion: def.version,
-					createdAt: ts,
-					createdBy: opts.actor.name,
-					updatedAt: ts,
-					updatedBy: opts.actor.name,
-					fields: sf.base,
-					blocks: sb.base
+					collection: definition.name,
+					slug: options.slug,
+					schemaVersion: definition.version,
+					createdAt: timestamp,
+					createdBy: options.actor.name,
+					updatedAt: timestamp,
+					updatedBy: options.actor.name,
+					fields: splitFieldValues.base,
+					blocks: splitBlockValues.base
 				};
 				const overlay: OverlayFile = {
 					lang,
 					status,
-					updatedAt: ts,
-					updatedBy: opts.actor.name,
-					publishedAt: status === 'published' ? ts : null,
-					fields: sf.local,
-					blocks: sb.local
+					updatedAt: timestamp,
+					updatedBy: options.actor.name,
+					publishedAt: status === 'published' ? timestamp : null,
+					fields: splitFieldValues.local,
+					blocks: splitBlockValues.local
 				};
-				await writeJson(paths.base(def.name, opts.slug), base);
-				await writeJson(paths.overlay(def.name, opts.slug, lang), overlay);
+				await writeJson(paths.base(definition.name, options.slug), base);
+				await writeJson(paths.overlay(definition.name, options.slug, lang), overlay);
 				const overlays = { [lang]: overlay };
-				await reindexDocument(def, base, overlays);
-				return toDocument(def, base, overlays, lang, false);
+				await reindexDocument(definition, base, overlays);
+				return toDocument(definition, base, overlays, lang, false);
 			});
 		},
 
-		/**
-		 * Speichert eine Sprachfassung. Nicht-lokalisierte Felder und die
-		 * Block-Struktur gelten für alle Sprachen (Basis-Datei).
-		 */
+		/** Saves one language version; non-localized fields and block structure are shared (base file). */
 		async save(
 			slug: string,
 			lang: string,
 			input: DocumentInput,
-			opts: { actor: Actor; status?: DocumentStatus }
+			options: { actor: Actor; status?: DocumentStatus }
 		): Promise<Document> {
 			assertLang(lang);
-			return withLock(`${def.name}/${slug}`, async () => {
+			return withLock(`${definition.name}/${slug}`, async () => {
 				const loaded = await load(slug);
-				if (!loaded) throw notFound(`${def.label} „${slug}"`);
+				if (!loaded) throw notFound(`${definition.label} „${slug}"`);
 				const { base, overlays } = loaded;
-				const prev = overlays[lang];
-				const status = opts.status ?? prev?.status ?? 'draft';
-				const { fields, blocks } = prepareInput(def, input, status === 'published');
-				const ts = now();
-				const sf = splitFields(def.fields, fields);
-				const sb = splitBlocks(blockDefs(), blocks);
+				const previous = overlays[lang];
+				const status = options.status ?? previous?.status ?? 'draft';
+				const { fields, blocks } = prepareInput(definition, input, status === 'published');
+				const timestamp = now();
+				const splitFieldValues = splitFields(definition.fields, fields);
+				const splitBlockValues = splitBlocks(blockDefinitions(), blocks);
 
-				await archive(def.name, slug, 'base', opts.actor);
-				await archive(def.name, slug, lang, opts.actor);
+				await archive(definition.name, slug, 'base', options.actor);
+				await archive(definition.name, slug, lang, options.actor);
 
 				const newBase: BaseFile = {
 					...base,
-					schemaVersion: def.version,
-					updatedAt: ts,
-					updatedBy: opts.actor.name,
-					fields: sf.base,
-					blocks: sb.base
+					schemaVersion: definition.version,
+					updatedAt: timestamp,
+					updatedBy: options.actor.name,
+					fields: splitFieldValues.base,
+					blocks: splitBlockValues.base
 				};
 				const newOverlay: OverlayFile = {
 					lang,
 					status,
-					updatedAt: ts,
-					updatedBy: opts.actor.name,
+					updatedAt: timestamp,
+					updatedBy: options.actor.name,
 					publishedAt:
-						status === 'published' ? (prev?.publishedAt ?? ts) : (prev?.publishedAt ?? null),
-					fields: sf.local,
-					blocks: sb.local
+						status === 'published'
+							? (previous?.publishedAt ?? timestamp)
+							: (previous?.publishedAt ?? null),
+					fields: splitFieldValues.local,
+					blocks: splitBlockValues.local
 				};
-				await writeJson(paths.base(def.name, slug), newBase);
-				await writeJson(paths.overlay(def.name, slug, lang), newOverlay);
+				await writeJson(paths.base(definition.name, slug), newBase);
+				await writeJson(paths.overlay(definition.name, slug, lang), newOverlay);
 				overlays[lang] = newOverlay;
 
-				// Overlays anderer Sprachen: Einträge gelöschter Blocks entfernen.
-				const liveIds = new Set(blocks.map((b) => b.id));
-				for (const [l, o] of Object.entries(overlays)) {
-					if (l === lang) continue;
-					const orphan = Object.keys(o.blocks ?? {}).filter((id) => !liveIds.has(id));
-					if (orphan.length) {
-						for (const id of orphan) delete o.blocks[id];
-						await writeJson(paths.overlay(def.name, slug, l), o);
+				// Drop entries of deleted blocks from the other languages' overlays
+				const liveIds = new Set(blocks.map((block) => block.id));
+				for (const [otherLang, otherOverlay] of Object.entries(overlays)) {
+					if (otherLang === lang) continue;
+					const orphanIds = Object.keys(otherOverlay.blocks ?? {}).filter((id) => !liveIds.has(id));
+					if (orphanIds.length) {
+						for (const id of orphanIds) delete otherOverlay.blocks[id];
+						await writeJson(paths.overlay(definition.name, slug, otherLang), otherOverlay);
 					}
 				}
-				await reindexDocument(def, newBase, overlays);
-				return toDocument(def, newBase, overlays, lang, false);
+				await reindexDocument(definition, newBase, overlays);
+				return toDocument(definition, newBase, overlays, lang, false);
 			});
 		},
 
@@ -459,58 +458,58 @@ export function collection(name: string) {
 			actor: Actor
 		): Promise<Document> {
 			assertLang(lang);
-			return withLock(`${def.name}/${slug}`, async () => {
+			return withLock(`${definition.name}/${slug}`, async () => {
 				const loaded = await load(slug);
 				const overlay = loaded?.overlays[lang];
-				if (!loaded || !overlay) throw notFound(`${def.label} „${slug}" (${lang})`);
+				if (!loaded || !overlay) throw notFound(`${definition.label} „${slug}" (${lang})`);
 				if (status === 'published') {
-					const doc = toDocument(def, loaded.base, loaded.overlays, lang, false);
-					prepareInput(def, { fields: doc.fields, blocks: doc.blocks }, true);
+					const document = toDocument(definition, loaded.base, loaded.overlays, lang, false);
+					prepareInput(definition, { fields: document.fields, blocks: document.blocks }, true);
 				}
-				await archive(def.name, slug, lang, actor);
+				await archive(definition.name, slug, lang, actor);
 				overlay.status = status;
 				overlay.updatedAt = now();
 				overlay.updatedBy = actor.name;
 				if (status === 'published') overlay.publishedAt = overlay.publishedAt ?? overlay.updatedAt;
-				await writeJson(paths.overlay(def.name, slug, lang), overlay);
-				await reindexDocument(def, loaded.base, loaded.overlays);
-				return toDocument(def, loaded.base, loaded.overlays, lang, false);
+				await writeJson(paths.overlay(definition.name, slug, lang), overlay);
+				await reindexDocument(definition, loaded.base, loaded.overlays);
+				return toDocument(definition, loaded.base, loaded.overlays, lang, false);
 			});
 		},
 
-		/** Löscht eine Sprachfassung oder (ohne `lang`) das ganze Dokument. Historie bleibt erhalten. */
-		async remove(slug: string, opts: { lang?: string; actor: Actor }): Promise<void> {
-			return withLock(`${def.name}/${slug}`, async () => {
+		/** Removes one language version or (without `lang`) the whole document; history is kept. */
+		async remove(slug: string, options: { lang?: string; actor: Actor }): Promise<void> {
+			return withLock(`${definition.name}/${slug}`, async () => {
 				const loaded = await load(slug);
-				if (!loaded) throw notFound(`${def.label} „${slug}"`);
+				if (!loaded) throw notFound(`${definition.label} „${slug}"`);
 				const storage = getStorage();
 				const index = await getIndex();
-				if (opts.lang) {
-					assertLang(opts.lang);
-					if (!loaded.overlays[opts.lang]) throw notFound(`Sprachfassung ${opts.lang}`);
-					await archive(def.name, slug, opts.lang, opts.actor);
-					await storage.remove(paths.overlay(def.name, slug, opts.lang));
-					delete loaded.overlays[opts.lang];
+				if (options.lang) {
+					assertLang(options.lang);
+					if (!loaded.overlays[options.lang]) throw notFound(`Sprachfassung ${options.lang}`);
+					await archive(definition.name, slug, options.lang, options.actor);
+					await storage.remove(paths.overlay(definition.name, slug, options.lang));
+					delete loaded.overlays[options.lang];
 					if (Object.keys(loaded.overlays).length) {
-						await reindexDocument(def, loaded.base, loaded.overlays);
+						await reindexDocument(definition, loaded.base, loaded.overlays);
 						return;
 					}
 				}
-				await archive(def.name, slug, 'base', opts.actor);
-				for (const l of Object.keys(loaded.overlays)) {
-					await archive(def.name, slug, l, opts.actor);
-					await storage.remove(paths.overlay(def.name, slug, l));
+				await archive(definition.name, slug, 'base', options.actor);
+				for (const overlayLang of Object.keys(loaded.overlays)) {
+					await archive(definition.name, slug, overlayLang, options.actor);
+					await storage.remove(paths.overlay(definition.name, slug, overlayLang));
 				}
-				await storage.remove(paths.base(def.name, slug));
-				await index.removeDocument(def.name, slug);
+				await storage.remove(paths.base(definition.name, slug));
+				await index.removeDocument(definition.name, slug);
 			});
 		},
 
 		async versions(slug: string): Promise<VersionInfo[]> {
 			assertSlug(slug);
 			const storage = getStorage();
-			const files = await storage.list(paths.historyDir(def.name, slug));
-			const out: VersionInfo[] = [];
+			const files = await storage.list(paths.historyDir(definition.name, slug));
+			const versions: VersionInfo[] = [];
 			for (const file of files) {
 				const name =
 					file
@@ -519,15 +518,15 @@ export function collection(name: string) {
 						?.replace(/\.json$/, '') ?? '';
 				const [stamp, part] = name.split('__');
 				if (!stamp || !part) continue;
-				const st = await storage.stat(file);
+				const stat = await storage.stat(file);
 				const raw = await storage.read(file);
 				let savedBy = '';
 				try {
 					savedBy = raw ? (JSON.parse(raw).savedBy ?? '') : '';
 				} catch {
-					/* ignorieren */
+					// unreadable version file: keep savedBy empty
 				}
-				out.push({
+				versions.push({
 					id: name,
 					part,
 					savedAt: stamp.replace(
@@ -535,34 +534,35 @@ export function collection(name: string) {
 						'$1T$2:$3:$4.$5Z'
 					),
 					savedBy,
-					size: st?.size ?? 0
+					size: stat?.size ?? 0
 				});
 			}
-			return out.sort((a, b) => (a.id < b.id ? 1 : -1));
+			return versions.sort((left, right) => (left.id < right.id ? 1 : -1));
 		},
 
-		/** Stellt eine Version wieder her (der aktuelle Stand wandert vorher in die Historie). */
+		/** Restores a version; the current state is archived first. */
 		async restore(slug: string, versionId: string, actor: Actor): Promise<void> {
 			assertSlug(slug);
 			if (!/^[0-9TZ-]+__[a-z-]+$/i.test(versionId)) throw badRequest('Ungültige Versions-ID');
-			return withLock(`${def.name}/${slug}`, async () => {
-				const raw = await getStorage().read(paths.history(def.name, slug, versionId));
+			return withLock(`${definition.name}/${slug}`, async () => {
+				const raw = await getStorage().read(paths.history(definition.name, slug, versionId));
 				if (!raw) throw notFound('Version');
 				const { part, content } = JSON.parse(raw) as { part: string; content: unknown };
-				await archive(def.name, slug, part, actor);
-				if (part === 'base') await writeJson(paths.base(def.name, slug), content);
-				else await writeJson(paths.overlay(def.name, slug, part), content);
+				if (part !== 'base' && !languages().includes(part)) throw badRequest('Ungültige Version');
+				await archive(definition.name, slug, part, actor);
+				if (part === 'base') await writeJson(paths.base(definition.name, slug), content);
+				else await writeJson(paths.overlay(definition.name, slug, part), content);
 				const loaded = await load(slug);
-				if (loaded) await reindexDocument(def, loaded.base, loaded.overlays);
+				if (loaded) await reindexDocument(definition, loaded.base, loaded.overlays);
 			});
 		},
 
-		/** Alle Slugs dieser Collection direkt aus dem Storage (ohne Index). */
+		/** All slugs of this collection straight from the storage (no index). */
 		async slugs(): Promise<string[]> {
-			const files = await getStorage().list(paths.collectionDir(def.name));
+			const files = await getStorage().list(paths.collectionDir(definition.name));
 			const slugs = new Set<string>();
-			for (const f of files) {
-				const parsed = parseContentFile(f.split('/').at(-1) ?? '');
+			for (const file of files) {
+				const parsed = parseContentFile(file.split('/').at(-1) ?? '');
 				if (parsed && parsed.lang === null) slugs.add(parsed.slug);
 			}
 			return [...slugs].sort();
@@ -572,23 +572,23 @@ export function collection(name: string) {
 
 export type CollectionApi = ReturnType<typeof collection>;
 
-/** Index komplett aus dem Storage neu aufbauen. */
+/** Rebuilds the whole index from the storage. */
 export async function reindexContent(): Promise<{ documents: number; languages: number }> {
 	const index = await getIndex();
 	await index.clearDocuments();
 	let documents = 0;
-	let langs = 0;
-	for (const def of Object.values(collections())) {
-		const api = collection(def.name);
+	let languageCount = 0;
+	for (const definition of Object.values(collections())) {
+		const api = collection(definition.name);
 		for (const slug of await api.slugs()) {
-			const base = await readBase(def.name, slug);
+			const base = await readBase(definition.name, slug);
 			if (!base) continue;
-			const overlays = await readOverlays(def.name, slug);
-			const rows = indexRows(def, base, overlays);
+			const overlays = await readOverlays(definition.name, slug);
+			const rows = indexRows(definition, base, overlays);
 			if (rows.length) await index.upsertDocument(rows);
 			documents++;
-			langs += rows.length;
+			languageCount += rows.length;
 		}
 	}
-	return { documents, languages: langs };
+	return { documents, languages: languageCount };
 }

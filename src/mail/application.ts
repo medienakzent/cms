@@ -1,25 +1,29 @@
-import { defineMail, f } from '@medienakzent/cms';
+import { defineMail, field } from '@medienakzent/cms';
 
-const MB = 1024 * 1024;
+const MEGABYTE = 1024 * 1024;
 
-/** Beispiel für ein Formular mit Datei-Uploads (Bewerbung). */
+/** Example form with file uploads. */
 export default defineMail({
 	name: 'application',
 	label: 'Bewerbung',
 	fields: {
-		name: f.text({ label: 'Name', required: true, maxLength: 120 }),
-		email: f.text({ label: 'E-Mail', required: true, maxLength: 200 }),
-		motivation: f.textarea({ label: 'Motivation', required: true, maxLength: 4000 }),
-		portfolio: f.file({
+		name: field.text({ label: 'Name', required: true, maxLength: 120 }),
+		email: field.text({ label: 'E-Mail', required: true, maxLength: 200 }),
+		motivation: field.textarea({ label: 'Motivation', required: true, maxLength: 4000 }),
+		portfolio: field.file({
 			label: 'Portfolio (PDF)',
 			accept: ['application/pdf'],
-			maxSize: 25 * MB,
+			maxSize: 25 * MEGABYTE,
 			required: true
 		}),
-		cv: f.file({ label: 'Lebenslauf (PDF)', accept: ['application/pdf'], maxSize: 10 * MB })
+		cv: field.file({
+			label: 'Lebenslauf (PDF)',
+			accept: ['application/pdf'],
+			maxSize: 10 * MEGABYTE
+		})
 	},
 	replyToField: 'email',
-	maxTotalSize: 32 * MB,
+	maxTotalSize: 32 * MEGABYTE,
 	subject: 'Bewerbung von {{name}}',
 	body: `## Neue Bewerbung
 

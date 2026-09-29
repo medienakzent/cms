@@ -1,6 +1,6 @@
 /**
- * Laufzeit des Servers: Registry + Konfiguration, gesetzt von `createHandle`
- * im Kundenprojekt. Alle Server-Module greifen über `getRuntime()` darauf zu.
+ * Server runtime: registry + configuration, set by `createHandle` in the
+ * customer project. All server modules access it through `getRuntime()`.
  */
 import type { CmsConfig } from '../config';
 import type { Registry } from '../registry';
@@ -20,7 +20,7 @@ export function initRuntime(registry: Registry, env: Env): Runtime {
 		registry,
 		config: registry.config,
 		server: buildServerConfig(env),
-		languages: registry.config.languages.map((l) => l.code)
+		languages: registry.config.languages.map((language) => language.code)
 	};
 	return runtime;
 }
@@ -36,4 +36,3 @@ export function getRuntime(): Runtime {
 
 export const serverConfig = () => getRuntime().server;
 export const siteConfig = () => getRuntime().config;
-export const registry = () => getRuntime().registry;

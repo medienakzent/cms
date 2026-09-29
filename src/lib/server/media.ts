@@ -1,4 +1,5 @@
 import sharp from 'sharp';
+import { extensionFor } from './mime';
 import { nanoid } from 'nanoid';
 import { extname } from 'node:path';
 import type { MediaItem } from '../types';
@@ -23,24 +24,15 @@ function kindOf(mime: string): MediaItem['kind'] {
 	return 'file';
 }
 
-function safeExt(name: string, mime: string): string {
-	const ext = extname(name)
+function safeExtension(name: string, mime: string): string {
+	const extension = extname(name)
 		.toLowerCase()
 		.replace(/[^a-z0-9.]/g, '');
-	if (ext && ext.length <= 6) return ext;
-	const byMime: Record<string, string> = {
-		'image/jpeg': '.jpg',
-		'image/png': '.png',
-		'image/webp': '.webp',
-		'image/gif': '.gif',
-		'image/svg+xml': '.svg',
-		'video/mp4': '.mp4',
-		'application/pdf': '.pdf'
-	};
-	return byMime[mime] ?? '.bin';
+	if (extension && extension.length <= 6) return extension;
+	return extensionFor(mime) ?? '.bin';
 }
 
-/** Sidecar-Datei neben dem Original: macht den Medien-Index aus dem Storage rekonstruierbar. */
+/** Sidecar file next to the original; makes the media index reconstructible from the storage. */
 const sidecarPath = (src: string) => src.replace(/\.[^./]+$/, '') + '.json';
 
 export async function uploadMedia(file: File, actor: Actor): Promise<MediaItem> {
@@ -51,7 +43,7 @@ export async function uploadMedia(file: File, actor: Actor): Promise<MediaItem> 
 	const now = new Date();
 	const year = String(now.getUTCFullYear());
 	const month = String(now.getUTCMonth() + 1).padStart(2, '0');
-	const src = paths.media(year, month, `${id}${safeExt(file.name, mime)}`);
+	const src = paths.media(year, month, `${id}${safeExtension(file.name, mime)}`);
 	const storage = getStorage();
 	const bytes = Buffer.from(await file.arrayBuffer());
 	await storage.write(src, bytes);
@@ -61,22 +53,22 @@ export async function uploadMedia(file: File, actor: Actor): Promise<MediaItem> 
 	const variants: Record<string, string> = {};
 	if (RASTER.has(mime)) {
 		try {
-			const meta = await sharp(bytes).metadata();
-			width = meta.width ?? null;
-			height = meta.height ?? null;
+			const metadata = await sharp(bytes).metadata();
+			width = metadata.width ?? null;
+			height = metadata.height ?? null;
 			for (const [name, targetWidth] of Object.entries(siteConfig().media.imageVariants)) {
-				if (width && targetWidth >= width) continue; // nicht hochskalieren
-				const out = await sharp(bytes)
+				if (width && targetWidth >= width) continue;
+				const resized = await sharp(bytes)
 					.rotate()
 					.resize({ width: targetWidth, withoutEnlargement: true })
 					.webp({ quality: siteConfig().media.imageQuality })
 					.toBuffer();
-				const vsrc = paths.media(year, month, `${id}__${name}.webp`);
-				await storage.write(vsrc, out);
-				variants[name] = vsrc;
+				const variantSrc = paths.media(year, month, `${id}__${name}.webp`);
+				await storage.write(variantSrc, resized);
+				variants[name] = variantSrc;
 			}
-		} catch (e) {
-			console.warn('Bildverarbeitung fehlgeschlagen', e);
+		} catch (error) {
+			console.warn('Bildverarbeitung fehlgeschlagen', error);
 		}
 	}
 
@@ -116,7 +108,7 @@ export async function deleteMedia(id: string): Promise<void> {
 	const storage = getStorage();
 	await storage.remove(item.src);
 	await storage.remove(sidecarPath(item.src));
-	for (const v of Object.values(item.variants)) await storage.remove(v);
+	for (const variantSrc of Object.values(item.variants)) await storage.remove(variantSrc);
 	await index.removeMedia(id);
 }
 
@@ -124,7 +116,7 @@ export async function reindexMedia(): Promise<number> {
 	const storage = getStorage();
 	const index = await getIndex();
 	await index.clearMedia();
-	let n = 0;
+	let count = 0;
 	for (const file of await storage.list('media')) {
 		if (!file.endsWith('.json')) continue;
 		const raw = await storage.read(file);
@@ -133,13 +125,13 @@ export async function reindexMedia(): Promise<number> {
 			const item = JSON.parse(raw) as MediaItem;
 			if (item.id && item.src) {
 				await index.insertMedia(item);
-				n++;
+				count++;
 			}
 		} catch {
 			console.warn('Ungültige Medien-Sidecar-Datei', file);
 		}
 	}
-	return n;
+	return count;
 }
 
 export const media = {
@@ -150,7 +142,7 @@ export const media = {
 	async get(id: string) {
 		return (await getIndex()).getMedia(id);
 	},
-	async list(opts: { kind?: string; q?: string; limit?: number; offset?: number } = {}) {
-		return (await getIndex()).listMedia(opts);
+	async list(options: { kind?: string; q?: string; limit?: number; offset?: number } = {}) {
+		return (await getIndex()).listMedia(options);
 	}
 };

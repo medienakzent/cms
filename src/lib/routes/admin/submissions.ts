@@ -20,7 +20,10 @@ export async function load({ url }: ServerLoadEvent) {
 		pages: Math.max(Math.ceil(result.total / limit), 1),
 		total: result.total,
 		items: result.items,
-		templates: Object.values(mail.templates).map((t) => ({ name: t.name, label: t.label })),
+		templates: Object.values(mail.templates).map((mailTemplate) => ({
+			name: mailTemplate.name,
+			label: mailTemplate.label
+		})),
 		transport: serverConfig().mail.transport,
 		breadcrumbs: [{ label: 'Übersicht', href: '/admin' }, { label: 'Einsendungen' }]
 	};

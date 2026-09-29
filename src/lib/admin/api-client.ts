@@ -10,28 +10,32 @@ export class ApiError extends Error {
 	}
 }
 
-/** fetch-Wrapper für /api/v1 — wirft ApiError mit Validierungsproblemen. */
-export async function apiFetch<T = unknown>(
+/** Fetch wrapper for /api/v1; throws ApiError carrying validation issues. */
+export async function apiFetch<Result = unknown>(
 	path: string,
 	init: RequestInit & { json?: unknown } = {}
-): Promise<T> {
+): Promise<Result> {
 	const headers = new Headers(init.headers);
 	let body = init.body;
 	if (init.json !== undefined) {
 		headers.set('content-type', 'application/json');
 		body = JSON.stringify(init.json);
 	}
-	const res = await fetch(path, { ...init, headers, body });
-	const data = (await res.json().catch(() => ({}))) as {
+	const response = await fetch(path, { ...init, headers, body });
+	const data = (await response.json().catch(() => ({}))) as {
 		error?: string;
 		issues?: ValidationIssue[];
 	};
-	if (!res.ok) throw new ApiError(res.status, data.error ?? res.statusText, data.issues ?? []);
-	return data as T;
+	if (!response.ok) {
+		throw new ApiError(response.status, data.error ?? response.statusText, data.issues ?? []);
+	}
+	return data as Result;
 }
 
 export function issuesToMap(issues: ValidationIssue[]): Record<string, string> {
-	const out: Record<string, string> = {};
-	for (const i of issues) if (!out[i.path]) out[i.path] = i.message;
-	return out;
+	const messagesByPath: Record<string, string> = {};
+	for (const issue of issues) {
+		if (!messagesByPath[issue.path]) messagesByPath[issue.path] = issue.message;
+	}
+	return messagesByPath;
 }

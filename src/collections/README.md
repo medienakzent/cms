@@ -8,7 +8,7 @@ Eine Collection ist eine Datei `src/collections/<name>.ts`, deren Default-Export
 - `blocks` listet erlaubte Block-Typen; `false` = keine Blocks (z. B. Tags, Kategorien).
 - `path(slug, lang)` liefert den öffentlichen Pfad oder `null` (nicht direkt aufrufbar).
 - Pages, Categories, Tags sind **nur Collections** — keine Sonderfälle im Kern.
-  Zuordnungen laufen über `f.reference('categories')` / `f.references('tags')`.
+  Zuordnungen laufen über `field.reference('categories')` / `field.references('tags')`.
 
 Storage-Layout (`STORAGE_DIR`, Default `./storage`):
 

@@ -3,21 +3,25 @@ import { fieldLabel } from '../../fields';
 import { mail } from '../../server/mail';
 
 export async function load({ params }: ServerLoadEvent) {
-	const sub = await mail.submission(params.id ?? '');
-	if (!sub) error(404, 'Einsendung nicht gefunden');
-	const def = mail.templates[sub.template];
-	// Beschriftungen aus der Vorlage, damit die Detailansicht lesbar bleibt.
-	const labels: Record<string, string> = def
-		? Object.fromEntries(Object.entries(def.fields).map(([k, f]) => [k, fieldLabel(k, f)]))
+	const submission = await mail.submission(params.id ?? '');
+	if (!submission) error(404, 'Einsendung nicht gefunden');
+	const template = mail.templates[submission.template];
+	const labels: Record<string, string> = template
+		? Object.fromEntries(
+				Object.entries(template.fields).map(([key, fieldDefinition]) => [
+					key,
+					fieldLabel(key, fieldDefinition)
+				])
+			)
 		: {};
 	return {
-		sub,
+		sub: submission,
 		labels,
-		templateLabel: def?.label ?? sub.template,
+		templateLabel: template?.label ?? submission.template,
 		breadcrumbs: [
 			{ label: 'Übersicht', href: '/admin' },
 			{ label: 'Einsendungen', href: '/admin/submissions' },
-			{ label: sub.subject || sub.id }
+			{ label: submission.subject || submission.id }
 		]
 	};
 }

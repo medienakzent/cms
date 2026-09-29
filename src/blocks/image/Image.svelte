@@ -1,9 +1,9 @@
 <script lang="ts">
 	import type { BlockProps } from '@medienakzent/cms';
 	import { mediaUrl } from '@medienakzent/cms';
-	import type def from './block';
+	import type definition from './block';
 
-	let { image, caption, size }: BlockProps<typeof def> = $props();
+	let { image, caption, size }: BlockProps<typeof definition> = $props();
 </script>
 
 {#if image}

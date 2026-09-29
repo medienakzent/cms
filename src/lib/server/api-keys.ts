@@ -1,8 +1,8 @@
 /**
- * API-Zugänge: Schlüssel mit Rolle (admin | editor), im Admin verwaltet. Gespeichert
- * wird nur der SHA-256-Hash; der Klartext erscheint genau einmal beim Anlegen.
- * Format: `cms_<präfix>_<geheimnis>` — das Präfix dient der Wiedererkennung in Listen.
- * Die Tabelle gehört zu den Auth-Daten (nicht rekonstruierbar) → /data sichern.
+ * API keys with a role (admin | editor), managed in the admin. Only the SHA-256 hash is
+ * stored; the plaintext is shown exactly once on creation. Format: `cms_<prefix>_<secret>`,
+ * the prefix identifies the key in lists. The table is auth data (not reconstructible),
+ * so /data must be backed up.
  */
 import { createHash, randomBytes } from 'node:crypto';
 import { getDb } from './db';
@@ -25,7 +25,7 @@ export interface ApiKeyInfo {
 	id: string;
 	name: string;
 	role: Role;
-	/** Sichtbarer Anfang des Schlüssels, z. B. `cms_a1b2c3d4` */
+	/** Visible start of the key, e.g. `cms_a1b2c3d4` */
 	prefix: string;
 	createdAt: string;
 	createdBy: string;
@@ -45,15 +45,15 @@ interface Row {
 }
 
 const hash = (key: string) => createHash('sha256').update(key).digest('hex');
-const toInfo = (r: Row): ApiKeyInfo => ({
-	id: r.id,
-	name: r.name,
-	role: r.role === 'admin' ? 'admin' : 'editor',
-	prefix: r.prefix,
-	createdAt: r.created_at,
-	createdBy: r.created_by,
-	lastUsedAt: r.last_used_at,
-	revokedAt: r.revoked_at
+const toInfo = (row: Row): ApiKeyInfo => ({
+	id: row.id,
+	name: row.name,
+	role: row.role === 'admin' ? 'admin' : 'editor',
+	prefix: row.prefix,
+	createdAt: row.created_at,
+	createdBy: row.created_by,
+	lastUsedAt: row.last_used_at,
+	revokedAt: row.revoked_at
 });
 
 const lastUsedWritten = new Map<string, number>();
@@ -70,7 +70,7 @@ export const apiKeys = {
 		return rows.map(toInfo);
 	},
 
-	/** Legt einen Schlüssel an und liefert den Klartext — nur dieses eine Mal. */
+	/** Creates a key and returns the plaintext, this one time only. */
 	async create(
 		name: string,
 		role: Role,
@@ -103,7 +103,7 @@ export const apiKeys = {
 		return true;
 	},
 
-	/** Prüft einen Bearer-Schlüssel; liefert die Rolle oder null. Merkt sich die letzte Nutzung (gedrosselt). */
+	/** Verifies a bearer key; returns its info or null. Records last use, throttled to once a minute. */
 	async verify(key: string): Promise<ApiKeyInfo | null> {
 		if (!/^cms_[0-9a-f]{8}_[A-Za-z0-9_-]{20,}$/.test(key)) return null;
 		const db = await getDb();

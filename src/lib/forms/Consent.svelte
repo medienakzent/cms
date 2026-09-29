@@ -5,20 +5,19 @@
 	import { consent } from './consent-store.svelte';
 
 	/**
-	 * Datenschutz-Banner mit Einstellungen. Einmal ins Website-Layout setzen:
+	 * Privacy banner with settings. Place once in the website layout:
 	 *
 	 *   <Consent config={registry.config.consent} lang={data.lang} />
 	 *
-	 * Gestaltung: Klassen `cms-consent*` sind bewusst schlicht und über eigenes CSS
-	 * überschreibbar; alternativ eigene Darstellung über die Snippets.
+	 * The `cms-consent*` classes are deliberately plain and overridable with custom CSS.
 	 */
 	type Props = { config: ConsentConfig | null | undefined; lang?: string; class?: string };
-	let { config, lang = 'de', class: klass = '' }: Props = $props();
+	let { config, lang = 'de', class: className = '' }: Props = $props();
 
 	let showSettings = $state(false);
 	let draft = $state<Record<string, boolean>>({});
 
-	const t = (key: Parameters<typeof consentText>[2]) =>
+	const text = (key: Parameters<typeof consentText>[2]) =>
 		config ? consentText(config, lang, key) : '';
 
 	onMount(() => {
@@ -30,9 +29,9 @@
 
 	function openSettings() {
 		draft = Object.fromEntries(
-			(config?.categories ?? []).map((c) => [
-				c.id,
-				c.required ? true : (consent.decisions?.[c.id] ?? false)
+			(config?.categories ?? []).map((category) => [
+				category.id,
+				category.required ? true : (consent.decisions?.[category.id] ?? false)
 			])
 		);
 		showSettings = true;
@@ -41,39 +40,40 @@
 
 {#if config && consent.open}
 	<div
-		class="cms-consent {klass}"
+		class="cms-consent {className}"
 		role="dialog"
 		aria-modal="true"
 		aria-labelledby="cms-consent-title"
 	>
 		<div class="cms-consent__card">
-			<h2 id="cms-consent-title" class="cms-consent__title">{t('title')}</h2>
-			<p class="cms-consent__text">{t('text')}</p>
+			<h2 id="cms-consent-title" class="cms-consent__title">{text('title')}</h2>
+			<p class="cms-consent__text">{text('text')}</p>
 
 			{#if showSettings}
 				<ul class="cms-consent__categories">
-					{#each config.categories as c (c.id)}
+					{#each config.categories as category (category.id)}
 						<li class="cms-consent__category">
 							<label>
 								<input
 									type="checkbox"
-									checked={c.required || draft[c.id]}
-									disabled={c.required}
-									onchange={(e) => (draft = { ...draft, [c.id]: e.currentTarget.checked })}
+									checked={category.required || draft[category.id]}
+									disabled={category.required}
+									onchange={(event) =>
+										(draft = { ...draft, [category.id]: event.currentTarget.checked })}
 								/>
 								<span class="cms-consent__label"
-									>{localized(c.label, lang)}{#if c.required}
-										<em>({t('required')})</em>{/if}</span
+									>{localized(category.label, lang)}{#if category.required}
+										<em>({text('required')})</em>{/if}</span
 								>
 							</label>
-							{#if c.description}<p class="cms-consent__description">
-									{localized(c.description, lang)}
+							{#if category.description}<p class="cms-consent__description">
+									{localized(category.description, lang)}
 								</p>{/if}
-							{#if config.services.some((s) => s.category === c.id)}
+							{#if config.services.some((service) => service.category === category.id)}
 								<p class="cms-consent__services">
 									{config.services
-										.filter((s) => s.category === c.id)
-										.map((s) => s.name)
+										.filter((service) => service.category === category.id)
+										.map((service) => service.name)
 										.join(', ')}
 								</p>
 							{/if}
@@ -86,23 +86,23 @@
 				<button
 					type="button"
 					class="cms-consent__btn cms-consent__btn--primary"
-					onclick={() => consent.acceptAll()}>{t('acceptAll')}</button
+					onclick={() => consent.acceptAll()}>{text('acceptAll')}</button
 				>
 				<button type="button" class="cms-consent__btn" onclick={() => consent.rejectAll()}
-					>{t('rejectAll')}</button
+					>{text('rejectAll')}</button
 				>
 				{#if showSettings}
 					<button type="button" class="cms-consent__btn" onclick={() => consent.set(draft)}
-						>{t('save')}</button
+						>{text('save')}</button
 					>
 				{:else}
 					<button
 						type="button"
 						class="cms-consent__btn cms-consent__btn--link"
-						onclick={openSettings}>{t('settings')}</button
+						onclick={openSettings}>{text('settings')}</button
 					>
 				{/if}
-				<a href={config.privacyHref} class="cms-consent__privacy">{t('privacyLink')}</a>
+				<a href={config.privacyHref} class="cms-consent__privacy">{text('privacyLink')}</a>
 			</div>
 		</div>
 	</div>

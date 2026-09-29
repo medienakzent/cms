@@ -5,15 +5,23 @@ import type { IndexRow } from '../../types';
 
 export async function load({ params, url }: ServerLoadEvent) {
 	const { registry, config } = getRuntime();
-	const def = registry.collections[params.collection ?? ''];
-	if (!def) error(404, 'Collection nicht gefunden');
-	const lang = url.searchParams.get('lang') ?? config.defaultLanguage;
-	const q = url.searchParams.get('q') ?? '';
-	const all = await collection(def.name).list({ status: 'all', q: q || undefined, limit: 200 });
+	const definition = registry.collections[params.collection ?? ''];
+	if (!definition) error(404, 'Collection nicht gefunden');
+	const requested = url.searchParams.get('lang');
+	const lang =
+		requested && config.languages.some((language) => language.code === requested)
+			? requested
+			: config.defaultLanguage;
+	const searchQuery = url.searchParams.get('q') ?? '';
+	const result = await collection(definition.name).list({
+		status: 'all',
+		q: searchQuery || undefined,
+		limit: 200
+	});
 
-	// Eine Zeile je Slug: bevorzugt die gewählte Sprache; sonst die erste vorhandene.
+	// One row per slug: prefer the selected language, otherwise the first one found.
 	const bySlug = new Map<string, { row: IndexRow; langs: IndexRow[] }>();
-	for (const row of all.items) {
+	for (const row of result.items) {
 		const entry = bySlug.get(row.slug) ?? { row, langs: [] };
 		if (row.lang === lang) entry.row = row;
 		entry.langs.push(row);
@@ -21,9 +29,9 @@ export async function load({ params, url }: ServerLoadEvent) {
 	}
 	return {
 		lang,
-		q,
-		def: { name: def.name, label: def.label, labelPlural: def.labelPlural },
+		q: searchQuery,
+		def: { name: definition.name, label: definition.label, labelPlural: definition.labelPlural },
 		rows: [...bySlug.values()],
-		breadcrumbs: [{ label: 'Übersicht', href: '/admin' }, { label: def.labelPlural }]
+		breadcrumbs: [{ label: 'Übersicht', href: '/admin' }, { label: definition.labelPlural }]
 	};
 }

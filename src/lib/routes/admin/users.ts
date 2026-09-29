@@ -11,7 +11,7 @@ export interface AdminUser {
 	banned: boolean;
 }
 
-/** Nutzerliste — nur für Administratoren (das Auth-Plugin prüft zusätzlich selbst). */
+/** User list, admins only (the auth plugin checks this as well). */
 export async function load({ locals, request }: ServerLoadEvent) {
 	if (locals.user?.role !== 'admin') error(403, 'Nur für Administratoren');
 	const auth = await getAuth();
@@ -19,13 +19,14 @@ export async function load({ locals, request }: ServerLoadEvent) {
 		query: { limit: 200, sortBy: 'createdAt', sortDirection: 'asc' },
 		headers: request.headers
 	});
-	const users: AdminUser[] = result.users.map((u) => ({
-		id: u.id,
-		name: u.name,
-		email: u.email,
-		role: (u as { role?: string | null }).role ?? 'editor',
-		createdAt: u.createdAt instanceof Date ? u.createdAt.toISOString() : String(u.createdAt),
-		banned: !!(u as { banned?: boolean | null }).banned
+	const users: AdminUser[] = result.users.map((user) => ({
+		id: user.id,
+		name: user.name,
+		email: user.email,
+		role: (user as { role?: string | null }).role ?? 'editor',
+		createdAt:
+			user.createdAt instanceof Date ? user.createdAt.toISOString() : String(user.createdAt),
+		banned: !!(user as { banned?: boolean | null }).banned
 	}));
 	return {
 		users,

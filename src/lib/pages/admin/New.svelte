@@ -32,8 +32,8 @@
 			id="slug"
 			name="slug"
 			value={suggested}
-			oninput={(e) => {
-				slug = slugify(e.currentTarget.value);
+			oninput={(event) => {
+				slug = slugify(event.currentTarget.value);
 				slugTouched = true;
 			}}
 			pattern="[a-z0-9]([a-z0-9-]*[a-z0-9])?"

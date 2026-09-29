@@ -3,14 +3,14 @@ import type { Registry } from './registry';
 
 const KEY = Symbol.for('@medienakzent/cms');
 
-/** Registry für Komponenten bereitstellen — im Wurzel-Layout der Website und im Admin-Layout. */
+/** Provides the registry to components; call in the site root layout and the admin layout. */
 export function setCmsContext(registry: Registry): Registry {
 	return setContext(KEY, registry);
 }
 
 export function getCmsContext(): Registry {
-	const r = getContext<Registry | undefined>(KEY);
-	if (!r)
+	const registry = getContext<Registry | undefined>(KEY);
+	if (!registry)
 		throw new Error('CMS-Registry fehlt im Kontext: setCmsContext(registry) im Layout aufrufen.');
-	return r;
+	return registry;
 }

@@ -9,18 +9,18 @@
 	setCmsContext(registry);
 	const config = registry.config;
 
-	/** Gleiche Seite in anderer Sprache, sofern sie dort existiert. */
+	/** Same page in each other language, falling back to home where it does not exist. */
 	const altLangs = $derived(
-		config.languages.map((l) => {
-			const available = (page.data.doc?.langs ?? []) as { lang: string; status: string }[];
-			const exists = available.some(
-				(a) => a.lang === l.code && (a.status === 'published' || data.preview)
+		config.languages.map((language) => {
+			const availableLanguages = (page.data.doc?.langs ?? []) as { lang: string; status: string }[];
+			const exists = availableLanguages.some(
+				(entry) => entry.lang === language.code && (entry.status === 'published' || data.preview)
 			);
 			const path = (page.data.docPath as string | undefined) ?? '/';
 			return {
-				...l,
-				href: localizePath(config, l.code, exists ? path : '/'),
-				current: l.code === data.lang
+				...language,
+				href: localizePath(config, language.code, exists ? path : '/'),
+				current: language.code === data.lang
 			};
 		})
 	);
@@ -39,9 +39,11 @@
 			{/each}
 			{#if config.languages.length > 1}
 				<span class="text-muted-foreground flex gap-2 border-s ps-4">
-					{#each altLangs as l (l.code)}
-						<a href={l.href} hreflang={l.code} class={l.current ? 'font-medium' : ''}
-							>{l.code.toUpperCase()}</a
+					{#each altLangs as language (language.code)}
+						<a
+							href={language.href}
+							hreflang={language.code}
+							class={language.current ? 'font-medium' : ''}>{language.code.toUpperCase()}</a
 						>
 					{/each}
 				</span>
@@ -68,5 +70,5 @@
 	{/if}
 </footer>
 
-<!-- Datenschutz-Banner: erscheint nur, wenn in cms.config.ts optionale Dienste eingetragen sind. -->
+<!-- Consent banner: only shown when cms.config.ts lists optional services. -->
 <Consent config={config.consent} lang={data.lang} />

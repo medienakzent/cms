@@ -1,32 +1,27 @@
 /**
- * Datei-Uploads aus Formularen: Ablage unter `mail/uploads/<token>/`, Download
- * nur mit Token (Link in der Mail), Aufräumen nach Aufbewahrungsfrist.
+ * Form file uploads: stored under `mail/uploads/<token>/`, downloadable only
+ * with the token (link in the mail), pruned after the retention period.
  */
 import { nanoid } from 'nanoid';
 import type { FileField } from '../../fields';
 import type { FileRef, ValidationIssue } from '../../types';
 import { serverConfig } from '../runtime';
 import { getStorage } from '../storage';
+import { formatBytes } from '../../format';
+import { extensionFor } from '../mime';
 
-const TOKEN_RE = /^[A-Za-z0-9_-]{24}$/;
+const TOKEN_PATTERN = /^[A-Za-z0-9_-]{24}$/;
 
-/** Signaturen, mit denen der vom Browser gemeldete Typ verifiziert wird. */
-const MAGIC: Record<string, (b: Buffer) => boolean> = {
-	'application/pdf': (b) => b.subarray(0, 4).toString('latin1') === '%PDF',
-	'image/png': (b) => b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4e && b[3] === 0x47,
-	'image/jpeg': (b) => b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff,
-	'image/webp': (b) =>
-		b.subarray(0, 4).toString('latin1') === 'RIFF' &&
-		b.subarray(8, 12).toString('latin1') === 'WEBP',
-	'image/gif': (b) => b.subarray(0, 3).toString('latin1') === 'GIF'
-};
-
-const EXT: Record<string, string> = {
-	'application/pdf': '.pdf',
-	'image/png': '.png',
-	'image/jpeg': '.jpg',
-	'image/webp': '.webp',
-	'image/gif': '.gif'
+/** File signatures used to verify the type reported by the browser. */
+const MAGIC: Record<string, (bytes: Buffer) => boolean> = {
+	'application/pdf': (bytes) => bytes.subarray(0, 4).toString('latin1') === '%PDF',
+	'image/png': (bytes) =>
+		bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47,
+	'image/jpeg': (bytes) => bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff,
+	'image/webp': (bytes) =>
+		bytes.subarray(0, 4).toString('latin1') === 'RIFF' &&
+		bytes.subarray(8, 12).toString('latin1') === 'WEBP',
+	'image/gif': (bytes) => bytes.subarray(0, 3).toString('latin1') === 'GIF'
 };
 
 export function safeFileName(name: string, mime: string): string {
@@ -39,16 +34,9 @@ export function safeFileName(name: string, mime: string): string {
 		.replace(/\s+/g, '_')
 		.replace(/_{2,}/g, '_')
 		.slice(-120);
-	const ext = EXT[mime];
-	if (ext && !cleaned.toLowerCase().endsWith(ext)) cleaned += ext;
-	return cleaned || `datei${ext ?? ''}`;
-}
-
-export function formatBytes(bytes: number): string {
-	const mb = bytes / 1048576;
-	return mb < 0.1
-		? `${Math.max(1, Math.round(bytes / 1024))} KB`
-		: `${mb.toFixed(1).replace('.', ',')} MB`;
+	const extension = extensionFor(mime);
+	if (extension && !cleaned.toLowerCase().endsWith(extension)) cleaned += extension;
+	return cleaned || `datei${extension ?? ''}`;
 }
 
 export interface CheckedFile {
@@ -58,7 +46,7 @@ export interface CheckedFile {
 	bytes: Buffer;
 }
 
-/** Prüft eine hochgeladene Datei gegen die Felddefinition (Typ, Signatur, Größe). */
+/** Checks an uploaded file against the field definition (type, signature, size). */
 export async function checkFile(
 	key: string,
 	field: FileField,
@@ -75,20 +63,20 @@ export async function checkFile(
 	if (accept.length && !accept.includes(mime)) {
 		issues.push({
 			path: key,
-			message: `Erlaubte Dateitypen: ${accept.map((m) => EXT[m] ?? m).join(', ')}`
+			message: `Erlaubte Dateitypen: ${accept.map((type) => extensionFor(type) ?? type).join(', ')}`
 		});
 		return null;
 	}
 	const bytes = Buffer.from(await file.arrayBuffer());
-	const sniff = MAGIC[mime];
-	if (sniff && !sniff(bytes)) {
+	const matchesSignature = MAGIC[mime];
+	if (matchesSignature && !matchesSignature(bytes)) {
 		issues.push({ path: key, message: 'Die Datei entspricht nicht ihrem Dateityp' });
 		return null;
 	}
 	return { key, name: file.name, mime, bytes };
 }
 
-/** Legt die Dateien einer Sendung ab und liefert die Referenzen mit Download-URLs. */
+/** Stores the files of one submission and returns the references with download URLs. */
 export async function storeFiles(
 	files: CheckedFile[],
 	origin: string
@@ -96,16 +84,16 @@ export async function storeFiles(
 	const token = nanoid(24);
 	const storage = getStorage();
 	const refs: Record<string, FileRef> = {};
-	for (const f of files) {
-		const stored = `${f.key}__${safeFileName(f.name, f.mime)}`;
-		const path = `mail/uploads/${token}/${stored}`;
-		await storage.write(path, f.bytes);
-		refs[f.key] = {
-			name: f.name,
-			size: f.bytes.length,
-			mime: f.mime,
+	for (const file of files) {
+		const storedName = `${file.key}__${safeFileName(file.name, file.mime)}`;
+		const path = `mail/uploads/${token}/${storedName}`;
+		await storage.write(path, file.bytes);
+		refs[file.key] = {
+			name: file.name,
+			size: file.bytes.length,
+			mime: file.mime,
 			path,
-			url: `${origin}/api/mail/download/${token}/${encodeURIComponent(stored)}`
+			url: `${origin}/api/mail/download/${token}/${encodeURIComponent(storedName)}`
 		};
 	}
 	await storage.write(
@@ -119,13 +107,24 @@ export async function storeFiles(
 	return { token, refs };
 }
 
-/** Datei für den Download auflösen — nur mit gültigem Token, nur innerhalb des Ordners. */
+async function readUploadMeta(token: string): Promise<{ files: FileRef[] } | null> {
+	const raw = await getStorage().read(`mail/uploads/${token}/meta.json`);
+	if (!raw) return null;
+	try {
+		const parsed = JSON.parse(raw) as { files?: unknown };
+		return Array.isArray(parsed.files) ? { files: parsed.files as FileRef[] } : null;
+	} catch {
+		return null;
+	}
+}
+
+/** Resolves a file for download: valid token only, never outside the folder. */
 export async function resolveUpload(
 	token: string,
 	name: string
 ): Promise<{ bytes: Buffer; mime: string; name: string } | null> {
 	if (
-		!TOKEN_RE.test(token) ||
+		!TOKEN_PATTERN.test(token) ||
 		name.includes('/') ||
 		name.includes('\\') ||
 		name.startsWith('.') ||
@@ -136,27 +135,26 @@ export async function resolveUpload(
 	const path = `mail/uploads/${token}/${name}`;
 	const bytes = await storage.readBytes(path);
 	if (!bytes) return null;
-	const meta = await storage.read(`mail/uploads/${token}/meta.json`);
-	const entry = meta
-		? (JSON.parse(meta).files as FileRef[]).find((f) => f.path === path)
-		: undefined;
+	const entry = (await readUploadMeta(token))?.files.find((file) => file.path === path);
 	return { bytes, mime: entry?.mime ?? 'application/octet-stream', name: entry?.name ?? name };
 }
 
-/** Löscht Upload-Ordner, die älter als die Aufbewahrungsfrist sind. */
+/** Deletes upload folders older than the retention period. */
 export async function pruneUploads(): Promise<number> {
 	const days = serverConfig().mail.uploadRetentionDays;
 	if (!days) return 0;
 	const storage = getStorage();
 	const cutoff = Date.now() - days * 86_400_000;
 	let removed = 0;
-	const metas = (await storage.list('mail/uploads')).filter((f) => f.endsWith('/meta.json'));
-	for (const meta of metas) {
-		const st = await storage.stat(meta);
-		if (!st || Date.parse(st.mtime) >= cutoff) continue;
-		const dir = meta.slice(0, -'/meta.json'.length);
-		if (storage.removeDir) await storage.removeDir(dir);
-		else for (const f of await storage.list(dir)) await storage.remove(f);
+	const metaFiles = (await storage.list('mail/uploads')).filter((file) =>
+		file.endsWith('/meta.json')
+	);
+	for (const metaFile of metaFiles) {
+		const stat = await storage.stat(metaFile);
+		if (!stat || Date.parse(stat.mtime) >= cutoff) continue;
+		const directory = metaFile.slice(0, -'/meta.json'.length);
+		if (storage.removeDir) await storage.removeDir(directory);
+		else for (const file of await storage.list(directory)) await storage.remove(file);
 		removed++;
 	}
 	return removed;

@@ -1,4 +1,5 @@
 import { timingSafeEqual } from 'node:crypto';
+import { jsonError } from './api';
 import type { Handle } from '@sveltejs/kit';
 import type { Registry } from '../registry';
 import { getAuth, getSessionUser } from './auth';
@@ -9,22 +10,22 @@ import { initRuntime } from './runtime';
 import { apiKeys } from './api-keys';
 
 export interface HandleOptions {
-	/** Umgebung — im Kundenprojekt `env` aus `$env/dynamic/private`. */
+	/** Environment; in the customer project `env` from `$env/dynamic/private`. */
 	env: Env;
-	/** `building` aus `$app/environment`: beim Build keine Datenbank anfassen. */
+	/** `building` from `$app/environment`: never touch the database during the build. */
 	building?: boolean;
-	/** Pfad des Admins (Default `/admin`). */
+	/** Admin path (default `/admin`). */
 	adminPath?: string;
 }
 
-/** Konstantzeit-Vergleich für Geheimnisse. */
-function safeEqual(a: string, b: string): boolean {
-	const x = Buffer.from(a);
-	const y = Buffer.from(b);
-	return x.length === y.length && timingSafeEqual(x, y);
+/** Constant-time comparison for secrets. */
+function safeEqual(left: string, right: string): boolean {
+	const leftBytes = Buffer.from(left);
+	const rightBytes = Buffer.from(right);
+	return leftBytes.length === rightBytes.length && timingSafeEqual(leftBytes, rightBytes);
 }
 
-/** Schutz-Header für Admin und API — die Website bleibt unberührt (Kundensache). */
+/** Protective headers for admin and API; the website itself is the customer's concern. */
 function harden(response: Response): Response {
 	response.headers.set('x-content-type-options', 'nosniff');
 	response.headers.set('x-frame-options', 'DENY');
@@ -32,55 +33,62 @@ function harden(response: Response): Response {
 	return response;
 }
 
-const jsonError = (status: number, error: string, headers: Record<string, string> = {}) =>
-	new Response(JSON.stringify({ error }), {
-		status,
-		headers: { 'content-type': 'application/json', ...headers }
-	});
+/**
+ * SvelteKit routes on the decoded path, so guards must decide on the decoded path
+ * as well. Undecodable paths are rejected.
+ */
+function decodedPathname(pathname: string): string | null {
+	try {
+		return decodeURIComponent(pathname);
+	} catch {
+		return null;
+	}
+}
 
 /**
- * SvelteKit-Handle des CMS: Laufzeit initialisieren, Auth-Endpunkte bedienen,
- * Session laden, Admin schützen, API mit Token/Session und Rate-Limit absichern.
- * Im Kundenprojekt (hooks.server.ts):
+ * SvelteKit handle of the CMS: initialises the runtime, serves the auth endpoints,
+ * loads the session, guards the admin and secures the API with token/session and rate limits.
+ * In the customer project (hooks.server.ts):
  *
  *   export const handle = createHandle(registry, { env, building });
  */
 export function createHandle(registry: Registry, options: HandleOptions): Handle {
 	const runtime = initRuntime(registry, options.env);
-	const rl = runtime.server.rateLimit;
-	const userLimiter = createRateLimiter({ windowMs: 60_000, max: rl.perMinute });
-	const anonLimiter = createRateLimiter({ windowMs: 60_000, max: rl.anonPerMinute });
-	const mailLimiter = createRateLimiter({ windowMs: 60_000, max: rl.mailPerMinute });
-	const captchaLimiter = createRateLimiter({ windowMs: 60_000, max: rl.captchaPerMinute });
+	const rateLimit = runtime.server.rateLimit;
+	const userLimiter = createRateLimiter({ windowMs: 60_000, max: rateLimit.perMinute });
+	const anonLimiter = createRateLimiter({ windowMs: 60_000, max: rateLimit.anonPerMinute });
+	const mailLimiter = createRateLimiter({ windowMs: 60_000, max: rateLimit.mailPerMinute });
+	const captchaLimiter = createRateLimiter({ windowMs: 60_000, max: rateLimit.captchaPerMinute });
 	const adminPath = options.adminPath ?? '/admin';
 
 	return async ({ event, resolve }) => {
 		if (options.building) return resolve(event);
 		await ensureReady();
 		const auth = await getAuth();
-		const { pathname } = event.url;
+		const pathname = decodedPathname(event.url.pathname);
+		if (pathname === null) return jsonError(400, 'Ungültiger Pfad');
 
-		// Auth-Endpunkte (Login, OAuth-Callbacks, Session) bedient Better Auth direkt.
+		// Auth endpoints (login, OAuth callbacks, session) are served by Better Auth directly.
 		if (pathname.startsWith('/api/auth/')) return auth.handler(event.request);
 
-		// Captcha-Aufgaben: öffentlich, eigenes (großzügigeres) Rate-Limit je IP.
+		// Captcha challenges: public, own (more generous) rate limit per IP.
 		if (pathname.startsWith('/api/captcha/')) {
-			const r = captchaLimiter.check(`ip:${event.getClientAddress()}`);
-			if (!r.ok)
-				return jsonError(429, 'Zu viele Anfragen', { 'retry-after': String(r.retryAfter) });
+			const result = captchaLimiter.check(`ip:${event.getClientAddress()}`);
+			if (!result.ok)
+				return jsonError(429, 'Zu viele Anfragen', { 'retry-after': String(result.retryAfter) });
 			return resolve(event);
 		}
 
-		// Öffentliche Formular-API: nur Rate-Limit je IP, keine Anmeldung.
+		// Public form API: rate limit per IP only, no sign-in.
 		if (pathname.startsWith('/api/mail/') && !pathname.startsWith('/api/mail/download/')) {
-			const r = mailLimiter.check(`ip:${event.getClientAddress()}`);
-			if (!r.ok)
-				return jsonError(429, 'Zu viele Anfragen', { 'retry-after': String(r.retryAfter) });
+			const result = mailLimiter.check(`ip:${event.getClientAddress()}`);
+			if (!result.ok)
+				return jsonError(429, 'Zu viele Anfragen', { 'retry-after': String(result.retryAfter) });
 			return resolve(event);
 		}
 
-		// API-Zugänge (Bearer) — nur für /api/v1: verwaltete Schlüssel mit Rolle (Admin → Nutzer),
-		// optional der Bootstrap-Token API_TOKEN aus der Umgebung (Rolle admin, z. B. für den Seed).
+		// Bearer keys, /api/v1 only: managed keys with a role, optionally the bootstrap
+		// token API_TOKEN from the environment (role admin, e.g. for seeding).
 		const bearer = event.request.headers.get('authorization')?.replace(/^Bearer\s+/i, '');
 		event.locals.user = null;
 		if (pathname.startsWith('/api/v1/') && bearer) {
@@ -111,25 +119,26 @@ export function createHandle(registry: Registry, options: HandleOptions): Handle
 
 		if (pathname.startsWith('/api/v1/')) {
 			const user = event.locals.user;
-			const r = user
+			const result = user
 				? userLimiter.check(`u:${user.id}`)
 				: anonLimiter.check(`ip:${event.getClientAddress()}`);
-			const rlHeaders = {
-				'x-ratelimit-limit': String(r.limit),
-				'x-ratelimit-remaining': String(r.remaining)
+			const rateLimitHeaders = {
+				'x-ratelimit-limit': String(result.limit),
+				'x-ratelimit-remaining': String(result.remaining)
 			};
-			if (!r.ok)
+			if (!result.ok)
 				return jsonError(429, 'Zu viele Anfragen', {
-					...rlHeaders,
-					'retry-after': String(r.retryAfter)
+					...rateLimitHeaders,
+					'retry-after': String(result.retryAfter)
 				});
-			if (!user) return jsonError(401, 'Nicht angemeldet', rlHeaders);
+			if (!user) return jsonError(401, 'Nicht angemeldet', rateLimitHeaders);
 			const response = harden(await resolve(event));
-			for (const [k, v] of Object.entries(rlHeaders)) response.headers.set(k, v);
+			for (const [name, value] of Object.entries(rateLimitHeaders))
+				response.headers.set(name, value);
 			return response;
 		}
 
-		if (pathname.startsWith(adminPath)) {
+		if (pathname === adminPath || pathname.startsWith(`${adminPath}/`)) {
 			const open = pathname === `${adminPath}/login` || pathname === `${adminPath}/reset`;
 			if (!open && !event.locals.user) {
 				return new Response(null, {

@@ -1,9 +1,9 @@
 <script lang="ts">
 	import type { BlockProps } from '@medienakzent/cms';
 	import { mediaUrl } from '@medienakzent/cms';
-	import type def from './block';
+	import type definition from './block';
 
-	let { title, subtitle, image, layout, cta }: BlockProps<typeof def> = $props();
+	let { title, subtitle, image, layout, cta }: BlockProps<typeof definition> = $props();
 </script>
 
 <section class="relative overflow-hidden py-20 {layout === 'center' ? 'text-center' : ''}">

@@ -1,9 +1,9 @@
 /**
- * Bausteine für Formulare und Datenschutz auf der Website (client-sicher):
- *   <Captcha config={captcha} />          im Formular
- *   <Consent config={config.consent} />   im Layout
+ * Client-safe building blocks for forms and privacy on the website:
+ *   <Captcha config={captcha} />          in the form
+ *   <Consent config={config.consent} />   in the layout
  *   consent.has('analytics'), openConsent(), track('name', {...})
- *   Tracking-Adapter: ga4(), matomo(), script()
+ *   tracking adapters: ga4(), matomo(), script()
  */
 export { default as Captcha } from './Captcha.svelte';
 export { default as Consent } from './Consent.svelte';

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatDateTime } from '../../format';
 	import { Badge } from '@compdata/ui/badge';
 	import { Button } from '@compdata/ui/button';
 	import * as Table from '@compdata/ui/table';
@@ -6,9 +7,8 @@
 
 	let { data }: { data: Awaited<ReturnType<typeof load>> } = $props();
 
-	const fmt = (iso: string) =>
-		new Date(iso).toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' });
-	const variant = (s: string) => (s === 'sent' ? 'positive' : s === 'spam' ? 'neutral' : 'signal');
+	const variant = (status: string) =>
+		status === 'sent' ? 'positive' : status === 'spam' ? 'neutral' : 'signal';
 	const statusLabel: Record<string, string> = {
 		all: 'Alle',
 		sent: 'Gesendet',
@@ -16,17 +16,16 @@
 		spam: 'Spam'
 	};
 	const href = (patch: Record<string, string | number>) => {
-		const p = new URLSearchParams();
+		const searchParams = new URLSearchParams();
 		const merged = { template: data.template, status: data.status, page: 1, ...patch };
-		for (const [k, v] of Object.entries(merged))
-			if (v && v !== 'all' && v !== 1) p.set(k, String(v));
-		const s = p.toString();
-		return `/admin/submissions${s ? `?${s}` : ''}`;
+		for (const [key, value] of Object.entries(merged))
+			if (value && value !== 'all' && value !== 1) searchParams.set(key, String(value));
+		const queryString = searchParams.toString();
+		return `/admin/submissions${queryString ? `?${queryString}` : ''}`;
 	};
-	/** Erste Textwerte als Kurzinfo der Zeile. */
-	const preview = (d: Record<string, unknown>) =>
-		Object.values(d)
-			.filter((v): v is string => typeof v === 'string' && v.trim() !== '')
+	const preview = (submissionData: Record<string, unknown>) =>
+		Object.values(submissionData)
+			.filter((value): value is string => typeof value === 'string' && value.trim() !== '')
 			.slice(0, 3)
 			.join(' · ')
 			.slice(0, 90);
@@ -46,12 +45,12 @@
 			? 'border-border'
 			: 'border-primary bg-primary/10'}">Alle Formulare</a
 	>
-	{#each data.templates as t (t.name)}
+	{#each data.templates as template (template.name)}
 		<a
-			href={href({ template: t.name })}
-			class="rounded-md border px-2 py-1 {data.template === t.name
+			href={href({ template: template.name })}
+			class="rounded-md border px-2 py-1 {data.template === template.name
 				? 'border-primary bg-primary/10'
-				: 'border-border'}">{t.label}</a
+				: 'border-border'}">{template.label}</a
 		>
 	{/each}
 	<span class="bg-border mx-1 h-5 w-px"></span>
@@ -79,23 +78,24 @@
 			</Table.TableRow>
 		</Table.TableHeader>
 		<Table.TableBody>
-			{#each data.items as s (s.id)}
+			{#each data.items as submission (submission.id)}
 				<Table.TableRow>
 					<Table.TableCell class="whitespace-nowrap"
-						><a href="/admin/submissions/{s.id}" class="font-medium hover:underline"
-							>{fmt(s.sentAt)}</a
+						><a href="/admin/submissions/{submission.id}" class="font-medium hover:underline"
+							>{formatDateTime(submission.sentAt)}</a
 						></Table.TableCell
 					>
 					<Table.TableCell
-						>{data.templates.find((t) => t.name === s.template)?.label ??
-							s.template}</Table.TableCell
+						>{data.templates.find((template) => template.name === submission.template)?.label ??
+							submission.template}</Table.TableCell
 					>
-					<Table.TableCell>{s.replyTo ?? '—'}</Table.TableCell>
+					<Table.TableCell>{submission.replyTo ?? '—'}</Table.TableCell>
 					<Table.TableCell class="text-muted-foreground max-w-md truncate"
-						>{s.subject || preview(s.data)}</Table.TableCell
+						>{submission.subject || preview(submission.data)}</Table.TableCell
 					>
 					<Table.TableCell
-						><Badge variant={variant(s.status)}>{statusLabel[s.status] ?? s.status}</Badge
+						><Badge variant={variant(submission.status)}
+							>{statusLabel[submission.status] ?? submission.status}</Badge
 						></Table.TableCell
 					>
 				</Table.TableRow>

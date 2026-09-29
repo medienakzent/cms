@@ -1,6 +1,6 @@
 import type { Field, FieldMap } from './fields';
 
-/** Eine Zeile im Facetten-Index: Feldpfad → Wert (Text und/oder Zahl). */
+/** One row in the facet index: field path -> value (text and/or number). */
 export interface Facet {
 	field: string;
 	text: string;
@@ -8,9 +8,9 @@ export interface Facet {
 }
 
 /**
- * Leitet Facetten aus den zusammengeführten Feldern eines Dokuments ab.
- * Welche Feldarten indiziert werden, definiert query.ts (FACET_KINDS) —
- * hier dieselbe Menge, damit Filter und Index nie auseinanderlaufen.
+ * Derives facets from the merged fields of a document. The indexed field kinds are
+ * defined by query.ts (FACET_KINDS); the same set is used here so filters and index
+ * never diverge.
  */
 export function extractFacets(
 	fields: FieldMap,
@@ -19,45 +19,52 @@ export function extractFacets(
 ): Facet[] {
 	const out: Facet[] = [];
 	for (const [key, field] of Object.entries(fields)) {
-		const v = value?.[key];
-		const path = `${prefix}${key}`;
-		facetsOf(field, v, path, out);
+		facetsOf(field, value?.[key], `${prefix}${key}`, out);
 	}
 	return out;
 }
 
-function facetsOf(field: Field, v: unknown, path: string, out: Facet[]) {
+function facetsOf(field: Field, value: unknown, path: string, out: Facet[]) {
 	switch (field.kind) {
 		case 'text':
-			if (typeof v === 'string' && v.trim())
-				out.push({ field: path, text: v.slice(0, 500), num: null });
+			if (typeof value === 'string' && value.trim())
+				out.push({ field: path, text: value.slice(0, 500), num: null });
 			break;
 		case 'number':
-			if (typeof v === 'number' && Number.isFinite(v))
-				out.push({ field: path, text: String(v), num: v });
+			if (typeof value === 'number' && Number.isFinite(value))
+				out.push({ field: path, text: String(value), num: value });
 			break;
 		case 'boolean':
-			out.push({ field: path, text: v === true ? 'true' : 'false', num: v === true ? 1 : 0 });
+			out.push({
+				field: path,
+				text: value === true ? 'true' : 'false',
+				num: value === true ? 1 : 0
+			});
 			break;
 		case 'date':
-			if (typeof v === 'string' && v) {
-				const t = Date.parse(v);
-				if (!Number.isNaN(t)) out.push({ field: path, text: v, num: t });
+			if (typeof value === 'string' && value) {
+				const timestamp = Date.parse(value);
+				if (!Number.isNaN(timestamp)) out.push({ field: path, text: value, num: timestamp });
 			}
 			break;
 		case 'select':
 		case 'reference':
-			if (typeof v === 'string' && v) out.push({ field: path, text: v, num: null });
+			if (typeof value === 'string' && value) out.push({ field: path, text: value, num: null });
 			break;
 		case 'multiselect':
 		case 'references':
-			if (Array.isArray(v))
-				for (const x of v)
-					if (typeof x === 'string' && x) out.push({ field: path, text: x, num: null });
+			if (Array.isArray(value))
+				for (const entry of value)
+					if (typeof entry === 'string' && entry) out.push({ field: path, text: entry, num: null });
 			break;
 		case 'group':
-			for (const [k, f] of Object.entries(field.fields)) {
-				facetsOf(f, (v as Record<string, unknown> | undefined)?.[k], `${path}.${k}`, out);
+			for (const [key, groupField] of Object.entries(field.fields)) {
+				facetsOf(
+					groupField,
+					(value as Record<string, unknown> | undefined)?.[key],
+					`${path}.${key}`,
+					out
+				);
 			}
 			break;
 		default:

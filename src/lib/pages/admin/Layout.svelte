@@ -18,7 +18,7 @@
 		children,
 		registry
 	}: { data: AdminLayoutData; children: Snippet; registry: Registry } = $props();
-	// Registry ist für die Lebensdauer der App konstant.
+	// The registry is constant for the lifetime of the app.
 	// svelte-ignore state_referenced_locally
 	setCmsContext(registry);
 

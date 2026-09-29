@@ -7,7 +7,7 @@ export type { DbDriver, Dialect } from './driver';
 let driver: DbDriver | null = null;
 let pending: Promise<DbDriver> | null = null;
 
-/** Datenbank-Singleton, ausgewählt über DATABASE_URL (`sqlite:<datei>` | `postgres://…`). */
+/** Database singleton, selected via DATABASE_URL (`sqlite:<file>` | `postgres://…`). */
 export async function getDb(): Promise<DbDriver> {
 	if (driver) return driver;
 	if (!pending) {

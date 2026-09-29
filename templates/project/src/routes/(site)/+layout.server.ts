@@ -2,7 +2,7 @@ import { localizePath } from '@medienakzent/cms';
 import { cms } from '@medienakzent/cms/server';
 import type { LayoutServerLoad } from './$types';
 
-/** Website-Layout: Navigation aus veröffentlichten Seiten der aktuellen Sprache. */
+/** Site layout: navigation from the published pages of the current language. */
 export const load: LayoutServerLoad = async ({ params, locals }) => {
 	const config = cms.config;
 	const lang = (params as { lang?: string }).lang ?? config.defaultLanguage;
@@ -17,13 +17,13 @@ export const load: LayoutServerLoad = async ({ params, locals }) => {
 		lang,
 		languages: config.languages,
 		siteName: config.site.name,
-		nav: pages.items.map((p) => ({
-			slug: p.slug,
-			title: p.title,
-			href: localizePath(config, lang, p.slug === 'home' ? '/' : `/${p.slug}`)
+		nav: pages.items.map((page) => ({
+			slug: page.slug,
+			title: page.title,
+			href: localizePath(config, lang, page.slug === 'home' ? '/' : `/${page.slug}`)
 		})),
 		preview: !!locals.user,
-		// Captcha-Konfiguration für Formulare (Provider, Site-Key, Challenge-URL)
+		// Captcha config for forms (provider, site key, challenge URL)
 		captcha: cms.forms.captcha()
 	};
 };

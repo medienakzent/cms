@@ -1,8 +1,8 @@
 /**
- * Index-Repository: abgeleitete Daten für Listen, Filter, Suche und Verweise.
- * Alles hier kann per `cms.reindex()` aus dem Storage neu erzeugt werden.
- * Ändert sich das Schema, INDEX_SCHEMA_VERSION erhöhen — die Tabellen werden
- * dann beim Start verworfen und neu aufgebaut.
+ * Index repository: derived data for lists, filters, search and references.
+ * Everything here can be rebuilt from the storage via `cms.reindex()`.
+ * On schema changes bump INDEX_SCHEMA_VERSION; the tables are then dropped
+ * and recreated at startup.
  */
 import type { Facet } from '../../facets';
 import type { Filter, ListQuery } from '../../query';
@@ -63,7 +63,7 @@ CREATE TABLE IF NOT EXISTS cms_media (
 	created_by TEXT NOT NULL DEFAULT ''
 );`;
 
-interface DocRow {
+interface DocumentRow {
 	collection: string;
 	slug: string;
 	lang: string;
@@ -93,37 +93,37 @@ interface MediaRow {
 	created_by: string;
 }
 
-function toIndexRow(r: DocRow): IndexRow {
+function toIndexRow(row: DocumentRow): IndexRow {
 	return {
-		collection: r.collection,
-		slug: r.slug,
-		lang: r.lang,
-		id: r.id,
-		status: r.status as DocumentStatus,
-		title: r.title,
-		excerpt: r.excerpt,
-		refs: JSON.parse(r.refs || '[]'),
-		createdAt: r.created_at,
-		updatedAt: r.updated_at,
-		updatedBy: r.updated_by,
-		publishedAt: r.published_at
+		collection: row.collection,
+		slug: row.slug,
+		lang: row.lang,
+		id: row.id,
+		status: row.status as DocumentStatus,
+		title: row.title,
+		excerpt: row.excerpt,
+		refs: JSON.parse(row.refs || '[]'),
+		createdAt: row.created_at,
+		updatedAt: row.updated_at,
+		updatedBy: row.updated_by,
+		publishedAt: row.published_at
 	};
 }
 
-function toMediaItem(r: MediaRow): MediaItem {
+function toMediaItem(row: MediaRow): MediaItem {
 	return {
-		id: r.id,
-		src: r.src,
-		mime: r.mime,
-		kind: r.kind as MediaItem['kind'],
-		width: r.width,
-		height: r.height,
-		alt: r.alt,
-		variants: JSON.parse(r.variants || '{}'),
-		originalName: r.original_name,
-		size: Number(r.size),
-		createdAt: r.created_at,
-		createdBy: r.created_by
+		id: row.id,
+		src: row.src,
+		mime: row.mime,
+		kind: row.kind as MediaItem['kind'],
+		width: row.width,
+		height: row.height,
+		alt: row.alt,
+		variants: JSON.parse(row.variants || '{}'),
+		originalName: row.original_name,
+		size: Number(row.size),
+		createdAt: row.created_at,
+		createdBy: row.created_by
 	};
 }
 
@@ -137,52 +137,61 @@ const COLUMN_SORT: Record<string, string> = {
 	slug: 'd.slug'
 };
 
-/** Eine Filterbedingung als EXISTS-Unterabfrage auf den Facetten-Index (portables SQL). */
-function filterSql(f: Filter, params: unknown[]): string {
-	const col =
-		f.mode === 'num' ? 'f.value_num' : f.mode === 'itext' ? 'LOWER(f.value_text)' : 'f.value_text';
-	const wrap = (v: string | number) =>
-		f.mode === 'itext' && typeof v === 'string' ? v.toLowerCase() : v;
-	let cond: string;
+/** LIKE pattern with wildcards and the escape character escaped. */
+function likePattern(value: string): string {
+	return `%${value.replace(/[\\%_]/g, (character) => `\\${character}`)}%`;
+}
+
+/** One filter condition as an EXISTS subquery on the facet index (portable SQL). */
+function filterSql(filter: Filter, params: unknown[]): string {
+	const column =
+		filter.mode === 'num'
+			? 'f.value_num'
+			: filter.mode === 'itext'
+				? 'LOWER(f.value_text)'
+				: 'f.value_text';
+	const normalizeValue = (value: string | number) =>
+		filter.mode === 'itext' && typeof value === 'string' ? value.toLowerCase() : value;
+	let condition: string;
 	let negate = false;
-	switch (f.op) {
+	switch (filter.op) {
 		case 'eq':
 		case 'ne':
-			cond = `${col} = ?`;
-			params.push(wrap(f.value as string | number));
-			negate = f.op === 'ne';
+			condition = `${column} = ?`;
+			params.push(normalizeValue(filter.value as string | number));
+			negate = filter.op === 'ne';
 			break;
 		case 'in':
 		case 'nin': {
-			const list = f.value as (string | number)[];
-			cond = `${col} IN (${list.map(() => '?').join(', ')})`;
-			params.push(...list.map(wrap));
-			negate = f.op === 'nin';
+			const values = filter.value as (string | number)[];
+			condition = `${column} IN (${values.map(() => '?').join(', ')})`;
+			params.push(...values.map(normalizeValue));
+			negate = filter.op === 'nin';
 			break;
 		}
 		case 'lt':
 		case 'lte':
 		case 'gt':
 		case 'gte': {
-			const opSql = { lt: '<', lte: '<=', gt: '>', gte: '>=' }[f.op];
-			cond = `${col} ${opSql} ?`;
-			params.push(wrap(f.value as string | number));
+			const operatorSql = { lt: '<', lte: '<=', gt: '>', gte: '>=' }[filter.op];
+			condition = `${column} ${operatorSql} ?`;
+			params.push(normalizeValue(filter.value as string | number));
 			break;
 		}
 		case 'contains':
-			cond = `${col} LIKE ?`;
-			params.push(`%${String(f.value).toLowerCase().replace(/[%_]/g, '')}%`);
+			condition = `${column} LIKE ? ESCAPE '\\'`;
+			params.push(likePattern(String(filter.value).toLowerCase()));
 			break;
 	}
-	params.push(f.field);
-	// Feldparameter steht am Ende → SQL-Reihenfolge entsprechend: Bedingung zuerst, dann Feldname.
-	const sub = `SELECT 1 FROM cms_facets f WHERE f.collection = d.collection AND f.slug = d.slug AND f.lang = d.lang AND (${cond}) AND f.field = ?`;
-	return `${negate ? 'NOT ' : ''}EXISTS (${sub})`;
+	params.push(filter.field);
+	// The field parameter is pushed last, so the SQL places the condition before the field name
+	const subquery = `SELECT 1 FROM cms_facets f WHERE f.collection = d.collection AND f.slug = d.slug AND f.lang = d.lang AND (${condition}) AND f.field = ?`;
+	return `${negate ? 'NOT ' : ''}EXISTS (${subquery})`;
 }
 
 export function createIndexRepo(db: DbDriver) {
 	return {
-		/** Legt Tabellen an; liefert `reset: true`, wenn der Dokument-Index neu aufgebaut werden muss. */
+		/** Creates the tables; `reset: true` means the document index must be rebuilt. */
 		async ensureSchema(): Promise<{ reset: boolean }> {
 			await db.exec(META);
 			const row = await db.get<{ value: string }>('SELECT value FROM cms_meta WHERE key = ?', [
@@ -205,7 +214,7 @@ export function createIndexRepo(db: DbDriver) {
 
 		async upsertDocument(rows: IndexDocument[]) {
 			await db.transaction(async () => {
-				for (const r of rows) {
+				for (const row of rows) {
 					await db.run(
 						`INSERT INTO cms_documents (collection, slug, lang, id, status, title, excerpt, search, refs, created_at, updated_at, updated_by, published_at)
 						 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -215,30 +224,30 @@ export function createIndexRepo(db: DbDriver) {
 						   created_at = excluded.created_at, updated_at = excluded.updated_at,
 						   updated_by = excluded.updated_by, published_at = excluded.published_at`,
 						[
-							r.collection,
-							r.slug,
-							r.lang,
-							r.id,
-							r.status,
-							r.title,
-							r.excerpt,
-							r.search,
-							JSON.stringify(r.refs),
-							r.createdAt,
-							r.updatedAt,
-							r.updatedBy,
-							r.publishedAt
+							row.collection,
+							row.slug,
+							row.lang,
+							row.id,
+							row.status,
+							row.title,
+							row.excerpt,
+							row.search,
+							JSON.stringify(row.refs),
+							row.createdAt,
+							row.updatedAt,
+							row.updatedBy,
+							row.publishedAt
 						]
 					);
 					await db.run('DELETE FROM cms_facets WHERE collection = ? AND slug = ? AND lang = ?', [
-						r.collection,
-						r.slug,
-						r.lang
+						row.collection,
+						row.slug,
+						row.lang
 					]);
-					for (const f of r.facets) {
+					for (const facet of row.facets) {
 						await db.run(
 							'INSERT INTO cms_facets (collection, slug, lang, field, value_text, value_num) VALUES (?, ?, ?, ?, ?, ?)',
-							[r.collection, r.slug, r.lang, f.field, f.text, f.num]
+							[row.collection, row.slug, row.lang, facet.field, facet.text, facet.num]
 						);
 					}
 				}
@@ -254,14 +263,14 @@ export function createIndexRepo(db: DbDriver) {
 			await db.run(`DELETE FROM cms_facets WHERE ${where}`, params);
 		},
 
-		/** Sprachen entfernen, die nicht mehr im Storage existieren. */
+		/** Removes languages that no longer exist in the storage. */
 		async pruneLangs(collection: string, slug: string, keep: string[]) {
 			const rows = await db.all<{ lang: string }>(
 				'SELECT lang FROM cms_documents WHERE collection = ? AND slug = ?',
 				[collection, slug]
 			);
-			for (const r of rows)
-				if (!keep.includes(r.lang)) await this.removeDocument(collection, slug, r.lang);
+			for (const row of rows)
+				if (!keep.includes(row.lang)) await this.removeDocument(collection, slug, row.lang);
 		},
 
 		async clearDocuments() {
@@ -281,59 +290,50 @@ export function createIndexRepo(db: DbDriver) {
 				params.push(query.status);
 			}
 			if (query.q) {
-				where.push('LOWER(d.search) LIKE ?');
-				params.push(`%${query.q.toLowerCase()}%`);
+				where.push("LOWER(d.search) LIKE ? ESCAPE '\\'");
+				params.push(likePattern(query.q.toLowerCase()));
 			}
-			for (const f of query.filters) where.push(filterSql(f, params));
-			const w = where.join(' AND ');
+			for (const filter of query.filters) where.push(filterSql(filter, params));
+			const whereSql = where.join(' AND ');
 
-			const total = await db.get<{ n: number }>(
-				`SELECT COUNT(*) AS n FROM cms_documents d WHERE ${w}`,
+			const total = await db.get<{ count: number }>(
+				`SELECT COUNT(*) AS count FROM cms_documents d WHERE ${whereSql}`,
 				params
 			);
 
 			let join = '';
-			let orderCol: string;
+			let orderColumn: string;
 			const listParams = [...params];
 			if (query.sort.kind === 'column') {
-				orderCol = COLUMN_SORT[query.sort.field] ?? 'd.updated_at';
+				orderColumn = COLUMN_SORT[query.sort.field] ?? 'd.updated_at';
 			} else {
 				join =
 					'LEFT JOIN cms_facets s ON s.collection = d.collection AND s.slug = d.slug AND s.lang = d.lang AND s.field = ?';
-				// JOIN-Parameter kommen in der SQL-Reihenfolge VOR den WHERE-Parametern.
+				// JOIN parameters precede the WHERE parameters in SQL order
 				listParams.unshift(query.sort.field);
-				orderCol =
+				orderColumn =
 					query.sort.mode === 'num'
 						? 's.value_num'
 						: query.sort.mode === 'itext'
 							? 'LOWER(s.value_text)'
 							: 's.value_text';
 			}
-			const dir = query.sort.direction === 'asc' ? 'ASC' : 'DESC';
-			const rows = await db.all<DocRow>(
-				`SELECT d.* FROM cms_documents d ${join} WHERE ${w} ORDER BY ${orderCol} ${dir}, d.slug ASC, d.lang ASC LIMIT ? OFFSET ?`,
+			const direction = query.sort.direction === 'asc' ? 'ASC' : 'DESC';
+			const rows = await db.all<DocumentRow>(
+				`SELECT d.* FROM cms_documents d ${join} WHERE ${whereSql} ORDER BY ${orderColumn} ${direction}, d.slug ASC, d.lang ASC LIMIT ? OFFSET ?`,
 				[...listParams, query.limit, query.offset]
 			);
-			return { items: rows.map(toIndexRow), total: Number(total?.n ?? 0) };
-		},
-
-		async getLangs(collection: string, slug: string): Promise<IndexRow[]> {
-			const rows = await db.all<DocRow>(
-				'SELECT * FROM cms_documents WHERE collection = ? AND slug = ? ORDER BY lang',
-				[collection, slug]
-			);
-			return rows.map(toIndexRow);
+			return { items: rows.map(toIndexRow), total: Number(total?.count ?? 0) };
 		},
 
 		async countByCollection(): Promise<Record<string, number>> {
-			const rows = await db.all<{ collection: string; n: number }>(
-				'SELECT collection, COUNT(DISTINCT slug) AS n FROM cms_documents GROUP BY collection'
+			const rows = await db.all<{ collection: string; count: number }>(
+				'SELECT collection, COUNT(DISTINCT slug) AS count FROM cms_documents GROUP BY collection'
 			);
-			return Object.fromEntries(rows.map((r) => [r.collection, Number(r.n)]));
+			return Object.fromEntries(rows.map((row) => [row.collection, Number(row.count)]));
 		},
 
-		// ── Medien ──────────────────────────────────────────────────────────
-		async insertMedia(m: MediaItem) {
+		async insertMedia(mediaItem: MediaItem) {
 			await db.run(
 				`INSERT INTO cms_media (id, src, mime, kind, width, height, alt, variants, original_name, size, created_at, created_by)
 				 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -341,18 +341,18 @@ export function createIndexRepo(db: DbDriver) {
 				   width = excluded.width, height = excluded.height, alt = excluded.alt, variants = excluded.variants,
 				   original_name = excluded.original_name, size = excluded.size`,
 				[
-					m.id,
-					m.src,
-					m.mime,
-					m.kind,
-					m.width,
-					m.height,
-					m.alt,
-					JSON.stringify(m.variants),
-					m.originalName,
-					m.size,
-					m.createdAt,
-					m.createdBy
+					mediaItem.id,
+					mediaItem.src,
+					mediaItem.mime,
+					mediaItem.kind,
+					mediaItem.width,
+					mediaItem.height,
+					mediaItem.alt,
+					JSON.stringify(mediaItem.variants),
+					mediaItem.originalName,
+					mediaItem.size,
+					mediaItem.createdAt,
+					mediaItem.createdBy
 				]
 			);
 		},
@@ -362,31 +362,32 @@ export function createIndexRepo(db: DbDriver) {
 		},
 
 		async getMedia(id: string): Promise<MediaItem | null> {
-			const r = await db.get<MediaRow>('SELECT * FROM cms_media WHERE id = ?', [id]);
-			return r ? toMediaItem(r) : null;
+			const row = await db.get<MediaRow>('SELECT * FROM cms_media WHERE id = ?', [id]);
+			return row ? toMediaItem(row) : null;
 		},
 
-		async listMedia(opts: { kind?: string; q?: string; limit?: number; offset?: number } = {}) {
+		async listMedia(options: { kind?: string; q?: string; limit?: number; offset?: number } = {}) {
 			const where: string[] = ['1 = 1'];
 			const params: unknown[] = [];
-			if (opts.kind && opts.kind !== 'any') {
+			if (options.kind && options.kind !== 'any') {
 				where.push('kind = ?');
-				params.push(opts.kind);
+				params.push(options.kind);
 			}
-			if (opts.q) {
-				where.push('(LOWER(original_name) LIKE ? OR LOWER(alt) LIKE ?)');
-				params.push(`%${opts.q.toLowerCase()}%`, `%${opts.q.toLowerCase()}%`);
+			if (options.q) {
+				where.push("(LOWER(original_name) LIKE ? ESCAPE '\\' OR LOWER(alt) LIKE ? ESCAPE '\\')");
+				const pattern = likePattern(options.q.toLowerCase());
+				params.push(pattern, pattern);
 			}
-			const w = where.join(' AND ');
-			const total = await db.get<{ n: number }>(
-				`SELECT COUNT(*) AS n FROM cms_media WHERE ${w}`,
+			const whereSql = where.join(' AND ');
+			const total = await db.get<{ count: number }>(
+				`SELECT COUNT(*) AS count FROM cms_media WHERE ${whereSql}`,
 				params
 			);
 			const rows = await db.all<MediaRow>(
-				`SELECT * FROM cms_media WHERE ${w} ORDER BY created_at DESC LIMIT ? OFFSET ?`,
-				[...params, Math.min(opts.limit ?? 60, 500), opts.offset ?? 0]
+				`SELECT * FROM cms_media WHERE ${whereSql} ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+				[...params, Math.min(options.limit ?? 60, 500), options.offset ?? 0]
 			);
-			return { items: rows.map(toMediaItem), total: Number(total?.n ?? 0) };
+			return { items: rows.map(toMediaItem), total: Number(total?.count ?? 0) };
 		},
 
 		async removeMedia(id: string) {

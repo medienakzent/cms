@@ -1,9 +1,10 @@
 /**
- * Consent-Zustand im Browser: Entscheidung je Kategorie, Cookie + localStorage,
- * Dienste laden und Seitenwechsel melden. Ein Modul, überall dieselbe Wahrheit.
+ * Consent state in the browser: decision per category, cookie + localStorage, loading
+ * services and reporting page changes. One module, one truth everywhere.
  */
 import type { ConsentConfig, ConsentDecisions } from '../consent';
 
+/** Persisted payload; the short keys are the stored cookie format. */
 interface Stored {
 	v: number;
 	d: ConsentDecisions;
@@ -20,10 +21,10 @@ let config: ConsentConfig | null = null;
 
 function readCookie(name: string): string | null {
 	if (typeof document === 'undefined') return null;
-	const m = document.cookie.match(
+	const match = document.cookie.match(
 		new RegExp(`(?:^|; )${name.replace(/[.$?*|{}()[\]\\/+^]/g, '\\$&')}=([^;]*)`)
 	);
-	return m ? decodeURIComponent(m[1]) : null;
+	return match ? decodeURIComponent(match[1]) : null;
 }
 
 function writeCookie(name: string, value: string, days: number) {
@@ -39,7 +40,7 @@ function persist(decisions: ConsentDecisions) {
 	try {
 		localStorage.setItem(config.cookieName, raw);
 	} catch {
-		/* privater Modus o. ä. */
+		/* private mode or similar */
 	}
 }
 
@@ -56,7 +57,8 @@ function restore(): ConsentDecisions | null {
 	if (!raw) return null;
 	try {
 		const stored = JSON.parse(raw) as Stored;
-		if (stored.v !== config.version) return null; // neue Version → erneut fragen
+		// A new config version asks again.
+		if (stored.v !== config.version) return null;
 		return stored.d;
 	} catch {
 		return null;
@@ -71,8 +73,8 @@ function apply(decisions: ConsentDecisions) {
 			void service.load();
 			state.loaded.add(service.id);
 			service.pageview?.(location.href);
-		} catch (e) {
-			console.warn(`[cms] Dienst ${service.id} konnte nicht geladen werden`, e);
+		} catch (error) {
+			console.warn(`[cms] Dienst ${service.id} konnte nicht geladen werden`, error);
 		}
 	}
 }
@@ -87,22 +89,27 @@ export const consent = {
 	get config() {
 		return config;
 	},
-	/** Vom <Consent>-Element beim Mount aufgerufen. */
-	init(cfg: ConsentConfig) {
-		config = cfg;
+	/** Called by the <Consent> element on mount. */
+	init(consentConfig: ConsentConfig) {
+		config = consentConfig;
 		const restored = restore();
 		state.decisions = restored;
 		if (restored) apply(restored);
-		else if (cfg.categories.some((c) => !c.required) && cfg.services.length) state.open = true;
+		else if (
+			consentConfig.categories.some((category) => !category.required) &&
+			consentConfig.services.length
+		)
+			state.open = true;
 	},
 	has(category: string): boolean {
-		const c = config?.categories.find((x) => x.id === category);
-		return !!c?.required || !!state.decisions?.[category];
+		const definition = config?.categories.find((entry) => entry.id === category);
+		return !!definition?.required || !!state.decisions?.[category];
 	},
 	set(decisions: ConsentDecisions) {
 		if (!config) return;
 		const full: ConsentDecisions = {};
-		for (const c of config.categories) full[c.id] = c.required ? true : !!decisions[c.id];
+		for (const category of config.categories)
+			full[category.id] = category.required ? true : !!decisions[category.id];
 		state.decisions = full;
 		state.open = false;
 		persist(full);
@@ -110,7 +117,7 @@ export const consent = {
 	},
 	acceptAll() {
 		if (!config) return;
-		consent.set(Object.fromEntries(config.categories.map((c) => [c.id, true])));
+		consent.set(Object.fromEntries(config.categories.map((category) => [category.id, true])));
 	},
 	rejectAll() {
 		consent.set({});
@@ -121,16 +128,18 @@ export const consent = {
 	hide() {
 		state.open = false;
 	},
-	/** Seitenwechsel an geladene Dienste melden (macht <Consent> per afterNavigate). */
+	/** Reports a page change to loaded services (<Consent> does this via afterNavigate). */
 	pageview(url: string) {
-		for (const s of config?.services ?? []) if (state.loaded.has(s.id)) s.pageview?.(url);
+		for (const service of config?.services ?? [])
+			if (state.loaded.has(service.id)) service.pageview?.(url);
 	},
-	/** Ereignis an geladene Dienste melden, z. B. `consent.track('formular_gesendet', { formular: 'contact' })`. */
+	/** Reports an event to loaded services, e.g. `consent.track('formular_gesendet', { formular: 'contact' })`. */
 	track(name: string, props?: Record<string, unknown>) {
-		for (const s of config?.services ?? []) if (state.loaded.has(s.id)) s.event?.(name, props);
+		for (const service of config?.services ?? [])
+			if (state.loaded.has(service.id)) service.event?.(name, props);
 	}
 };
 
-/** Für Buttons wie „Cookie-Einstellungen" im Footer. */
+/** For buttons like "Cookie-Einstellungen" in the footer. */
 export const openConsent = () => consent.show();
 export const track = consent.track;

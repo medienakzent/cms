@@ -1,25 +1,37 @@
 import type { RequestEvent } from '@sveltejs/kit';
-import { actorOf, api, readJsonBody } from '../../server/api';
+import { actorOf, api, limitRequestBody, readJsonBody } from '../../server/api';
 import { CmsError } from '../../server/errors';
 import { media } from '../../server/media';
+import { serverConfig } from '../../server/runtime';
+
+function integerParam(value: string | null, fallback: number): number {
+	if (value === null) return fallback;
+	if (!/^\d{1,9}$/.test(value)) throw new CmsError(400, 'Ganzzahl erwartet');
+	return Number(value);
+}
 
 /** GET /api/v1/media?kind=image&q=&limit=&offset= */
 export const GET = (event: RequestEvent) =>
 	api(async () => {
-		const p = event.url.searchParams;
+		const searchParams = event.url.searchParams;
 		return media.list({
-			kind: p.get('kind') ?? undefined,
-			q: p.get('q') ?? undefined,
-			limit: Number(p.get('limit') ?? 60),
-			offset: Number(p.get('offset') ?? 0)
+			kind: searchParams.get('kind') ?? undefined,
+			q: searchParams.get('q') ?? undefined,
+			limit: integerParam(searchParams.get('limit'), 60),
+			offset: integerParam(searchParams.get('offset'), 0)
 		});
 	});
 
-/** POST /api/v1/media  multipart/form-data, Feld `file` (mehrfach erlaubt) */
+/** POST /api/v1/media  multipart/form-data, field `file` (may repeat) */
 export const POST = (event: RequestEvent) =>
 	api(async () => {
-		const form = await event.request.formData();
-		const files = form.getAll('file').filter((f): f is File => f instanceof File);
+		const maxBytes = serverConfig().maxUploadBytes;
+		const form = await limitRequestBody(event.request, maxBytes * 4 + 64 * 1024)
+			.formData()
+			.catch((cause: unknown) => {
+				throw cause instanceof CmsError ? cause : new CmsError(400, 'Ungültige Formulardaten');
+			});
+		const files = form.getAll('file').filter((entry): entry is File => entry instanceof File);
 		if (!files.length) throw new CmsError(400, 'Keine Datei (Feld „file")');
 		const items = [];
 		for (const file of files) items.push(await media.upload(file, actorOf(event)));

@@ -4,6 +4,7 @@
 	import { SearchableSelect } from '@compdata/ui/select';
 	import { Badge } from '@compdata/ui/badge';
 	import XIcon from '@lucide/svelte/icons/x';
+	import { toast } from 'svelte-sonner';
 
 	type Props = {
 		id?: string;
@@ -11,7 +12,7 @@
 		lang: string;
 		multiple?: boolean;
 		value: string | null | string[];
-		onchange: (v: string | null | string[]) => void;
+		onchange: (value: string | null | string[]) => void;
 	};
 
 	let { id, collection, lang, multiple = false, value, onchange }: Props = $props();
@@ -19,27 +20,30 @@
 	let rows = $state<IndexRow[]>([]);
 
 	const selected = $derived(Array.isArray(value) ? value : value ? [value] : []);
-	const byTitle = $derived(new Map(rows.map((r) => [r.slug, r.title || r.slug])));
+	const titleBySlug = $derived(new Map(rows.map((row) => [row.slug, row.title || row.slug])));
 	const options = $derived([
 		...(multiple ? [] : [{ value: '', label: '— keine Auswahl —' }]),
 		...rows
-			.filter((r) => !multiple || !selected.includes(r.slug))
-			.map((r) => ({ value: r.slug, label: r.title || r.slug }))
+			.filter((row) => !multiple || !selected.includes(row.slug))
+			.map((row) => ({ value: row.slug, label: row.title || row.slug }))
 	]);
 
 	$effect(() => {
 		void collection;
-		apiFetch<{ items: IndexRow[] }>(`/api/v1/${collection}?status=all&limit=500&order=asc`)
-			.then((r) => {
-				// Eine Zeile je Slug, bevorzugt in der aktuellen Sprache.
-				const map = new Map<string, IndexRow>();
-				for (const row of r.items) {
-					const cur = map.get(row.slug);
-					if (!cur || row.lang === lang) map.set(row.slug, row);
+		apiFetch<{ items: IndexRow[] }>(`/api/v1/${collection}?status=all&limit=200&sort=title`)
+			.then((result) => {
+				// One row per slug, preferring the current language.
+				const rowBySlug = new Map<string, IndexRow>();
+				for (const row of result.items) {
+					const current = rowBySlug.get(row.slug);
+					if (!current || row.lang === lang) rowBySlug.set(row.slug, row);
 				}
-				rows = [...map.values()].sort((a, b) => a.title.localeCompare(b.title));
+				rows = [...rowBySlug.values()].sort((left, right) => left.title.localeCompare(right.title));
 			})
-			.catch(() => (rows = []));
+			.catch((error: Error) => {
+				rows = [];
+				toast.error(`Referenzen konnten nicht geladen werden: ${error.message}`);
+			});
 	});
 
 	function select(slug: string) {
@@ -47,7 +51,7 @@
 		else onchange(slug || null);
 	}
 	function remove(slug: string) {
-		onchange(selected.filter((s) => s !== slug));
+		onchange(selected.filter((selectedSlug) => selectedSlug !== slug));
 	}
 </script>
 
@@ -55,7 +59,7 @@
 	<div class="flex flex-wrap items-center gap-2">
 		{#each selected as slug (slug)}
 			<Badge variant="neutral" class="gap-1">
-				{byTitle.get(slug) ?? slug}
+				{titleBySlug.get(slug) ?? slug}
 				<button type="button" onclick={() => remove(slug)} aria-label="Entfernen"
 					><XIcon class="size-3" /></button
 				>

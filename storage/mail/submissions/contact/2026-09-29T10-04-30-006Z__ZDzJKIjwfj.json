@@ -1,26 +1,24 @@
 {
-  "id": "ZDzJKIjwfj",
-  "template": "contact",
-  "lang": "de",
-  "sentAt": "2026-09-29T10:04:30.006Z",
-  "status": "sent",
-  "transport": "file",
-  "to": [
-    "office@example.com"
-  ],
-  "replyTo": "f@x.de",
-  "subject": "Kontaktanfrage von Form",
-  "messageId": "2026-09-29T10-04-30-009Z__SwFCFm",
-  "error": null,
-  "data": {
-    "name": "Form",
-    "email": "f@x.de",
-    "phone": "",
-    "message": "Ohne JS"
-  },
-  "meta": {
-    "ip": "127.0.0.1",
-    "userAgent": "node",
-    "url": ""
-  }
+	"id": "ZDzJKIjwfj",
+	"template": "contact",
+	"lang": "de",
+	"sentAt": "2026-09-29T10:04:30.006Z",
+	"status": "sent",
+	"transport": "file",
+	"to": ["office@example.com"],
+	"replyTo": "f@x.de",
+	"subject": "Kontaktanfrage von Form",
+	"messageId": "2026-09-29T10-04-30-009Z__SwFCFm",
+	"error": null,
+	"data": {
+		"name": "Form",
+		"email": "f@x.de",
+		"phone": "",
+		"message": "Ohne JS"
+	},
+	"meta": {
+		"ip": "127.0.0.1",
+		"userAgent": "node",
+		"url": ""
+	}
 }

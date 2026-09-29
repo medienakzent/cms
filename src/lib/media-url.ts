@@ -1,8 +1,8 @@
 import type { MediaRef } from './types';
 
-/** Öffentliche URL einer Mediendatei, optional als Variante (`thumb`, `md`, `lg`). */
-export function mediaUrl(ref: MediaRef | null | undefined, variant?: string): string {
-	if (!ref) return '';
-	const src = variant && ref.variants?.[variant] ? ref.variants[variant] : ref.src;
+/** Public URL of a media file, optionally as a variant (`thumb`, `md`, `lg`). */
+export function mediaUrl(media: MediaRef | null | undefined, variant?: string): string {
+	if (!media) return '';
+	const src = variant && media.variants?.[variant] ? media.variants[variant] : media.src;
 	return `/${src}`;
 }

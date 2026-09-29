@@ -1,17 +1,14 @@
-import { defineMail, f } from '@medienakzent/cms';
+import { defineMail, field } from '@medienakzent/cms';
 
-/**
- * Kontaktformular. Empfänger über `to` oder MAIL_TO_DEFAULT; Reply-To ist die
- * Adresse des Absenders. Öffentlich erreichbar unter POST /api/mail/contact.
- */
+/** Contact form. Recipient via `to` or MAIL_TO_DEFAULT; public endpoint POST /api/mail/contact. */
 export default defineMail({
 	name: 'contact',
 	label: 'Kontaktanfrage',
 	fields: {
-		name: f.text({ label: 'Name', required: true, maxLength: 120 }),
-		email: f.text({ label: 'E-Mail', required: true, maxLength: 200 }),
-		phone: f.text({ label: 'Telefon', maxLength: 60 }),
-		message: f.textarea({ label: 'Nachricht', required: true, maxLength: 5000 })
+		name: field.text({ label: 'Name', required: true, maxLength: 120 }),
+		email: field.text({ label: 'E-Mail', required: true, maxLength: 200 }),
+		phone: field.text({ label: 'Telefon', maxLength: 60 }),
+		message: field.textarea({ label: 'Nachricht', required: true, maxLength: 5000 })
 	},
 	replyToField: 'email',
 	subject: { de: 'Kontaktanfrage von {{name}}', en: 'Contact request from {{name}}' },

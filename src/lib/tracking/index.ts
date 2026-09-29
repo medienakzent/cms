@@ -8,36 +8,37 @@ declare global {
 	}
 }
 
-/** Skript einmalig laden. */
-function loadScript(src: string, attrs: Record<string, string> = {}): Promise<void> {
+/** Loads a script once. */
+function loadScript(src: string, attributes: Record<string, string> = {}): Promise<void> {
 	return new Promise((resolve, reject) => {
 		if (document.querySelector(`script[src="${src}"]`)) return resolve();
-		const s = document.createElement('script');
-		s.src = src;
-		s.async = true;
-		for (const [k, v] of Object.entries(attrs)) s.setAttribute(k, v);
-		s.onload = () => resolve();
-		s.onerror = () => reject(new Error(`Skript konnte nicht geladen werden: ${src}`));
-		document.head.appendChild(s);
+		const scriptElement = document.createElement('script');
+		scriptElement.src = src;
+		scriptElement.async = true;
+		for (const [name, value] of Object.entries(attributes)) scriptElement.setAttribute(name, value);
+		scriptElement.onload = () => resolve();
+		scriptElement.onerror = () => reject(new Error(`Skript konnte nicht geladen werden: ${src}`));
+		document.head.appendChild(scriptElement);
 	});
 }
 
 /**
- * Google Analytics 4 mit Consent Mode: Einwilligung wird vor dem Laden gesetzt,
- * IP-Anonymisierung ist bei GA4 Standard. Seitenwechsel werden manuell gemeldet.
+ * Google Analytics 4 with Consent Mode: consent is set before loading, IP anonymization
+ * is the GA4 default. Page changes are reported manually.
  */
-export function ga4(opts: {
+export function ga4(options: {
 	measurementId: string;
 	category?: string;
 	name?: string;
 }): ConsentService {
 	return {
-		id: `ga4-${opts.measurementId}`,
-		name: opts.name ?? 'Google Analytics',
-		category: opts.category ?? 'analytics',
+		id: `ga4-${options.measurementId}`,
+		name: options.name ?? 'Google Analytics',
+		category: options.category ?? 'analytics',
 		load() {
 			window.dataLayer = window.dataLayer ?? [];
 			window.gtag = function gtag() {
+				// gtag requires the raw `arguments` object, not a rest array.
 				// eslint-disable-next-line prefer-rest-params
 				window.dataLayer!.push(arguments);
 			};
@@ -48,9 +49,9 @@ export function ga4(opts: {
 				analytics_storage: 'granted'
 			});
 			window.gtag('js', new Date());
-			window.gtag('config', opts.measurementId, { send_page_view: false });
+			window.gtag('config', options.measurementId, { send_page_view: false });
 			void loadScript(
-				`https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(opts.measurementId)}`
+				`https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(options.measurementId)}`
 			);
 		},
 		pageview(url) {
@@ -62,26 +63,26 @@ export function ga4(opts: {
 	};
 }
 
-/** Matomo (selbst gehostet). `url` mit abschließendem Slash, z. B. https://stats.example.de/ */
-export function matomo(opts: {
+/** Matomo (self-hosted). `url` with trailing slash, e.g. https://stats.example.de/ */
+export function matomo(options: {
 	url: string;
 	siteId: string | number;
 	category?: string;
 	name?: string;
 }): ConsentService {
-	const base = opts.url.replace(/\/+$/, '') + '/';
+	const baseUrl = options.url.replace(/\/+$/, '') + '/';
 	return {
-		id: `matomo-${opts.siteId}`,
-		name: opts.name ?? 'Matomo',
-		category: opts.category ?? 'analytics',
+		id: `matomo-${options.siteId}`,
+		name: options.name ?? 'Matomo',
+		category: options.category ?? 'analytics',
 		load() {
 			window._paq = window._paq ?? [];
 			window._paq.push(
-				['setTrackerUrl', `${base}matomo.php`],
-				['setSiteId', String(opts.siteId)],
+				['setTrackerUrl', `${baseUrl}matomo.php`],
+				['setSiteId', String(options.siteId)],
 				['enableLinkTracking']
 			);
-			void loadScript(`${base}matomo.js`);
+			void loadScript(`${baseUrl}matomo.js`);
 		},
 		pageview(url) {
 			window._paq?.push(
@@ -101,8 +102,8 @@ export function matomo(opts: {
 	};
 }
 
-/** Beliebiges Skript (z. B. Chat-Widget, Karten), erst nach Einwilligung. */
-export function script(opts: {
+/** Any script (chat widget, maps, ...), loaded only after consent. */
+export function script(options: {
 	id: string;
 	name: string;
 	category: string;
@@ -111,15 +112,15 @@ export function script(opts: {
 	attrs?: Record<string, string>;
 }): ConsentService {
 	return {
-		id: opts.id,
-		name: opts.name,
-		category: opts.category,
+		id: options.id,
+		name: options.name,
+		category: options.category,
 		load() {
-			if (opts.src) void loadScript(opts.src, opts.attrs);
-			if (opts.inline) {
-				const s = document.createElement('script');
-				s.textContent = opts.inline;
-				document.head.appendChild(s);
+			if (options.src) void loadScript(options.src, options.attrs);
+			if (options.inline) {
+				const scriptElement = document.createElement('script');
+				scriptElement.textContent = options.inline;
+				document.head.appendChild(scriptElement);
 			}
 		}
 	};

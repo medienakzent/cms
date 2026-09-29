@@ -6,18 +6,18 @@ import { getRuntime } from '../../server/runtime';
 
 const ALLOWED_GET = ['lang', 'fallback', 'status', 'editable'];
 
-function checkParams(p: URLSearchParams, allowed: string[]) {
-	const unknown = [...p.keys()].filter((k) => !allowed.includes(k));
+function checkParams(searchParams: URLSearchParams, allowed: string[]) {
+	const unknown = [...searchParams.keys()].filter((key) => !allowed.includes(key));
 	if (unknown.length)
 		throw new CmsError(
 			400,
 			'Unbekannte Parameter',
-			unknown.map((k) => ({ path: k, message: `Erlaubt: ${allowed.join(', ')}` }))
+			unknown.map((key) => ({ path: key, message: `Erlaubt: ${allowed.join(', ')}` }))
 		);
 }
-function langParam(p: URLSearchParams): string {
+function langParam(searchParams: URLSearchParams): string {
 	const { languages, config } = getRuntime();
-	const lang = p.get('lang') ?? config.defaultLanguage;
+	const lang = searchParams.get('lang') ?? config.defaultLanguage;
 	if (!languages.includes(lang))
 		throw new CmsError(400, 'Unbekannte Sprache', [
 			{ path: 'lang', message: `Erlaubt: ${languages.join(', ')}` }
@@ -28,22 +28,26 @@ function langParam(p: URLSearchParams): string {
 /** GET /api/v1/<collection>/<slug>?lang=de&fallback=0&status=all&editable=1 */
 export const GET = (event: RequestEvent) =>
 	api(async () => {
-		const p = event.url.searchParams;
-		checkParams(p, ALLOWED_GET);
-		const lang = langParam(p);
-		const status = p.get('status') ?? 'all';
+		const searchParams = event.url.searchParams;
+		checkParams(searchParams, ALLOWED_GET);
+		const lang = langParam(searchParams);
+		const status = searchParams.get('status') ?? 'all';
 		if (status !== 'draft' && status !== 'published' && status !== 'all')
 			throw new CmsError(400, 'status: draft, published oder all');
-		const c = collection(event.params.collection ?? '');
+		const documents = collection(event.params.collection ?? '');
 		const slug = event.params.slug ?? '';
-		if (p.get('editable') === '1') {
-			const r = await c.getEditable(slug, lang);
-			if (!r) throw new CmsError(404, 'Dokument nicht gefunden');
-			return r;
+		if (searchParams.get('editable') === '1') {
+			const editable = await documents.getEditable(slug, lang);
+			if (!editable) throw new CmsError(404, 'Dokument nicht gefunden');
+			return editable;
 		}
-		const doc = await c.get(slug, { lang, fallback: p.get('fallback') !== '0', status });
-		if (!doc) throw new CmsError(404, 'Dokument nicht gefunden');
-		return doc;
+		const result = await documents.get(slug, {
+			lang,
+			fallback: searchParams.get('fallback') !== '0',
+			status
+		});
+		if (!result) throw new CmsError(404, 'Dokument nicht gefunden');
+		return result;
 	});
 
 /** PUT /api/v1/<collection>/<slug>?lang=de  { fields, blocks, status? } */
@@ -51,16 +55,18 @@ export const PUT = (event: RequestEvent) =>
 	api(async () => {
 		checkParams(event.url.searchParams, ['lang']);
 		const lang = langParam(event.url.searchParams);
-		const doc = parseDocumentBody(await readJsonBody(event, ['fields', 'blocks', 'status']));
+		const documentInput = parseDocumentBody(
+			await readJsonBody(event, ['fields', 'blocks', 'status'])
+		);
 		return collection(event.params.collection ?? '').save(
 			event.params.slug ?? '',
 			lang,
-			{ fields: doc.fields, blocks: doc.blocks },
-			{ actor: actorOf(event), status: doc.status }
+			{ fields: documentInput.fields, blocks: documentInput.blocks },
+			{ actor: actorOf(event), status: documentInput.status }
 		);
 	});
 
-/** DELETE /api/v1/<collection>/<slug>[?lang=de]  — ohne lang: ganzes Dokument */
+/** DELETE /api/v1/<collection>/<slug>[?lang=de]; without lang the whole document is removed */
 export const DELETE = (event: RequestEvent) =>
 	api(async () => {
 		checkParams(event.url.searchParams, ['lang']);

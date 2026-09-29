@@ -6,13 +6,13 @@ export type { StorageAdapter } from './types';
 
 let instance: StorageAdapter | null = null;
 
-/** Storage-Singleton. Für andere Adapter hier verzweigen (z. B. nach `STORAGE_URL`). */
+/** Storage singleton. Branch here for other adapters (e.g. by `STORAGE_URL`). */
 export function getStorage(): StorageAdapter {
 	if (!instance) instance = new FsStorage(serverConfig().storageDir);
 	return instance;
 }
 
-/** Pfad-Konventionen — an genau einer Stelle definiert. */
+/** Path conventions, defined in exactly one place. */
 export const paths = {
 	base: (collection: string, slug: string) => `content/${collection}/${slug}.json`,
 	overlay: (collection: string, slug: string, lang: string) =>
@@ -25,11 +25,11 @@ export const paths = {
 };
 
 /**
- * Zerlegt einen Dateinamen unter content/<collection>/ in Slug + Sprache.
+ * Splits a file name under content/<collection>/ into slug + language.
  * `about.json` → { slug: 'about', lang: null }, `about.en.json` → { slug: 'about', lang: 'en' }
  */
 export function parseContentFile(file: string): { slug: string; lang: string | null } | null {
-	const m = /^([a-z0-9-]+?)(?:\.([a-z]{2}(?:-[a-zA-Z]{2,4})?))?\.json$/.exec(file);
-	if (!m) return null;
-	return { slug: m[1], lang: m[2] ?? null };
+	const match = /^([a-z0-9-]+?)(?:\.([a-z]{2}(?:-[a-zA-Z]{2,4})?))?\.json$/.exec(file);
+	if (!match) return null;
+	return { slug: match[1], lang: match[2] ?? null };
 }

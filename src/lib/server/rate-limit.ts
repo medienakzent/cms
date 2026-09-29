@@ -1,41 +1,41 @@
 /**
- * Rate-Limit für die API: festes Fenster pro Schlüssel, im Prozessspeicher.
- * Für mehrere Instanzen hinter einem Load-Balancer müsste der Zähler in die
- * Datenbank oder nach Redis — die Schnittstelle bleibt gleich.
+ * API rate limit: fixed window per key, kept in process memory. Multiple
+ * instances behind a load balancer would need the counter in the database or
+ * Redis; the interface stays the same.
  */
 export interface RateLimitResult {
 	ok: boolean;
 	limit: number;
 	remaining: number;
-	/** Sekunden bis zum Fensterende. */
+	/** Seconds until the window ends. */
 	retryAfter: number;
 }
 
-export function createRateLimiter(opts: { windowMs: number; max: number }) {
+export function createRateLimiter(options: { windowMs: number; max: number }) {
 	const buckets = new Map<string, { count: number; resetAt: number }>();
 	let lastSweep = Date.now();
 
 	function sweep(now: number) {
-		if (now - lastSweep < opts.windowMs) return;
+		if (now - lastSweep < options.windowMs) return;
 		lastSweep = now;
-		for (const [key, b] of buckets) if (b.resetAt <= now) buckets.delete(key);
+		for (const [key, bucket] of buckets) if (bucket.resetAt <= now) buckets.delete(key);
 	}
 
 	return {
 		check(key: string, now = Date.now()): RateLimitResult {
 			sweep(now);
-			let b = buckets.get(key);
-			if (!b || b.resetAt <= now) {
-				b = { count: 0, resetAt: now + opts.windowMs };
-				buckets.set(key, b);
+			let bucket = buckets.get(key);
+			if (!bucket || bucket.resetAt <= now) {
+				bucket = { count: 0, resetAt: now + options.windowMs };
+				buckets.set(key, bucket);
 			}
-			b.count += 1;
-			const remaining = Math.max(opts.max - b.count, 0);
+			bucket.count += 1;
+			const remaining = Math.max(options.max - bucket.count, 0);
 			return {
-				ok: b.count <= opts.max,
-				limit: opts.max,
+				ok: bucket.count <= options.max,
+				limit: options.max,
 				remaining,
-				retryAfter: Math.max(Math.ceil((b.resetAt - now) / 1000), 1)
+				retryAfter: Math.max(Math.ceil((bucket.resetAt - now) / 1000), 1)
 			};
 		}
 	};

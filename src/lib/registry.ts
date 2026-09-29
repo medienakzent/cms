@@ -1,10 +1,10 @@
 /**
- * Registry: alle Definitionen eines Projekts an einem Ort — Blocks mit ihren
- * Svelte-Komponenten, Collections, Mail-Vorlagen und die Konfiguration.
+ * Registry: every definition of a project in one place; blocks with their Svelte
+ * components, collections, mail templates and the config.
  *
- * Die Dateien werden im KUNDENPROJEKT eingesammelt (src/cms.ts, per
- * import.meta.glob) und hier geprüft. Das Paket selbst kennt keine Pfade.
- * Verstöße gegen die Konventionen brechen den Start mit klarer Meldung.
+ * The files are collected in the CUSTOMER project (src/cms.ts via import.meta.glob) and
+ * checked here; the package itself knows no paths. Convention violations fail startup
+ * with a clear message.
  */
 import type { Component } from 'svelte';
 import type { BlockDefinition } from './block';
@@ -25,9 +25,9 @@ export interface Registry {
 
 export interface RegistryInput {
 	config: CmsConfig;
-	/** Glob `blocks/<name>/block.ts` (eager, default-Export) */
+	/** Glob `blocks/<name>/block.ts` (eager, default export) */
 	blocks: Record<string, unknown>;
-	/** Glob `blocks/<name>/<Name>.svelte` (eager, default-Export) */
+	/** Glob `blocks/<name>/<Name>.svelte` (eager, default export) */
 	components: Record<string, unknown>;
 	/** Glob `collections/<name>.ts` */
 	collections?: Record<string, unknown>;
@@ -40,25 +40,26 @@ export interface RegistryInput {
 const folderOf = (path: string) => path.split('/').at(-2) ?? '';
 const fileOf = (path: string) => (path.split('/').at(-1) ?? '').replace(/\.(ts|js|svelte)$/, '');
 
-function checkReferences(owner: string, fields: Record<string, Field>, r: Registry) {
+function checkReferences(owner: string, fields: Record<string, Field>, registry: Registry) {
 	for (const [key, field] of Object.entries(fields)) {
 		if (
 			(field.kind === 'reference' || field.kind === 'references') &&
-			!r.collections[field.collection]
+			!registry.collections[field.collection]
 		) {
 			throw new Error(`${owner}.${key}: verweist auf unbekannte Collection „${field.collection}".`);
 		}
 		if (field.kind === 'blocks') {
-			for (const b of field.allow ?? [])
-				if (!r.blocks[b]) throw new Error(`${owner}.${key}: unbekannter Block „${b}".`);
+			for (const blockName of field.allow ?? [])
+				if (!registry.blocks[blockName])
+					throw new Error(`${owner}.${key}: unbekannter Block „${blockName}".`);
 		}
-		if (field.kind === 'group') checkReferences(`${owner}.${key}`, field.fields, r);
-		if (field.kind === 'list') checkReferences(`${owner}.${key}[]`, { item: field.of }, r);
+		if (field.kind === 'group') checkReferences(`${owner}.${key}`, field.fields, registry);
+		if (field.kind === 'list') checkReferences(`${owner}.${key}[]`, { item: field.of }, registry);
 	}
 }
 
 export function defineRegistry(input: RegistryInput): Registry {
-	const r: Registry = {
+	const registry: Registry = {
 		config: input.config,
 		blocks: {},
 		components: {},
@@ -66,79 +67,82 @@ export function defineRegistry(input: RegistryInput): Registry {
 		mail: {}
 	};
 
-	for (const [path, def] of Object.entries(input.blocks)) {
-		const d = def as BlockDefinition;
-		if (!d || typeof d !== 'object' || !d.name)
+	for (const [path, moduleExport] of Object.entries(input.blocks)) {
+		const definition = moduleExport as BlockDefinition;
+		if (!definition || typeof definition !== 'object' || !definition.name)
 			throw new Error(`${path}: default export muss defineBlock(...) sein.`);
-		if (d.name !== folderOf(path))
+		if (definition.name !== folderOf(path))
 			throw new Error(
-				`${path}: Block-Name „${d.name}" muss dem Ordnernamen „${folderOf(path)}" entsprechen.`
+				`${path}: Block-Name „${definition.name}" muss dem Ordnernamen „${folderOf(path)}" entsprechen.`
 			);
-		r.blocks[d.name] = d;
+		registry.blocks[definition.name] = definition;
 	}
 	for (const [path, component] of Object.entries(input.components)) {
 		const folder = folderOf(path);
-		if (r.components[folder])
+		if (registry.components[folder])
 			throw new Error(`blocks/${folder}: mehr als eine .svelte-Datei — genau eine ist erlaubt.`);
-		r.components[folder] = component as BlockComponent;
+		registry.components[folder] = component as BlockComponent;
 	}
-	for (const name of Object.keys(r.blocks)) {
-		if (!r.components[name])
+	for (const name of Object.keys(registry.blocks)) {
+		if (!registry.components[name])
 			throw new Error(
 				`blocks/${name}: Svelte-Komponente fehlt (genau eine .svelte-Datei im Ordner).`
 			);
 	}
-	for (const [path, def] of Object.entries(input.collections ?? {})) {
-		const d = def as CollectionDefinition;
-		if (!d || typeof d !== 'object' || !d.name)
+	for (const [path, moduleExport] of Object.entries(input.collections ?? {})) {
+		const definition = moduleExport as CollectionDefinition;
+		if (!definition || typeof definition !== 'object' || !definition.name)
 			throw new Error(`${path}: default export muss defineCollection(...) sein.`);
-		if (d.name !== fileOf(path))
+		if (definition.name !== fileOf(path))
 			throw new Error(
-				`${path}: Collection-Name „${d.name}" muss dem Dateinamen „${fileOf(path)}" entsprechen.`
+				`${path}: Collection-Name „${definition.name}" muss dem Dateinamen „${fileOf(path)}" entsprechen.`
 			);
-		r.collections[d.name] = d;
+		registry.collections[definition.name] = definition;
 	}
-	for (const [path, content] of Object.entries(input.content ?? {})) {
-		const c = content as ContentDefinition;
-		if (!c || !Array.isArray(c.collections))
+	for (const [path, moduleExport] of Object.entries(input.content ?? {})) {
+		const content = moduleExport as ContentDefinition;
+		if (!content || !Array.isArray(content.collections))
 			throw new Error(`${path}: default export muss defineContent(...) sein.`);
-		for (const d of c.collections) {
-			if (r.collections[d.name])
+		for (const definition of content.collections) {
+			if (registry.collections[definition.name])
 				throw new Error(
-					`${path}: Collection „${d.name}" existiert bereits (collections/${d.name}.ts).`
+					`${path}: Collection „${definition.name}" existiert bereits (collections/${definition.name}.ts).`
 				);
-			r.collections[d.name] = d;
+			registry.collections[definition.name] = definition;
 		}
 	}
-	for (const [path, def] of Object.entries(input.mail ?? {})) {
-		const d = def as MailTemplateDefinition;
-		if (!d || typeof d !== 'object' || !d.name)
+	for (const [path, moduleExport] of Object.entries(input.mail ?? {})) {
+		const definition = moduleExport as MailTemplateDefinition;
+		if (!definition || typeof definition !== 'object' || !definition.name)
 			throw new Error(`${path}: default export muss defineMail(...) sein.`);
-		if (d.name !== fileOf(path))
+		if (definition.name !== fileOf(path))
 			throw new Error(
-				`${path}: Mail-Name „${d.name}" muss dem Dateinamen „${fileOf(path)}" entsprechen.`
+				`${path}: Mail-Name „${definition.name}" muss dem Dateinamen „${fileOf(path)}" entsprechen.`
 			);
-		r.mail[d.name] = d;
+		registry.mail[definition.name] = definition;
 	}
 
-	for (const c of Object.values(r.collections)) {
-		for (const b of c.blocks || [])
-			if (!r.blocks[b]) throw new Error(`Collection „${c.name}": unbekannter Block „${b}".`);
-		checkReferences(`collections/${c.name}`, c.fields, r);
+	for (const collection of Object.values(registry.collections)) {
+		for (const blockName of collection.blocks || [])
+			if (!registry.blocks[blockName])
+				throw new Error(`Collection „${collection.name}": unbekannter Block „${blockName}".`);
+		checkReferences(`collections/${collection.name}`, collection.fields, registry);
 	}
-	for (const b of Object.values(r.blocks)) checkReferences(`blocks/${b.name}`, b.fields, r);
-	for (const m of Object.values(r.mail)) checkReferences(`mail/${m.name}`, m.fields, r);
+	for (const block of Object.values(registry.blocks))
+		checkReferences(`blocks/${block.name}`, block.fields, registry);
+	for (const mailTemplate of Object.values(registry.mail))
+		checkReferences(`mail/${mailTemplate.name}`, mailTemplate.fields, registry);
 
-	const home = r.config.routing.home;
-	if (!r.collections[home.collection]) {
+	const home = registry.config.routing.home;
+	if (!registry.collections[home.collection]) {
 		throw new Error(
 			`cms.config: routing.home.collection „${home.collection}" ist keine bekannte Collection.`
 		);
 	}
-	return r;
+	return registry;
 }
 
-/** Erlaubte Block-Typen einer Collection (leer, wenn keine Blocks). */
-export function allowedBlocks(c: CollectionDefinition): string[] {
-	return c.blocks ? [...c.blocks] : [];
+/** Allowed block types of a collection (empty when it has no blocks). */
+export function allowedBlocks(collection: CollectionDefinition): string[] {
+	return collection.blocks ? [...collection.blocks] : [];
 }

@@ -1,17 +1,17 @@
 {
-  "id": "oG1RhwbEu5b-",
-  "collection": "posts",
-  "slug": "test",
-  "schemaVersion": 1,
-  "createdAt": "2026-09-29T09:31:35.168Z",
-  "createdBy": "test@test.de",
-  "updatedAt": "2026-09-29T09:31:43.351Z",
-  "updatedBy": "test@test.de",
-  "fields": {
-    "cover": null,
-    "publishedOn": "2026-09-17",
-    "category": null,
-    "tags": []
-  },
-  "blocks": []
+	"id": "oG1RhwbEu5b-",
+	"collection": "posts",
+	"slug": "test",
+	"schemaVersion": 1,
+	"createdAt": "2026-09-29T09:31:35.168Z",
+	"createdBy": "test@test.de",
+	"updatedAt": "2026-09-29T09:31:43.351Z",
+	"updatedBy": "test@test.de",
+	"fields": {
+		"cover": null,
+		"publishedOn": "2026-09-17",
+		"category": null,
+		"tags": []
+	},
+	"blocks": []
 }

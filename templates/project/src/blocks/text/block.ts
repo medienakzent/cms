@@ -1,4 +1,4 @@
-import { defineBlock, f } from '@medienakzent/cms';
+import { defineBlock, field } from '@medienakzent/cms';
 
 export default defineBlock({
 	name: 'text',
@@ -6,7 +6,7 @@ export default defineBlock({
 	description: 'Fließtext in Markdown.',
 	icon: 'text',
 	fields: {
-		body: f.richtext({ label: 'Text', localized: true, required: true }),
-		width: f.select(['narrow', 'wide'], { label: 'Breite', default: 'narrow' })
+		body: field.richtext({ label: 'Text', localized: true, required: true }),
+		width: field.select(['narrow', 'wide'], { label: 'Breite', default: 'narrow' })
 	}
 });

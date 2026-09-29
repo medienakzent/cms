@@ -10,8 +10,8 @@ import { getStorage } from './storage';
 let ready: Promise<void> | null = null;
 
 /**
- * Einmalig beim ersten Request: Index-Schema, Auth-Tabellen, ggf. Index
- * aus dem Storage aufbauen und ein Beispiel-Dokument anlegen.
+ * Once on the first request: index schema, auth tables, rebuild the index from
+ * the storage if needed and create a sample document.
  */
 export function ensureReady(): Promise<void> {
 	if (!ready) {
@@ -28,15 +28,15 @@ export function ensureReady(): Promise<void> {
 			if (!hasContent) {
 				await seed();
 			} else if (reset || Object.keys(counts).length === 0) {
-				const r = await reindexContent();
+				const result = await reindexContent();
 				await reindexMedia();
 				console.log(
-					`[cms] Index aufgebaut: ${r.documents} Dokumente, ${r.languages} Sprachfassungen`
+					`[cms] Index aufgebaut: ${result.documents} Dokumente, ${result.languages} Sprachfassungen`
 				);
 			}
-		})().catch((e) => {
+		})().catch((error) => {
 			ready = null;
-			throw e;
+			throw error;
 		});
 	}
 	return ready;

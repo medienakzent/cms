@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { defineBlock } from './block';
-import { f } from './fields';
+import { field } from './fields';
 import { mergeBlocks, mergeFields, splitBlocks, splitFields } from './localize';
 import { validateFields } from './validate';
 
 const fields = {
-	title: f.text({ localized: true, required: true }),
-	count: f.number({ default: 3 }),
-	seo: f.group({ description: f.textarea({ localized: true }), noindex: f.boolean() }),
-	tags: f.references('tags')
+	title: field.text({ localized: true, required: true }),
+	count: field.number({ default: 3 }),
+	seo: field.group({ description: field.textarea({ localized: true }), noindex: field.boolean() }),
+	tags: field.references('tags')
 };
 
 describe('splitFields / mergeFields', () => {
@@ -23,8 +23,8 @@ describe('splitFields / mergeFields', () => {
 		expect(base).toEqual({ count: 5, seo: { noindex: true }, tags: ['a'] });
 		expect(local).toEqual({ title: 'Hallo', seo: { description: 'Desc' } });
 
-		const en = mergeFields(fields, base, { title: 'Hello', seo: {} }, local);
-		expect(en).toEqual({
+		const english = mergeFields(fields, base, { title: 'Hello', seo: {} }, local);
+		expect(english).toEqual({
 			title: 'Hello',
 			count: 5,
 			seo: { description: 'Desc', noindex: true },
@@ -46,22 +46,22 @@ describe('Blocks', () => {
 		name: 'hero',
 		version: 2,
 		fields: {
-			title: f.text({ localized: true }),
-			layout: f.select(['left', 'center'], { default: 'left' })
+			title: field.text({ localized: true }),
+			layout: field.select(['left', 'center'], { default: 'left' })
 		},
-		migrate: { 1: (d) => ({ ...d, layout: 'center' }) }
+		migrate: { 1: (data) => ({ ...data, layout: 'center' }) }
 	});
-	const defs = { hero };
+	const definitions = { hero };
 
 	it('splittet Block-Daten nach ID und migriert alte Versionen beim Lesen', () => {
-		const { base, local } = splitBlocks(defs, [
+		const { base, local } = splitBlocks(definitions, [
 			{ id: 'b1', type: 'hero', data: { title: 'T', layout: 'left' } }
 		]);
 		expect(base[0]).toEqual({ id: 'b1', type: 'hero', version: 2, data: { layout: 'left' } });
 		expect(local).toEqual({ b1: { title: 'T' } });
 
 		const merged = mergeBlocks(
-			defs,
+			definitions,
 			[{ id: 'b1', type: 'hero', version: 1, data: {} }],
 			{ b1: { title: 'X' } },
 			undefined

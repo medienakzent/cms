@@ -1,6 +1,6 @@
 {
 	"name": "@medienakzent/cms",
-	"version": "0.4.0",
+	"version": "0.5.0",
 	"description": "Block-basiertes CMS für SvelteKit: Übersetzung pro Feld, Versionierung, Storage als Wahrheit, Formulare mit Mail-Versand — Kundenprojekte erweitern nur um eigene Dateien.",
 	"license": "MIT",
 	"repository": {
@@ -94,7 +94,7 @@
 		"nanoid": "^5.1.0",
 		"nodemailer": "^10.0.12",
 		"pg": "^8.16.0",
-		"sharp": "^0.34.0"
+		"sharp": "^0.35.5"
 	},
 	"devDependencies": {
 		"@compdata/ui": "github:compdataitgmh/ui#v0.1.5",
@@ -126,5 +126,8 @@
 		"typescript": "^5.9.3",
 		"vite": "^7.2.6",
 		"vitest": "^3.2.0"
+	},
+	"overrides": {
+		"cookie": "^0.7.2"
 	}
 }

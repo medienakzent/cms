@@ -12,7 +12,7 @@ export class CmsError extends Error {
 }
 
 export const notFound = (what: string) => new CmsError(404, `${what} nicht gefunden`);
-export const conflict = (msg: string) => new CmsError(409, msg);
-export const badRequest = (msg: string) => new CmsError(400, msg);
+export const conflict = (message: string) => new CmsError(409, message);
+export const badRequest = (message: string) => new CmsError(400, message);
 export const validation = (issues: ValidationIssue[]) =>
 	new CmsError(422, 'Validierung fehlgeschlagen', issues);

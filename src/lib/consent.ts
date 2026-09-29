@@ -1,29 +1,27 @@
 /**
- * Datenschutz-Einwilligung: Kategorien, Dienste und Texte. Konfiguration in
- * `cms.config.ts` unter `consent`. Ohne optionale Dienste erscheint kein Banner.
+ * Privacy consent: categories, services and texts, configured in `cms.config.ts` under
+ * `consent`. Without optional services no banner is shown.
  *
- * Dienste laden erst nach Einwilligung ihrer Kategorie; Seitenwechsel werden
- * an geladene Dienste gemeldet. Adapter: `ga4`, `matomo`, `script` aus
- * `@medienakzent/cms/forms`.
+ * Services load only after consent for their category; page changes are reported to
+ * loaded services. Adapters: `ga4`, `matomo`, `script` from `@medienakzent/cms/forms`.
  */
 export interface ConsentCategory {
 	id: string;
 	label: string | Record<string, string>;
 	description?: string | Record<string, string>;
-	/** Technisch notwendig — immer aktiv, nicht abwählbar. */
+	/** Technically necessary: always on, cannot be deselected. */
 	required?: boolean;
 }
 
 export interface ConsentService {
 	id: string;
 	name: string;
-	/** Kategorie-ID, deren Einwilligung den Dienst freischaltet. */
+	/** Category id whose consent enables the service. */
 	category: string;
-	/** Dienst laden — läuft genau einmal nach Einwilligung, nur im Browser. */
+	/** Loads the service; runs exactly once after consent, browser only. */
 	load: () => void | Promise<void>;
-	/** Seitenaufruf melden (Client-Navigation). */
+	/** Reports a page view (client navigation). */
 	pageview?: (url: string) => void;
-	/** Ereignis melden. */
 	event?: (name: string, props?: Record<string, unknown>) => void;
 }
 
@@ -39,10 +37,10 @@ export interface ConsentTexts {
 }
 
 export interface ConsentConfig {
-	/** Version — erhöhen, wenn sich Dienste/Kategorien ändern; dann wird erneut gefragt. */
+	/** Bump when services or categories change; visitors are then asked again. */
 	version: number;
 	cookieName: string;
-	/** Gültigkeit der Entscheidung in Tagen. */
+	/** Validity of the decision in days. */
 	days: number;
 	privacyHref: string;
 	categories: ConsentCategory[];
@@ -79,7 +77,7 @@ export function defineConsent(
 	input: Partial<ConsentConfig> & { categories?: ConsentCategory[]; services?: ConsentService[] }
 ): ConsentConfig {
 	const categories = input.categories ?? [];
-	if (!categories.some((c) => c.required)) {
+	if (!categories.some((category) => category.required)) {
 		categories.unshift({
 			id: 'necessary',
 			label: { de: 'Notwendig', en: 'Necessary' },
@@ -90,10 +88,10 @@ export function defineConsent(
 			required: true
 		});
 	}
-	for (const s of input.services ?? []) {
-		if (!categories.some((c) => c.id === s.category))
+	for (const service of input.services ?? []) {
+		if (!categories.some((category) => category.id === service.category))
 			throw new Error(
-				`consent: Dienst „${s.id}" verweist auf unbekannte Kategorie „${s.category}".`
+				`consent: Dienst „${service.id}" verweist auf unbekannte Kategorie „${service.category}".`
 			);
 	}
 	return {

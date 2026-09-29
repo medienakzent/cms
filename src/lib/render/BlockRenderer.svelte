@@ -3,23 +3,20 @@
 	import type { BlockComponent } from '../registry';
 	import type { RenderBlock } from '../types';
 
-	/**
-	 * Der immer gleiche Wrapper: rendert eine Block-Liste in Reihenfolge.
-	 * Komponenten kommen aus der Registry (Kontext) oder explizit über `components`.
-	 */
+	/** Renders a block list in order; components come from the registry (context) or `components`. */
 	let {
 		blocks,
 		components
 	}: { blocks: RenderBlock[]; components?: Record<string, BlockComponent> } = $props();
 
-	// Kontext muss bei der Initialisierung gelesen werden; `components` als Prop ist eine bewusste Einmal-Entscheidung.
+	// Context must be read during init; `components` is deliberately evaluated once.
 	// svelte-ignore state_referenced_locally
 	const registry = components ? null : getCmsContext();
-	const map = $derived(components ?? registry?.components ?? {});
+	const componentMap = $derived(components ?? registry?.components ?? {});
 </script>
 
 {#each blocks as block (block.id)}
-	{@const Component = map[block.type]}
+	{@const Component = componentMap[block.type]}
 	{#if Component}
 		<Component {...block.data} />
 	{:else}

@@ -1,6 +1,6 @@
 import type { FieldMap } from '../fields';
 
-/** Serialisierbare Sicht auf Definitionen für den Client (ohne Funktionen). */
+/** Serializable view of the definitions for the client (no functions). */
 export interface AdminCollection {
 	name: string;
 	label: string;

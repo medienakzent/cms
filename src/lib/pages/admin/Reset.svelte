@@ -14,8 +14,8 @@
 	let done = $state(false);
 	let busy = $state(false);
 
-	async function submit(e: SubmitEvent) {
-		e.preventDefault();
+	async function submit(event: SubmitEvent) {
+		event.preventDefault();
 		busy = true;
 		error = '';
 		const result = await authClient.resetPassword({ newPassword: password, token: data.token });

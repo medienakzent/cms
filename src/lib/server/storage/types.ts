@@ -1,18 +1,18 @@
 /**
- * Storage-Adapter: Inhalte, Historie und Medien liegen als Dateien hier —
- * NICHT in der Datenbank. Die Datenbank ist nur ein abgeleiteter Index.
- * Default: Dateisystem (fs.ts). Weitere Adapter (S3, …) implementieren dieses Interface.
+ * Storage adapter: content, history and media live here as files, NOT in the
+ * database. The database is only a derived index. Default: file system (fs.ts);
+ * further adapters (S3, …) implement this interface.
  */
 export interface StorageAdapter {
 	read(path: string): Promise<string | null>;
 	readBytes(path: string): Promise<Buffer | null>;
-	/** Atomar: erst temporär schreiben, dann umbenennen. Legt Verzeichnisse an. */
+	/** Atomic: write to a temporary file, then rename. Creates directories. */
 	write(path: string, data: string | Buffer): Promise<void>;
 	exists(path: string): Promise<boolean>;
 	remove(path: string): Promise<void>;
-	/** Alle Dateien (relative Pfade) unter `prefix`, rekursiv, sortiert. */
+	/** All files (relative paths) under `prefix`, recursive, sorted. */
 	list(prefix: string): Promise<string[]>;
 	stat(path: string): Promise<{ size: number; mtime: string } | null>;
-	/** Verzeichnis samt Inhalt entfernen (optional; sonst bleiben leere Ordner stehen). */
+	/** Remove a directory with its contents (optional; otherwise empty folders remain). */
 	removeDir?(prefix: string): Promise<void>;
 }

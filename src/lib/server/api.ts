@@ -4,39 +4,81 @@ import type { Actor } from './content';
 import { CmsError } from './errors';
 import { QueryError } from '../query';
 
-/** Einheitliche Fehlerantwort für REST-Routen. */
-export async function api<T>(fn: () => Promise<T>): Promise<Response> {
+/** Uniform error response for REST routes. */
+export async function api<Result>(handler: () => Promise<Result>): Promise<Response> {
 	try {
-		const result = await fn();
+		const result = await handler();
 		return json(result ?? { ok: true });
-	} catch (e) {
-		if (e instanceof QueryError)
-			return json({ error: e.message, issues: e.issues }, { status: 400 });
-		if (e instanceof CmsError) {
-			return json({ error: e.message, issues: e.issues }, { status: e.status });
+	} catch (error) {
+		if (error instanceof QueryError)
+			return json({ error: error.message, issues: error.issues }, { status: 400 });
+		if (error instanceof CmsError) {
+			return json({ error: error.message, issues: error.issues }, { status: error.status });
 		}
-		if (e instanceof SyntaxError) return json({ error: 'Ungültiges JSON' }, { status: 400 });
-		console.error(e);
+		if (error instanceof SyntaxError) return json({ error: 'Ungültiges JSON' }, { status: 400 });
+		console.error(error);
 		return json({ error: 'Interner Fehler' }, { status: 500 });
 	}
 }
 
+/**
+ * Enforce a byte limit while the body is read. Content-Length alone is not
+ * reliable (chunked uploads carry none).
+ */
+export function limitRequestBody(request: Request, maxBytes: number): Request {
+	if (!request.body) return request;
+	// Reading manually instead of piping: cancelling the upstream stream would destroy
+	// the socket before the 413 response is written.
+	const reader = request.body.getReader();
+	let seen = 0;
+	const limited = new ReadableStream<Uint8Array>({
+		async pull(controller) {
+			const { done, value } = await reader.read();
+			if (done) {
+				controller.close();
+				return;
+			}
+			seen += value.byteLength;
+			if (seen > maxBytes) {
+				reader.releaseLock();
+				controller.error(new CmsError(413, 'Anfrage zu groß'));
+				return;
+			}
+			controller.enqueue(value);
+		},
+		cancel(reason) {
+			return reader.cancel(reason);
+		}
+	});
+	return new Request(request, { body: limited, duplex: 'half' } as RequestInit);
+}
+
 export function actorOf(event: RequestEvent): Actor {
-	const u = event.locals.user;
-	return u ? { id: u.id, name: u.name } : { id: 'anonymous', name: 'anonymous' };
+	const user = event.locals.user;
+	return user ? { id: user.id, name: user.name } : { id: 'anonymous', name: 'anonymous' };
 }
 
 export function requireAdmin(event: RequestEvent): void {
 	if (event.locals.user?.role !== 'admin') throw new CmsError(403, 'Nur für Administratoren');
 }
 
-/** JSON-Body strikt lesen: Content-Type prüfen, nur Objekte, nur erlaubte Schlüssel. */
+/** User and API key management needs a real browser session of an administrator, never an API token. */
+export function requireSessionAdmin(event: RequestEvent): void {
+	if (event.locals.user?.role !== 'admin' || event.locals.user.api)
+		throw new CmsError(403, 'Nur für angemeldete Administratoren');
+}
+
+export function jsonError(status: number, error: string, headers: Record<string, string> = {}) {
+	return json({ error }, { status, headers });
+}
+
+/** Strict JSON body: content type checked, objects only, allowed keys only. */
 export async function readJsonBody(
 	event: RequestEvent,
 	allowedKeys: readonly string[]
 ): Promise<Record<string, unknown>> {
-	const ct = event.request.headers.get('content-type') ?? '';
-	if (!ct.toLowerCase().startsWith('application/json'))
+	const contentType = event.request.headers.get('content-type') ?? '';
+	if (!contentType.toLowerCase().startsWith('application/json'))
 		throw new CmsError(415, 'Content-Type application/json erwartet');
 	let body: unknown;
 	try {
@@ -46,21 +88,24 @@ export async function readJsonBody(
 	}
 	if (typeof body !== 'object' || body === null || Array.isArray(body))
 		throw new CmsError(400, 'JSON-Objekt erwartet');
-	const unknown = Object.keys(body).filter((k) => !allowedKeys.includes(k));
-	if (unknown.length) {
+	const unknownKeys = Object.keys(body).filter((key) => !allowedKeys.includes(key));
+	if (unknownKeys.length) {
 		throw new CmsError(
 			400,
 			'Unbekannte Felder im Body',
-			unknown.map((k) => ({ path: k, message: `Unbekannt. Erlaubt: ${allowedKeys.join(', ')}` }))
+			unknownKeys.map((key) => ({
+				path: key,
+				message: `Unbekannt. Erlaubt: ${allowedKeys.join(', ')}`
+			}))
 		);
 	}
 	return body as Record<string, unknown>;
 }
 
-const isRecord = (v: unknown): v is Record<string, unknown> =>
-	typeof v === 'object' && v !== null && !Array.isArray(v);
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+	typeof value === 'object' && value !== null && !Array.isArray(value);
 
-/** Prüft `fields`, `blocks` und `status` eines Dokument-Bodys auf ihre Grundform (Inhalte prüft die Bibliothek). */
+/** Checks the shape of `fields`, `blocks` and `status` of a document body; content validation happens in the library. */
 export function parseDocumentBody(body: Record<string, unknown>): {
 	fields: Record<string, unknown>;
 	blocks: RenderBlock[];
@@ -72,16 +117,19 @@ export function parseDocumentBody(body: Record<string, unknown>): {
 	if (body.blocks !== undefined) {
 		if (!Array.isArray(body.blocks)) issues.push({ path: 'blocks', message: 'Array erwartet' });
 		else
-			body.blocks.forEach((b, i) => {
-				if (!isRecord(b) || typeof b.type !== 'string')
-					issues.push({ path: `blocks[${i}]`, message: '{ id?, type, data } erwartet' });
-				else if (b.data !== undefined && !isRecord(b.data))
-					issues.push({ path: `blocks[${i}].data`, message: 'Objekt erwartet' });
+			body.blocks.forEach((block, index) => {
+				if (!isRecord(block) || typeof block.type !== 'string')
+					issues.push({ path: `blocks[${index}]`, message: '{ id?, type, data } erwartet' });
+				else if (block.data !== undefined && !isRecord(block.data))
+					issues.push({ path: `blocks[${index}].data`, message: 'Objekt erwartet' });
 				else if (
-					b.id !== undefined &&
-					(typeof b.id !== 'string' || !/^[A-Za-z0-9_-]{1,32}$/.test(b.id))
+					block.id !== undefined &&
+					(typeof block.id !== 'string' || !/^[A-Za-z0-9_-]{1,32}$/.test(block.id))
 				)
-					issues.push({ path: `blocks[${i}].id`, message: 'ID: 1–32 Zeichen [A-Za-z0-9_-]' });
+					issues.push({
+						path: `blocks[${index}].id`,
+						message: 'ID: 1–32 Zeichen [A-Za-z0-9_-]'
+					});
 			});
 	}
 	if (body.status !== undefined && body.status !== 'draft' && body.status !== 'published')
@@ -89,10 +137,10 @@ export function parseDocumentBody(body: Record<string, unknown>): {
 	if (issues.length) throw new CmsError(400, 'Ungültiger Body', issues);
 	return {
 		fields: (body.fields as Record<string, unknown>) ?? {},
-		blocks: ((body.blocks as RenderBlock[]) ?? []).map((b) => ({
-			id: b.id ?? '',
-			type: b.type,
-			data: b.data ?? {}
+		blocks: ((body.blocks as RenderBlock[]) ?? []).map((block) => ({
+			id: block.id ?? '',
+			type: block.type,
+			data: block.data ?? {}
 		})),
 		status: body.status as DocumentStatus | undefined
 	};

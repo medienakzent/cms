@@ -6,19 +6,19 @@ import { getRuntime } from '../../server/runtime';
 
 export async function load({ params, url }: ServerLoadEvent) {
 	const { registry, config } = getRuntime();
-	const def = registry.collections[params.collection ?? ''];
-	if (!def) error(404, 'Collection nicht gefunden');
+	const definition = registry.collections[params.collection ?? ''];
+	if (!definition) error(404, 'Collection nicht gefunden');
 	return {
 		lang: url.searchParams.get('lang') ?? config.defaultLanguage,
 		def: {
-			name: def.name,
-			label: def.label,
-			labelPlural: def.labelPlural,
-			titleField: def.titleField
+			name: definition.name,
+			label: definition.label,
+			labelPlural: definition.labelPlural,
+			titleField: definition.titleField
 		},
 		breadcrumbs: [
 			{ label: 'Übersicht', href: '/admin' },
-			{ label: def.labelPlural, href: `/admin/${def.name}` },
+			{ label: definition.labelPlural, href: `/admin/${definition.name}` },
 			{ label: 'Neu' }
 		]
 	};
@@ -27,24 +27,25 @@ export async function load({ params, url }: ServerLoadEvent) {
 export const actions = {
 	default: async ({ params, request, locals }: RequestEvent) => {
 		const { registry, config } = getRuntime();
-		const def = registry.collections[params.collection ?? ''];
-		if (!def) error(404);
+		const definition = registry.collections[params.collection ?? ''];
+		if (!definition) error(404);
 		const form = await request.formData();
 		const title = String(form.get('title') ?? '').trim();
 		const slug = String(form.get('slug') ?? '').trim() || slugify(title);
 		const lang = String(form.get('lang') ?? config.defaultLanguage);
 		if (!title) return fail(400, { error: 'Titel fehlt', title, slug });
 		try {
-			await collection(def.name).create({
+			await collection(definition.name).create({
 				slug,
 				lang,
-				input: { fields: { [def.titleField]: title } },
+				input: { fields: { [definition.titleField]: title } },
 				actor: { id: locals.user!.id, name: locals.user!.name }
 			});
-		} catch (e) {
-			if (e instanceof CmsError) return fail(e.status, { error: e.message, title, slug });
-			throw e;
+		} catch (cause) {
+			if (cause instanceof CmsError)
+				return fail(cause.status, { error: cause.message, title, slug });
+			throw cause;
 		}
-		redirect(303, `/admin/${def.name}/${slug}?lang=${lang}`);
+		redirect(303, `/admin/${definition.name}/${slug}?lang=${lang}`);
 	}
 };

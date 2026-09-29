@@ -64,12 +64,15 @@ Konfiguration, Website-Layout) und laufen als ein Node-Prozess in einem Containe
 - Formulare: Captcha-Prüfung bleibt zentral in `mail.send`; neue Provider nur in `server/captcha.ts` und `forms/Captcha.svelte`. Consent-Adapter gehören nach `src/lib/tracking`.
 - Neue Server-Funktion: in `content.ts`/`mail/index.ts` implementieren, dann REST-Route in
   `src/lib/routes/api`, dann Stub. Nie umgekehrt.
-- Texte der Oberfläche sind Deutsch; Codekommentare erklären das Warum, nicht das Was.
+- Texte der Oberfläche sind Deutsch. **Code ist Englisch:** Kommentare auf Englisch, so wenige wie
+  möglich und nur für das Warum. **Bezeichner immer ausgeschrieben** — keine Kürzel wie `f`, `r`,
+  `s`, `idx`; der Feld-Builder heißt `field`. Keine Ein-Buchstaben-Variablen, auch nicht in
+  Schleifen oder Callbacks (`for (const language of languages)`, `.map((row) => …)`).
 
 ## Konventionen für Kundendateien (gelten auch für die Spielwiese)
 
 - `src/blocks/<name>/block.ts` + genau eine `.svelte`-Datei, Ordnername = `name`.
-  Props ausschließlich `BlockProps<typeof def>`. Keine Datenzugriffe in Blocks.
+  Props ausschließlich `BlockProps<typeof definition>`. Keine Datenzugriffe in Blocks.
 - `src/collections/<name>.ts`, Dateiname = `name`; alternativ gebündelt in `src/cms.content.ts`.
 - `src/mail/<name>.ts`, Dateiname = `name`.
 - `localized: true` markiert übersetzbare Felder; ganz oder gar nicht, in `list` nicht verschachtelt.
@@ -94,6 +97,10 @@ Konfiguration, Website-Layout) und laufen als ein Node-Prozess in einem Containe
 - Besucher-Eingaben (Formulare) werden escaped; Pfade aus URLs laufen durch `isValidSlug`, Tokens
   durch feste Muster; der Storage verweigert Pfade außerhalb seiner Wurzel.
 - Geheimnisse zeitkonstant vergleichen, nie loggen.
+- Zugriffsentscheidungen im Hook nur auf dem dekodierten Pfad (`decodeURIComponent`); SvelteKit
+  routet dekodiert, ein roher `startsWith` ist umgehbar. Redirect-Ziele (`returnTo`, `_redirect`)
+  nur seiteninterne Pfade. Markdown von Redakteuren nur über `renderMarkdown` ausgeben, nie roh in
+  `{@html}`. Request-Bodies mit `limitRequestBody` begrenzen, nie auf Content-Length vertrauen.
 
 ## Was bewusst nicht im Paket liegt
 

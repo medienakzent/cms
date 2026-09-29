@@ -17,8 +17,8 @@ import Calendar from '@lucide/svelte/icons/calendar';
 import Mail from '@lucide/svelte/icons/mail';
 
 /**
- * Icons für `icon`-Angaben in Blocks/Collections. Lucide-Icons lassen sich nicht
- * dynamisch per Name importieren — neue Namen hier ergänzen.
+ * Icons for `icon` names in blocks/collections. Lucide icons cannot be imported
+ * dynamically by name, so new names must be added here.
  */
 const icons: Record<string, Component<{ class?: string }>> = {
 	box: Box,

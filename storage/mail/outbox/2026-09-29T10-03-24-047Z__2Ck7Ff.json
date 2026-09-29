@@ -1,11 +1,9 @@
 {
-  "id": "2026-09-29T10-03-24-047Z__2Ck7Ff",
-  "from": "CMS Dev <noreply@localhost>",
-  "to": [
-    "office@example.com"
-  ],
-  "replyTo": "max@example.com",
-  "subject": "Kontaktanfrage von Max Muster",
-  "text": "Neue Kontaktanfrage\n\nName: Max Muster\nE-Mail: max@example.com\nNachricht\n\nHallo,\n*Test* <b>x</b>\n\n\n---\nGesendet am 29.9.2026, 10:03:24 über http://localhost:5173/kontakt",
-  "html": "<!doctype html><html><body style=\"font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;font-size:15px;line-height:1.5;color:#111;max-width:640px;margin:0 auto;padding:24px\"><h2>Neue Kontaktanfrage</h2>\n<p><strong>Name:</strong> Max Muster\n<strong>E-Mail:</strong> <a href=\"mailto:max@example.com\">max@example.com</a>\n<strong>Nachricht</strong></p>\n<p>Hallo,<br>*Test* &lt;b&gt;x&lt;/b&gt;</p>\n<hr>\n<p>Gesendet am 29.9.2026, 10:03:24 über <a href=\"http://localhost:5173/kontakt\">http://localhost:5173/kontakt</a></p>\n</body></html>"
+	"id": "2026-09-29T10-03-24-047Z__2Ck7Ff",
+	"from": "CMS Dev <noreply@localhost>",
+	"to": ["office@example.com"],
+	"replyTo": "max@example.com",
+	"subject": "Kontaktanfrage von Max Muster",
+	"text": "Neue Kontaktanfrage\n\nName: Max Muster\nE-Mail: max@example.com\nNachricht\n\nHallo,\n*Test* <b>x</b>\n\n\n---\nGesendet am 29.9.2026, 10:03:24 über http://localhost:5173/kontakt",
+	"html": "<!doctype html><html><body style=\"font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;font-size:15px;line-height:1.5;color:#111;max-width:640px;margin:0 auto;padding:24px\"><h2>Neue Kontaktanfrage</h2>\n<p><strong>Name:</strong> Max Muster\n<strong>E-Mail:</strong> <a href=\"mailto:max@example.com\">max@example.com</a>\n<strong>Nachricht</strong></p>\n<p>Hallo,<br>*Test* &lt;b&gt;x&lt;/b&gt;</p>\n<hr>\n<p>Gesendet am 29.9.2026, 10:03:24 über <a href=\"http://localhost:5173/kontakt\">http://localhost:5173/kontakt</a></p>\n</body></html>"
 }

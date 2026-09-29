@@ -1,17 +1,35 @@
 /**
- * Server-Konfiguration aus Umgebungsvariablen. Das Objekt wird EINMAL beim
- * Start gebaut (createHandle) — das Paket liest nie selbst `$env`.
+ * Server configuration from environment variables. Built ONCE at startup
+ * (createHandle); the package never reads `$env` itself.
  */
 export type Env = Record<string, string | undefined>;
 
-function num(value: string | undefined, fallback: number): number {
-	const n = Number(value);
-	return Number.isFinite(n) && n > 0 ? n : fallback;
+function positiveNumber(value: string | undefined, fallback: number): number {
+	const parsed = Number(value);
+	return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+const MAIL_TRANSPORTS = ['file', 'smtp', 'microsoft', 'google'] as const;
+type MailTransportName = (typeof MAIL_TRANSPORTS)[number];
+
+function mailTransport(value: string | undefined): MailTransportName {
+	if (!value) return 'file';
+	if ((MAIL_TRANSPORTS as readonly string[]).includes(value)) return value as MailTransportName;
+	throw new Error(
+		`MAIL_TRANSPORT „${value}" ist unbekannt. Erlaubt: ${MAIL_TRANSPORTS.join(', ')}`
+	);
+}
+
+function list(value: string | undefined): string[] {
+	return (value ?? '')
+		.split(',')
+		.map((entry) => entry.trim())
+		.filter(Boolean);
 }
 
 export function buildServerConfig(env: Env) {
 	const isProd = env.NODE_ENV === 'production';
-	const cfg = {
+	const config = {
 		isProd,
 		dataDir: env.DATA_DIR || 'data',
 		storageDir: env.STORAGE_DIR || 'storage',
@@ -19,8 +37,9 @@ export function buildServerConfig(env: Env) {
 		databaseUrl: env.DATABASE_URL || 'sqlite:cms.db',
 		authSecret: env.AUTH_SECRET || '',
 		allowSignup: env.ALLOW_SIGNUP === '1',
+		trustedOrigins: list(env.TRUSTED_ORIGINS).map((origin) => origin.replace(/\/+$/, '')),
 		apiToken: env.API_TOKEN || '',
-		maxUploadBytes: num(env.MAX_UPLOAD_MB, 200) * 1024 * 1024,
+		maxUploadBytes: positiveNumber(env.MAX_UPLOAD_MB, 200) * 1024 * 1024,
 		oauth: {
 			github: {
 				clientId: env.GITHUB_CLIENT_ID || '',
@@ -37,13 +56,10 @@ export function buildServerConfig(env: Env) {
 			}
 		},
 		mail: {
-			/** file (Default, Ablage im Storage) | smtp | microsoft | google */
-			transport: (env.MAIL_TRANSPORT || 'file') as 'file' | 'smtp' | 'microsoft' | 'google',
+			/** file (default, stored in the storage) | smtp | microsoft | google */
+			transport: mailTransport(env.MAIL_TRANSPORT),
 			from: env.MAIL_FROM || 'CMS <noreply@localhost>',
-			defaultTo: (env.MAIL_TO_DEFAULT || '')
-				.split(',')
-				.map((s) => s.trim())
-				.filter(Boolean),
+			defaultTo: list(env.MAIL_TO_DEFAULT),
 			smtpUrl: env.SMTP_URL || '',
 			microsoft: {
 				tenantId: env.MS_MAIL_TENANT_ID || '',
@@ -55,32 +71,35 @@ export function buildServerConfig(env: Env) {
 				serviceAccountFile: env.GOOGLE_MAIL_SERVICE_ACCOUNT || '',
 				sender: env.GOOGLE_MAIL_SENDER || ''
 			},
-			/** Aufbewahrung hochgeladener Formulardateien in Tagen; 0 = unbegrenzt. */
-			uploadRetentionDays: Number(env.MAIL_UPLOAD_RETENTION_DAYS ?? 180) || 0
+			/** Retention of uploaded form files in days; 0 = unlimited. */
+			uploadRetentionDays:
+				env.MAIL_UPLOAD_RETENTION_DAYS === '0'
+					? 0
+					: positiveNumber(env.MAIL_UPLOAD_RETENTION_DAYS, 180)
 		},
 		captcha: {
-			/** ALTCHA ist immer an; CAPTCHA=0 nur für Tests. */
+			/** ALTCHA is always on; CAPTCHA=0 only for tests. */
 			enabled: env.CAPTCHA !== '0',
-			/** HMAC-Geheimnis für die Aufgaben (Default: AUTH_SECRET) */
+			/** HMAC secret for challenges (default: AUTH_SECRET) */
 			secret: env.CAPTCHA_SECRET || env.AUTH_SECRET || 'dev-captcha-secret',
-			/** Rechenaufwand (PBKDF2-Iterationen); höher = mehr Schutz, langsamer */
-			cost: num(env.ALTCHA_COST, 1000)
+			/** Proof-of-work cost (PBKDF2 iterations); higher = more protection, slower */
+			cost: positiveNumber(env.ALTCHA_COST, 1000)
 		},
 		rateLimit: {
-			/** Captcha-Aufgaben pro Minute je IP */
-			captchaPerMinute: num(env.RATE_LIMIT_CAPTCHA_PER_MINUTE, 60),
-			/** Formular-Sendungen pro Minute je IP auf /api/mail */
-			mailPerMinute: num(env.RATE_LIMIT_MAIL_PER_MINUTE, 5),
-			/** Anfragen pro Minute je angemeldetem Nutzer bzw. API-Token auf /api/v1 */
-			perMinute: num(env.RATE_LIMIT_PER_MINUTE, 300),
-			/** Anfragen pro Minute je IP ohne Anmeldung */
-			anonPerMinute: num(env.RATE_LIMIT_ANON_PER_MINUTE, 30)
+			/** Captcha challenges per minute per IP */
+			captchaPerMinute: positiveNumber(env.RATE_LIMIT_CAPTCHA_PER_MINUTE, 60),
+			/** Form submissions per minute per IP on /api/mail */
+			mailPerMinute: positiveNumber(env.RATE_LIMIT_MAIL_PER_MINUTE, 5),
+			/** Requests per minute per signed-in user or API token on /api/v1 */
+			perMinute: positiveNumber(env.RATE_LIMIT_PER_MINUTE, 300),
+			/** Requests per minute per IP without sign-in */
+			anonPerMinute: positiveNumber(env.RATE_LIMIT_ANON_PER_MINUTE, 30)
 		}
 	};
-	if (isProd && cfg.authSecret.length < 32) {
+	if (isProd && config.authSecret.length < 32) {
 		throw new Error('AUTH_SECRET fehlt oder ist zu kurz (mind. 32 Zeichen).');
 	}
-	return cfg;
+	return config;
 }
 
 export type ServerConfig = ReturnType<typeof buildServerConfig>;

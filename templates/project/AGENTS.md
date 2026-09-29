@@ -1,4 +1,4 @@
-# AGENTS.md — __PROJECT_NAME__
+# AGENTS.md — **PROJECT_NAME**
 
 Dieses Projekt nutzt `@medienakzent/cms`. Diese Datei gilt für Menschen und KI-Agenten;
 es gibt keine CLAUDE.md.
@@ -25,7 +25,7 @@ es gibt keine CLAUDE.md.
 ## Regeln
 
 1. Struktur nur über `defineBlock`, `defineCollection`, `defineMail`. Props von Blocks kommen
-   ausschließlich aus `BlockProps<typeof def>`. Keine Datenzugriffe in Blocks.
+   ausschließlich aus `BlockProps<typeof definition>`. Keine Datenzugriffe in Blocks.
 2. Inhalte liegen unter `storage/`; die Datenbank ist nur Index. `storage/content` darf
    versioniert werden, Medien und Historie nicht.
 3. Übersetzbare Felder tragen `localized: true` — ganz oder gar nicht.
@@ -44,6 +44,11 @@ es gibt keine CLAUDE.md.
   Stubs. Nicht im laufenden Container austauschen: Vite stürzt ab, wenn das Paket unter ihm
   wechselt. Danach `npx cms check` und CHANGELOG des Pakets lesen.
 - Alle Umgebungsvariablen sind in `.env.example` dokumentiert.
+
+## Code-Stil
+
+Kommentare auf Englisch und minimal (nur das Warum). Bezeichner immer ausgeschrieben, keine
+Kürzel oder Ein-Buchstaben-Variablen; der Feld-Builder heißt `field`. Texte der Oberfläche Deutsch.
 
 ## Git
 

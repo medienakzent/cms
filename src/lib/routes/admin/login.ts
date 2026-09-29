@@ -2,17 +2,25 @@ import { redirect, type ServerLoadEvent } from '@sveltejs/kit';
 import { getDb } from '../../server/db';
 import { serverConfig } from '../../server/runtime';
 
+/** Only site-internal targets are accepted as return address after login. */
+function safeReturnTo(value: string | null): string {
+	return value && /^\/[^/\\]/.test(value) ? value : '/admin';
+}
+
 export async function load({ locals, url }: ServerLoadEvent) {
-	if (locals.user) redirect(303, url.searchParams.get('returnTo') || '/admin');
-	// Registrierung anbieten, wenn erlaubt oder noch kein Konto existiert (erster Nutzer wird Admin).
+	const returnTo = safeReturnTo(url.searchParams.get('returnTo'));
+	if (locals.user) redirect(303, returnTo);
+	// Offer signup when allowed or when no account exists yet (the first user becomes admin).
 	let signup = serverConfig().allowSignup;
 	if (!signup) {
 		try {
-			const row = await (await getDb()).get<{ n: number }>('SELECT COUNT(*) AS n FROM "user"');
-			signup = Number(row?.n ?? 0) === 0;
+			const row = await (
+				await getDb()
+			).get<{ count: number }>('SELECT COUNT(*) AS count FROM "user"');
+			signup = Number(row?.count ?? 0) === 0;
 		} catch {
 			signup = false;
 		}
 	}
-	return { returnTo: url.searchParams.get('returnTo') || '/admin', signup };
+	return { returnTo, signup };
 }

@@ -1,10 +1,7 @@
 import { defineConfig, defineConsent } from '@medienakzent/cms';
 import { script } from '@medienakzent/cms/forms';
 
-/**
- * Projektweite CMS-Konfiguration. Struktur (Blocks, Collections) liegt in
- * src/blocks und src/collections — hier nur Sprachen, Routing, Medien.
- */
+/** Languages, routing, media. Structure (blocks, collections) lives in src/blocks and src/collections. */
 export default defineConfig({
 	site: { name: 'CMS' },
 	languages: [
@@ -20,7 +17,7 @@ export default defineConfig({
 		imageVariants: { thumb: 320, md: 960, lg: 1920 },
 		imageQuality: 82
 	},
-	// Spielwiese: ein Beispiel-Dienst, damit der Banner sichtbar ist.
+	// Playground: one example service so the banner is visible.
 	consent: defineConsent({
 		version: 1,
 		privacyHref: '/datenschutz',

@@ -24,15 +24,15 @@ das Paket und ergänzen nur eigene Dateien; alles läuft in einem Node-Prozess.
 
 ```bash
 mkdir mein-projekt && cd mein-projekt
-npm init -y >/dev/null && npm install github:medienakzent/cms#v0.1.0
+npm init -y >/dev/null && npm install github:medienakzent/cms#v0.5.0
 npx cms init .                 # Gerüst, Stubs, Docker, .env.example, AGENTS.md
 cp .env.example .env           # AUTH_SECRET setzen
 docker compose -f docker-compose.dev.yml up -d --build
 ```
 
 - Website: http://localhost:5173 (Beispiel-Startseite beim ersten Start)
-- Admin: http://localhost:5173/admin — mit `ALLOW_SIGNUP=1` registrieren; der erste Nutzer
-  wird Admin. Danach `ALLOW_SIGNUP=0`.
+- Admin: http://localhost:5173/admin — der erste Nutzer registriert sich selbst und wird Admin.
+  Weitere Konten legt der Admin unter „Nutzer" an (`ALLOW_SIGNUP` bleibt 0).
 
 Das Paket wird per Git-Tag installiert (privates `@compdata/ui` braucht SSH-Zugriff auf
 GitHub, siehe `docker/dev-entrypoint.sh` der Vorlage).
@@ -102,7 +102,7 @@ Zwei gleichwertige Wege, beide ohne Registrierung:
 - gebündelt in `src/cms.content.ts`:
 
 ```ts
-import { defineCollection, defineContent, f } from '@medienakzent/cms';
+import { defineCollection, defineContent, field } from '@medienakzent/cms';
 
 export default defineContent({
 	collections: [
@@ -111,11 +111,11 @@ export default defineContent({
 			label: 'Veranstaltung',
 			labelPlural: 'Veranstaltungen',
 			fields: {
-				title: f.text({ localized: true, required: true }),
-				start: f.date({ required: true }),
-				city: f.text(),
-				category: f.select(['konzert', 'lesung']),
-				tags: f.references('tags')
+				title: field.text({ localized: true, required: true }),
+				start: field.date({ required: true }),
+				city: field.text(),
+				category: field.select(['konzert', 'lesung']),
+				tags: field.references('tags')
 			},
 			blocks: ['text', 'image'],
 			sortBy: { field: 'start', direction: 'asc' }
@@ -129,7 +129,7 @@ Facetten und die REST-Endpunkte unter `/api/v1/<name>`.
 
 ## Abfragen (Filter, Sortierung)
 
-Eine Definition für Bibliothek und REST (`src/lib/cms/query.ts`). Alles wird gegen
+Eine Definition für Bibliothek und REST (`src/lib/query.ts`). Alles wird gegen
 die Felddefinition geprüft; Unbekanntes ergibt `400` mit einer `issues`-Liste.
 
 ```
@@ -179,7 +179,7 @@ await cms.collection('events').list({
   `RATE_LIMIT_ANON_PER_MINUTE` je IP ohne Anmeldung (Default 30). Antworten tragen
   `x-ratelimit-limit`/`x-ratelimit-remaining`, bei Überschreitung `429` mit `retry-after`.
   Login-Endpunkte unter `/api/auth` limitiert Better Auth selbst.
-  Der Zähler lebt im Prozess; für mehrere Instanzen siehe `src/lib/cms/server/rate-limit.ts`.
+  Der Zähler lebt im Prozess; für mehrere Instanzen siehe `src/lib/server/rate-limit.ts`.
 
 ## Mail-Versand (Kontakt- und Anfrageformulare)
 
@@ -189,9 +189,9 @@ Vorlagen liegen je Kunde in `src/mail/<name>.ts` und nutzen das Feldsystem der B
 export default defineMail({
 	name: 'contact',
 	fields: {
-		name: f.text({ required: true }),
-		email: f.text({ required: true }),
-		message: f.textarea({ required: true })
+		name: field.text({ required: true }),
+		email: field.text({ required: true }),
+		message: field.textarea({ required: true })
 	},
 	replyToField: 'email',
 	to: ['office@example.com'], // leer → MAIL_TO_DEFAULT
@@ -209,7 +209,7 @@ escaped, Markdown wird zu HTML plus Textfassung.
 - **Öffentlich:** `POST /api/mail/contact` mit JSON oder Formulardaten. Optional `_lang`
   und `_redirect=/danke` für Formulare ohne JavaScript. Schutz: Rate-Limit je IP
   (`RATE_LIMIT_MAIL_PER_MINUTE`), Honeypot-Feld (`honeypot`, Default `website`), 64 KB Limit.
-- **Datei-Uploads:** `f.file({ accept: ['application/pdf'], maxSize: 10 * 1024 * 1024, required: true })`.
+- **Datei-Uploads:** `field.file({ accept: ['application/pdf'], maxSize: 10 * 1024 * 1024, required: true })`.
   Dateien kommen per multipart, werden gegen Typ, Signatur und Größe geprüft (Summe:
   `maxTotalSize` der Vorlage, Default 32 MB) und unter `storage/mail/uploads/<token>/` abgelegt.
   Die Mail enthält Download-Links mit Token (`{{files}}` oder `{{feld}}`), erreichbar unter
@@ -218,7 +218,7 @@ escaped, Markdown wird zu HTML plus Textfassung.
 - **Transport** über `MAIL_TRANSPORT`: `file` (Entwicklung, Ablage unter `storage/mail/outbox`),
   `smtp` (nodemailer, `SMTP_URL`), `microsoft` (Graph `sendMail`, App-Registrierung mit
   `Mail.Send`), `google` (Gmail API, Service-Account mit domänenweiter Delegation).
-  Eigene Transporte implementieren `MailTransport` aus `src/lib/cms/server/mail/transport.ts`.
+  Eigene Transporte implementieren `MailTransport` aus `src/lib/server/mail/transport.ts`.
 - Jede Einsendung wird unter `storage/mail/submissions/` gespeichert und im Admin unter
   „Einsendungen" gelistet (Detail, Dateien, Löschen), inklusive Spam (Honeypot) und Fehlern.
   Abruf per API nur mit Anmeldung oder Token: `GET /api/v1/submissions?template=&status=`,
@@ -289,11 +289,15 @@ Gestaltung über die Klassen `cms-consent*` und CSS-Variablen `--cms-consent-*`.
   `static/robots.txt` im Projekt anpassen.
 - Volumes sichern: `/storage` (Inhalte, Medien, Historie, Einsendungen) und `/data` (Index, Auth).
   Der Index ist rekonstruierbar, Auth-Tabellen (Konten) nicht — beides sichern.
-- Uploads: `BODY_SIZE_LIMIT` am Node-Server über der größten `maxTotalSize` halten.
+- Uploads: Das CMS begrenzt Bodies beim Lesen (Formulare: `maxTotalSize`, Medien: `MAX_UPLOAD_MB`).
+  `BODY_SIZE_LIMIT` am Node-Server (Default 64M) über der größten dieser Grenzen halten.
+- Hinter einem Proxy: `ADDRESS_HEADER=x-forwarded-for` und `XFF_DEPTH=1` (in der Docker-Vorlage gesetzt),
+  damit Rate-Limits die Besucher-IP sehen. Weitere Login-Domains (Alias) in `TRUSTED_ORIGINS` eintragen;
+  in Produktion zählen nur `ORIGIN` und diese Liste.
 - Rate-Limits und Captcha-Replay-Schutz sind prozesslokal — bei mehreren Instanzen Sticky Sessions
   oder einen gemeinsamen Speicher nachrüsten.
-- Redakteure können in Richtext-Feldern HTML setzen (Markdown erlaubt es). Konten daher nur an
-  vertrauenswürdige Personen vergeben; Formular-Eingaben von Besuchern werden immer escaped.
+- Richtext (Markdown) wird bereinigt ausgegeben: rohes HTML wird escaped, Links nur http(s), mailto,
+  tel oder relativ. Formular-Eingaben von Besuchern werden immer escaped.
 - Für KI-Suchsysteme (GEO): sauberes SSR-HTML, JSON-LD und Meta-Beschreibungen kommen vom
   Kundenlayout; `llms.txt` und `sitemap.xml` liefert das CMS. Wer KI-Training ausschließen will,
   trägt in `robots.txt` z. B. `GPTBot`, `ClaudeBot`, `Google-Extended` mit `Disallow: /` ein.
@@ -322,11 +326,11 @@ Gestaltung über die Klassen `cms-consent*` und CSS-Variablen `--cms-consent-*`.
 
 `DATABASE_URL=sqlite:cms.db` (Default, Datei unter `DATA_DIR`) oder
 `DATABASE_URL=postgres://…`. Der Index nutzt bewusst nur portables SQL
-(`src/lib/cms/server/db/`); weitere Dialekte brauchen nur einen kleinen Treiber
+(`src/lib/server/db/`); weitere Dialekte brauchen nur einen kleinen Treiber
 mit `all/get/run/exec/transaction`. Better Auth legt seine Tabellen selbst an.
 
 ## Storage-Adapter
 
-`src/lib/cms/server/storage/types.ts` — Default ist das Dateisystem (`STORAGE_DIR`).
+`src/lib/server/storage/types.ts` — Default ist das Dateisystem (`STORAGE_DIR`).
 Ein S3-Adapter implementiert dieselben sieben Methoden; Pfad-Konventionen liegen
 zentral in `storage/index.ts`.

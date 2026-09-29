@@ -1,4 +1,4 @@
-import { defineCollection, f } from '@medienakzent/cms';
+import { defineCollection, field } from '@medienakzent/cms';
 
 export default defineCollection({
 	name: 'categories',
@@ -6,8 +6,8 @@ export default defineCollection({
 	labelPlural: 'Kategorien',
 	icon: 'folder',
 	fields: {
-		title: f.text({ label: 'Name', localized: true, required: true }),
-		description: f.textarea({ label: 'Beschreibung', localized: true })
+		title: field.text({ label: 'Name', localized: true, required: true }),
+		description: field.textarea({ label: 'Beschreibung', localized: true })
 	},
 	blocks: false,
 	sortBy: { field: 'title', direction: 'asc' }

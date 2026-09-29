@@ -7,18 +7,18 @@ import type { ConsentConfig } from './consent';
 
 export interface CmsConfig {
 	site: { name: string };
-	/** Datenschutz-Banner und Dienste (siehe consent.ts, defineConsent). Ohne Angabe: kein Banner. */
+	/** Privacy banner and services (see consent.ts, defineConsent); `null` = no banner. */
 	consent: ConsentConfig | null;
 	languages: LanguageConfig[];
 	defaultLanguage: string;
 	routing: {
-		/** `except-default`: /about (de) und /en/about — `always`: /de/about und /en/about */
+		/** `except-default`: /about (de) and /en/about; `always`: /de/about and /en/about */
 		localePrefix: 'except-default' | 'always';
-		/** Collection + Slug der Startseite */
+		/** Collection and slug of the start page */
 		home: { collection: string; slug: string };
 	};
 	media: {
-		/** Breite je Bildvariante (webp). */
+		/** Width per image variant (webp). */
 		imageVariants: Record<string, number>;
 		imageQuality: number;
 	};
@@ -35,7 +35,7 @@ export interface CmsConfigInput {
 
 export function defineConfig(input: CmsConfigInput): CmsConfig {
 	const defaultLanguage = input.defaultLanguage ?? input.languages[0]?.code;
-	if (!defaultLanguage || !input.languages.some((l) => l.code === defaultLanguage)) {
+	if (!defaultLanguage || !input.languages.some((language) => language.code === defaultLanguage)) {
 		throw new Error('cms.config: defaultLanguage muss in languages enthalten sein.');
 	}
 	return {
@@ -56,7 +56,7 @@ export function defineConfig(input: CmsConfigInput): CmsConfig {
 	};
 }
 
-/** Öffentlicher Pfad mit Sprachpräfix gemäß `routing.localePrefix`. */
+/** Public path with language prefix according to `routing.localePrefix`. */
 export function localizePath(config: CmsConfig, lang: string, path: string): string {
 	const clean = path.startsWith('/') ? path : `/${path}`;
 	if (config.routing.localePrefix === 'except-default' && lang === config.defaultLanguage)

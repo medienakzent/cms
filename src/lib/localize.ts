@@ -1,19 +1,14 @@
 /**
- * Aufteilen (Speichern) und Zusammenführen (Lesen) von Inhalten in
- * Basis-Datei + Sprach-Overlay. Siehe fields.ts für die Regel zu `localized`.
+ * Splits content into base file + language overlay on save and merges it back on read.
+ * See fields.ts for the `localized` rule.
  */
 import type { Field, FieldMap } from './fields';
 import type { BlockDefinition } from './block';
 import { migrateBlockData } from './block';
 import type { RenderBlock, StoredBlock } from './types';
-import { defaultValue, normalizeField, normalizeFields } from './validate';
+import { isEmptyValue, normalizeField, normalizeFields } from './validate';
 
-export function isEmptyValue(v: unknown): boolean {
-	if (v === undefined || v === null) return true;
-	if (typeof v === 'string') return v.trim() === '';
-	if (Array.isArray(v)) return v.length === 0;
-	return false;
-}
+export { isEmptyValue, emptyValues } from './validate';
 
 function hasLocalizedLeaf(field: Field): boolean {
 	if (field.localized) return true;
@@ -21,7 +16,7 @@ function hasLocalizedLeaf(field: Field): boolean {
 	return false;
 }
 
-/** Trennt einen Feldwert-Satz in nicht-lokalisierten Basisanteil und lokalisierten Anteil. */
+/** Splits a field value set into the non-localized base part and the localized part. */
 export function splitFields(
 	fields: FieldMap,
 	value: Record<string, unknown>
@@ -29,23 +24,23 @@ export function splitFields(
 	const base: Record<string, unknown> = {};
 	const local: Record<string, unknown> = {};
 	for (const [key, field] of Object.entries(fields)) {
-		const v = value?.[key];
+		const fieldValue = value?.[key];
 		if (field.localized) {
-			local[key] = v;
+			local[key] = fieldValue;
 		} else if (field.kind === 'group' && hasLocalizedLeaf(field)) {
-			const inner = splitFields(field.fields, (v as Record<string, unknown>) ?? {});
+			const inner = splitFields(field.fields, (fieldValue as Record<string, unknown>) ?? {});
 			base[key] = inner.base;
 			local[key] = inner.local;
 		} else {
-			base[key] = v;
+			base[key] = fieldValue;
 		}
 	}
 	return { base, local };
 }
 
 /**
- * Führt Basis + Overlay (+ Fallback-Overlay der Standardsprache) zusammen und
- * normalisiert jeden Wert auf den Typ, den die Komponente erwartet.
+ * Merges base + overlay (+ fallback overlay of the default language) and normalizes
+ * every value to the type the component expects.
  */
 export function mergeFields(
 	fields: FieldMap,
@@ -56,9 +51,9 @@ export function mergeFields(
 	const out: Record<string, unknown> = {};
 	for (const [key, field] of Object.entries(fields)) {
 		if (field.localized) {
-			let v = local?.[key];
-			if (isEmptyValue(v) && fallback) v = fallback[key];
-			out[key] = normalizeField(field, v);
+			let value = local?.[key];
+			if (isEmptyValue(value) && fallback) value = fallback[key];
+			out[key] = normalizeField(field, value);
 		} else if (field.kind === 'group' && hasLocalizedLeaf(field)) {
 			out[key] = mergeFields(
 				field.fields,
@@ -74,46 +69,39 @@ export function mergeFields(
 }
 
 export function splitBlocks(
-	defs: Record<string, BlockDefinition>,
+	definitions: Record<string, BlockDefinition>,
 	blocks: RenderBlock[]
 ): { base: StoredBlock[]; local: Record<string, Record<string, unknown>> } {
 	const base: StoredBlock[] = [];
 	const local: Record<string, Record<string, unknown>> = {};
 	for (const block of blocks) {
-		const def = defs[block.type];
-		if (!def) {
-			// Unbekannter Typ: unverändert in die Basis (Validierung meldet ihn).
+		const definition = definitions[block.type];
+		if (!definition) {
+			// Unknown type goes into the base unchanged; validation reports it.
 			base.push({ id: block.id, type: block.type, version: 0, data: block.data });
 			continue;
 		}
-		const parts = splitFields(def.fields, block.data);
-		base.push({ id: block.id, type: block.type, version: def.version, data: parts.base });
+		const parts = splitFields(definition.fields, block.data);
+		base.push({ id: block.id, type: block.type, version: definition.version, data: parts.base });
 		if (Object.keys(parts.local).length) local[block.id] = parts.local;
 	}
 	return { base, local };
 }
 
 export function mergeBlocks(
-	defs: Record<string, BlockDefinition>,
+	definitions: Record<string, BlockDefinition>,
 	stored: StoredBlock[],
 	local: Record<string, Record<string, unknown>> | undefined,
 	fallback: Record<string, Record<string, unknown>> | undefined
 ): RenderBlock[] {
 	return stored.map((block) => {
-		const def = defs[block.type];
-		if (!def) return { id: block.id, type: block.type, data: block.data };
-		let data = mergeFields(def.fields, block.data, local?.[block.id], fallback?.[block.id]);
-		if (block.version < def.version) {
-			data = migrateBlockData(def, block.version, data).data;
-			data = normalizeFields(def.fields, data);
+		const definition = definitions[block.type];
+		if (!definition) return { id: block.id, type: block.type, data: block.data };
+		let data = mergeFields(definition.fields, block.data, local?.[block.id], fallback?.[block.id]);
+		if (block.version < definition.version) {
+			data = migrateBlockData(definition, block.version, data).data;
+			data = normalizeFields(definition.fields, data);
 		}
 		return { id: block.id, type: block.type, data };
 	});
-}
-
-/** Leerer Wert-Satz für neue Dokumente/Blocks. */
-export function emptyValues(fields: FieldMap): Record<string, unknown> {
-	const out: Record<string, unknown> = {};
-	for (const [key, field] of Object.entries(fields)) out[key] = defaultValue(field);
-	return out;
 }

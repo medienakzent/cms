@@ -1,11 +1,9 @@
 {
-  "id": "2026-09-29T10-53-13-904Z__W9T9ap",
-  "from": "CMS Dev <noreply@localhost>",
-  "to": [
-    "office@example.com"
-  ],
-  "replyTo": "anna@example.com",
-  "subject": "Bewerbung von Anna Test",
-  "text": "Neue Bewerbung\n\nName: Anna Test\nE-Mail: anna@example.com\nMotivation: Ich möchte …\nPortfolio (PDF): Portfolio Anna.pdf (2 KB)\nLebenslauf (PDF): cv.pdf (2 KB)\n\nUnterlagen\n\n- Portfolio (PDF): Portfolio Anna.pdf (2 KB)\n- Lebenslauf (PDF): cv.pdf (2 KB)\n\nDie Links sind nur mit dieser Adresse aufrufbar.",
-  "html": "<!doctype html><html><body style=\"font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;font-size:15px;line-height:1.5;color:#111;max-width:640px;margin:0 auto;padding:24px\"><h2>Neue Bewerbung</h2>\n<p><strong>Name:</strong> Anna Test\n<strong>E-Mail:</strong> <a href=\"mailto:anna@example.com\">anna@example.com</a>\n<strong>Motivation:</strong> Ich möchte …\n<strong>Portfolio (PDF):</strong> <a href=\"http://localhost:5173/api/mail/download/dPQynB9uHLA3oJzecL_hebqW/portfolio__Portfolio_Anna.pdf\">Portfolio Anna.pdf</a> (2 KB)\n<strong>Lebenslauf (PDF):</strong> <a href=\"http://localhost:5173/api/mail/download/dPQynB9uHLA3oJzecL_hebqW/cv__cv.pdf\">cv.pdf</a> (2 KB)</p>\n<h3>Unterlagen</h3>\n<ul>\n<li><strong>Portfolio (PDF):</strong> <a href=\"http://localhost:5173/api/mail/download/dPQynB9uHLA3oJzecL_hebqW/portfolio__Portfolio_Anna.pdf\">Portfolio Anna.pdf</a> (2 KB)</li>\n<li><strong>Lebenslauf (PDF):</strong> <a href=\"http://localhost:5173/api/mail/download/dPQynB9uHLA3oJzecL_hebqW/cv__cv.pdf\">cv.pdf</a> (2 KB)</li>\n</ul>\n<p>Die Links sind nur mit dieser Adresse aufrufbar.</p>\n</body></html>"
+	"id": "2026-09-29T10-53-13-904Z__W9T9ap",
+	"from": "CMS Dev <noreply@localhost>",
+	"to": ["office@example.com"],
+	"replyTo": "anna@example.com",
+	"subject": "Bewerbung von Anna Test",
+	"text": "Neue Bewerbung\n\nName: Anna Test\nE-Mail: anna@example.com\nMotivation: Ich möchte …\nPortfolio (PDF): Portfolio Anna.pdf (2 KB)\nLebenslauf (PDF): cv.pdf (2 KB)\n\nUnterlagen\n\n- Portfolio (PDF): Portfolio Anna.pdf (2 KB)\n- Lebenslauf (PDF): cv.pdf (2 KB)\n\nDie Links sind nur mit dieser Adresse aufrufbar.",
+	"html": "<!doctype html><html><body style=\"font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;font-size:15px;line-height:1.5;color:#111;max-width:640px;margin:0 auto;padding:24px\"><h2>Neue Bewerbung</h2>\n<p><strong>Name:</strong> Anna Test\n<strong>E-Mail:</strong> <a href=\"mailto:anna@example.com\">anna@example.com</a>\n<strong>Motivation:</strong> Ich möchte …\n<strong>Portfolio (PDF):</strong> <a href=\"http://localhost:5173/api/mail/download/dPQynB9uHLA3oJzecL_hebqW/portfolio__Portfolio_Anna.pdf\">Portfolio Anna.pdf</a> (2 KB)\n<strong>Lebenslauf (PDF):</strong> <a href=\"http://localhost:5173/api/mail/download/dPQynB9uHLA3oJzecL_hebqW/cv__cv.pdf\">cv.pdf</a> (2 KB)</p>\n<h3>Unterlagen</h3>\n<ul>\n<li><strong>Portfolio (PDF):</strong> <a href=\"http://localhost:5173/api/mail/download/dPQynB9uHLA3oJzecL_hebqW/portfolio__Portfolio_Anna.pdf\">Portfolio Anna.pdf</a> (2 KB)</li>\n<li><strong>Lebenslauf (PDF):</strong> <a href=\"http://localhost:5173/api/mail/download/dPQynB9uHLA3oJzecL_hebqW/cv__cv.pdf\">cv.pdf</a> (2 KB)</li>\n</ul>\n<p>Die Links sind nur mit dieser Adresse aufrufbar.</p>\n</body></html>"
 }

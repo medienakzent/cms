@@ -1,24 +1,24 @@
 /**
- * Minimaler Datenbank-Treiber: Der Index braucht nur SELECT/INSERT/UPSERT/DELETE.
- * SQL wird mit `?`-Platzhaltern geschrieben; der Postgres-Treiber übersetzt nach `$n`.
- * Konvention für portable SQL: nur TEXT und INTEGER, Zeitstempel als ISO-Text,
- * Booleans als 0/1, IDs als TEXT (kein Autoincrement).
+ * Minimal database driver: the index only needs SELECT/INSERT/UPSERT/DELETE.
+ * SQL uses `?` placeholders; the Postgres driver translates them to `$n`.
+ * Portable SQL convention: TEXT and INTEGER only, timestamps as ISO text,
+ * booleans as 0/1, IDs as TEXT (no autoincrement).
  */
 export type Dialect = 'sqlite' | 'postgres';
 
 export interface DbDriver {
 	dialect: Dialect;
-	all<T = Record<string, unknown>>(sql: string, params?: unknown[]): Promise<T[]>;
-	get<T = Record<string, unknown>>(sql: string, params?: unknown[]): Promise<T | null>;
+	all<Row = Record<string, unknown>>(sql: string, params?: unknown[]): Promise<Row[]>;
+	get<Row = Record<string, unknown>>(sql: string, params?: unknown[]): Promise<Row | null>;
 	run(sql: string, params?: unknown[]): Promise<void>;
-	/** Mehrere Anweisungen (Schema). */
+	/** Multiple statements (schema). */
 	exec(sql: string): Promise<void>;
-	transaction<T>(fn: () => Promise<T>): Promise<T>;
-	/** Rohes Handle für Better Auth (better-sqlite3 Database bzw. pg Pool). */
+	transaction<Result>(callback: () => Promise<Result>): Promise<Result>;
+	/** Raw handle for Better Auth (better-sqlite3 Database or pg Pool). */
 	raw: unknown;
 }
 
 export function toPgPlaceholders(sql: string): string {
-	let i = 0;
-	return sql.replace(/\?/g, () => `$${++i}`);
+	let index = 0;
+	return sql.replace(/\?/g, () => `$${++index}`);
 }

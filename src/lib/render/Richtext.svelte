@@ -1,10 +1,9 @@
 <script lang="ts">
-	import { marked } from 'marked';
+	import { renderMarkdown } from '../markdown';
 
-	/** Rendert Markdown aus einem `richtext`-Feld. Inhalte stammen von angemeldeten Redakteuren. */
 	let { source, class: className = 'prose' }: { source: string; class?: string } = $props();
 
-	const html = $derived(marked.parse(source ?? '', { async: false }) as string);
+	const html = $derived(renderMarkdown(source ?? ''));
 </script>
 
 <div class={className}>{@html html}</div>

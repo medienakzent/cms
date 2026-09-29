@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatDateTime } from '../format';
 	import { beforeNavigate, goto, invalidateAll } from '$app/navigation';
 	import type { Document, DocumentStatus, RenderBlock, VersionInfo } from '../types';
 	import type { LanguageConfig } from '../config';
@@ -30,7 +31,7 @@
 		collection: AdminCollection;
 		blockDefs: Record<string, AdminBlock>;
 		doc: Document;
-		/** Existiert die Sprachfassung bereits im Storage? */
+		/** Whether this language version already exists in storage. */
 		exists: boolean;
 		lang: string;
 		languages: LanguageConfig[];
@@ -41,7 +42,7 @@
 	let { collection, blockDefs, doc, exists, lang, languages, versions, previewHref }: Props =
 		$props();
 
-	// Initialwerte bewusst einmalig übernommen — die Seite remountet den Editor per {#key}.
+	// Initial values are copied once on purpose; the page remounts the editor via {#key}.
 	// svelte-ignore state_referenced_locally
 	let fields = $state<Record<string, unknown>>(structuredClone(doc.fields));
 	// svelte-ignore state_referenced_locally
@@ -55,7 +56,9 @@
 	let historyOpen = $state(false);
 	let settingsOpen = $state(false);
 	let expandedBlocks = $state(new Set<string>());
-	const allExpanded = $derived(blocks.length > 0 && blocks.every((b) => expandedBlocks.has(b.id)));
+	const allExpanded = $derived(
+		blocks.length > 0 && blocks.every((block) => expandedBlocks.has(block.id))
+	);
 	let preview = $state(false);
 
 	const PREVIEW_KEY = 'cms.editor.preview';
@@ -63,7 +66,7 @@
 		try {
 			preview = localStorage.getItem(PREVIEW_KEY) === '1';
 		} catch {
-			/* Speicher nicht verfügbar */
+			/* storage unavailable */
 		}
 	});
 	function togglePreview() {
@@ -71,44 +74,46 @@
 		try {
 			localStorage.setItem(PREVIEW_KEY, preview ? '1' : '0');
 		} catch {
-			/* ignorieren */
+			/* storage unavailable */
 		}
 	}
 
-	/** Einstellungen = alle Felder außer dem Titel; der steht prominent oben. */
+	/** Settings are all fields except the title, which is shown prominently at the top. */
 	const settingsFields = $derived(
 		Object.fromEntries(
-			Object.entries(collection.fields).filter(([k]) => k !== collection.titleField)
+			Object.entries(collection.fields).filter(([key]) => key !== collection.titleField)
 		) as FieldMap
 	);
 	const titleField = $derived(collection.fields[collection.titleField]);
 	const settingsErrorCount = $derived(
 		Object.keys(errors).filter(
-			(k) => !k.startsWith('blocks') && !k.startsWith(collection.titleField)
+			(key) => !key.startsWith('blocks') && !key.startsWith(collection.titleField)
 		).length
 	);
 
-	const base = $derived(`/api/v1/${collection.name}/${doc.slug}`);
+	const apiBase = $derived(`/api/v1/${collection.name}/${doc.slug}`);
 	const title = $derived(String(fields[collection.titleField] ?? '') || doc.slug);
-	const langMeta = $derived(new Map(doc.langs.map((l) => [l.lang, l])));
+	const langMeta = $derived(
+		new Map(doc.langs.map((languageState) => [languageState.lang, languageState]))
+	);
 
-	beforeNavigate((nav) => {
+	beforeNavigate((navigation) => {
 		if (!dirty || confirm) return;
-		// Beim Verlassen der Seite (Reload, Tab schließen) zeigt der Browser den nativen Hinweis;
-		// ein eigenes confirm() ist dort blockiert.
-		if (nav.willUnload) {
-			nav.cancel();
+		// On unload (reload, tab close) the browser shows its native prompt;
+		// a custom confirm() is blocked there.
+		if (navigation.willUnload) {
+			navigation.cancel();
 			return;
 		}
-		if (!window.confirm('Ungespeicherte Änderungen verwerfen?')) nav.cancel();
+		if (!window.confirm('Ungespeicherte Änderungen verwerfen?')) navigation.cancel();
 	});
 
-	function setFields(v: Record<string, unknown>) {
-		fields = v;
+	function setFields(nextFields: Record<string, unknown>) {
+		fields = nextFields;
 		dirty = true;
 	}
-	function setBlocks(v: RenderBlock[]) {
-		blocks = v;
+	function setBlocks(nextBlocks: RenderBlock[]) {
+		blocks = nextBlocks;
 		dirty = true;
 	}
 
@@ -116,7 +121,7 @@
 		busy = true;
 		errors = {};
 		try {
-			const saved = await apiFetch<Document>(`${base}?lang=${lang}`, {
+			const saved = await apiFetch<Document>(`${apiBase}?lang=${lang}`, {
 				method: 'PUT',
 				json: {
 					fields: $state.snapshot(fields),
@@ -128,11 +133,11 @@
 			dirty = false;
 			toast.success(nextStatus === 'published' ? 'Veröffentlicht' : 'Gespeichert');
 			await invalidateAll();
-		} catch (e) {
-			if (e instanceof ApiError && e.status === 422) {
-				errors = issuesToMap(e.issues);
-				toast.error(`${e.issues.length} Problem(e) — bitte Felder prüfen`);
-			} else toast.error((e as Error).message);
+		} catch (error) {
+			if (error instanceof ApiError && error.status === 422) {
+				errors = issuesToMap(error.issues);
+				toast.error(`${error.issues.length} Problem(e) — bitte Felder prüfen`);
+			} else toast.error((error as Error).message);
 		} finally {
 			busy = false;
 		}
@@ -141,12 +146,12 @@
 	async function unpublish() {
 		busy = true;
 		try {
-			await apiFetch(`${base}/status`, { method: 'POST', json: { lang, status: 'draft' } });
+			await apiFetch(`${apiBase}/status`, { method: 'POST', json: { lang, status: 'draft' } });
 			status = 'draft';
 			toast.success('Auf Entwurf gesetzt');
 			await invalidateAll();
-		} catch (e) {
-			toast.error((e as Error).message);
+		} catch (error) {
+			toast.error((error as Error).message);
 		} finally {
 			busy = false;
 		}
@@ -155,39 +160,35 @@
 	async function remove(whole: boolean) {
 		busy = true;
 		try {
-			await apiFetch(whole ? base : `${base}?lang=${lang}`, { method: 'DELETE' });
+			await apiFetch(whole ? apiBase : `${apiBase}?lang=${lang}`, { method: 'DELETE' });
 			dirty = false;
 			toast.success(whole ? 'Dokument gelöscht' : `Sprachfassung ${lang.toUpperCase()} gelöscht`);
 			await goto(`/admin/${collection.name}`);
-		} catch (e) {
-			toast.error((e as Error).message);
+		} catch (error) {
+			toast.error((error as Error).message);
 			busy = false;
 		} finally {
 			confirm = null;
 		}
 	}
 
-	async function restore(v: VersionInfo) {
+	async function restore(version: VersionInfo) {
 		busy = true;
 		try {
-			await apiFetch(`${base}/versions/${v.id}/restore`, { method: 'POST' });
+			await apiFetch(`${apiBase}/versions/${version.id}/restore`, { method: 'POST' });
 			toast.success('Version wiederhergestellt');
 			historyOpen = false;
 			dirty = false;
 			await invalidateAll();
 			window.location.reload();
-		} catch (e) {
-			toast.error((e as Error).message);
+		} catch (error) {
+			toast.error((error as Error).message);
 			busy = false;
 		}
 	}
-
-	const fmt = (iso: string) =>
-		new Date(iso).toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' });
 </script>
 
 <div class="space-y-6">
-	<!-- Kopfzeile -->
 	<div class="flex flex-wrap items-start justify-between gap-3">
 		<div class="min-w-0">
 			<h1 class="truncate text-2xl font-semibold">{title}</h1>
@@ -227,17 +228,16 @@
 		</div>
 	</div>
 
-	<!-- Sprachen -->
 	<div class="flex flex-wrap gap-2">
-		{#each languages as l (l.code)}
-			{@const meta = langMeta.get(l.code)}
+		{#each languages as language (language.code)}
+			{@const meta = langMeta.get(language.code)}
 			<a
-				href="/admin/{collection.name}/{doc.slug}?lang={l.code}"
-				class="rounded-md border px-3 py-1.5 text-sm {l.code === lang
+				href="/admin/{collection.name}/{doc.slug}?lang={language.code}"
+				class="rounded-md border px-3 py-1.5 text-sm {language.code === lang
 					? 'border-primary bg-primary/10 font-medium'
 					: 'border-border hover:bg-accent'}"
 			>
-				{l.label}
+				{language.label}
 				{#if !meta}<span class="text-muted-foreground"> · fehlt</span>
 				{:else if meta.status === 'published'}<span class="text-green-700"> · live</span>
 				{:else}<span class="text-amber-700"> · Entwurf</span>{/if}
@@ -246,16 +246,15 @@
 	</div>
 
 	<div class="grid gap-6 {preview ? '2xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]' : ''}">
-		<!-- Editor-Spalte -->
+		<!-- Editor column -->
 		<div class="min-w-0 space-y-8">
-			<!-- Titel -->
 			{#if titleField}
 				<div class="[&_input]:h-11 [&_input]:text-lg [&_input]:font-medium">
 					<FieldEditor
 						field={titleField}
 						name={collection.titleField}
 						value={fields[collection.titleField]}
-						onchange={(v) => setFields({ ...fields, [collection.titleField]: v })}
+						onchange={(titleValue) => setFields({ ...fields, [collection.titleField]: titleValue })}
 						path={collection.titleField}
 						{errors}
 						{lang}
@@ -264,7 +263,6 @@
 				</div>
 			{/if}
 
-			<!-- Blocks -->
 			{#if collection.blocks.length}
 				<section class="space-y-3">
 					<div class="flex items-center justify-between">
@@ -281,7 +279,7 @@
 								<Button
 									variant="ghost"
 									size="sm"
-									onclick={() => (expandedBlocks = new Set(blocks.map((b) => b.id)))}
+									onclick={() => (expandedBlocks = new Set(blocks.map((block) => block.id)))}
 									><ChevronsUpDownIcon aria-hidden="true" /> Alle aufklappen</Button
 								>
 							{/if}
@@ -299,7 +297,7 @@
 				</section>
 			{/if}
 
-			<!-- Einstellungen (eingeklappt) -->
+			<!-- Settings (collapsed) -->
 			{#if Object.keys(settingsFields).length}
 				<section class="border-border rounded-lg border">
 					<button
@@ -350,7 +348,7 @@
 			{/if}
 		</div>
 
-		<!-- Live-Vorschau: rendert den aktuellen Zustand direkt mit dem Block-Renderer, ohne Speichern. -->
+		<!-- Live preview renders the current unsaved state with the block renderer. -->
 		{#if preview}
 			<aside class="min-w-0 2xl:sticky 2xl:top-4 2xl:max-h-[calc(100vh-2rem)]">
 				<div
@@ -413,18 +411,20 @@
 			{#if versions.length === 0}
 				<p class="text-muted-foreground text-sm">Noch keine Versionen.</p>
 			{/if}
-			{#each versions as v (v.id)}
+			{#each versions as version (version.id)}
 				<div
 					class="border-border flex items-center justify-between gap-2 rounded-md border p-2 text-sm"
 				>
 					<div>
 						<div>
-							{fmt(v.savedAt)}
-							<Badge variant="id">{v.part === 'base' ? 'Struktur' : v.part.toUpperCase()}</Badge>
+							{formatDateTime(version.savedAt)}
+							<Badge variant="id"
+								>{version.part === 'base' ? 'Struktur' : version.part.toUpperCase()}</Badge
+							>
 						</div>
-						<div class="text-muted-foreground text-xs">{v.savedBy}</div>
+						<div class="text-muted-foreground text-xs">{version.savedBy}</div>
 					</div>
-					<Button size="sm" variant="outline" onclick={() => restore(v)} disabled={busy}
+					<Button size="sm" variant="outline" onclick={() => restore(version)} disabled={busy}
 						>Wiederherstellen</Button
 					>
 				</div>

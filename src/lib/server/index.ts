@@ -1,5 +1,5 @@
 /**
- * Server-API des CMS: `import { cms } from '@medienakzent/cms/server'`.
+ * Server API of the CMS: `import { cms } from '@medienakzent/cms/server'`.
  *
  *   const page = await cms.collection('pages').get('about', { lang: 'de' });
  *   await cms.collection('pages').save('about', 'de', input, { actor });
@@ -48,7 +48,7 @@ export const cms = {
 	collection,
 	media,
 	mail,
-	/** Client-Konfiguration für Formulare (Captcha) — im Layout-Load an die Seite geben. */
+	/** Client configuration for forms (captcha); pass it to the page in the layout load. */
 	forms: { captcha: captchaClientConfig },
 	systemActor: SYSTEM_ACTOR,
 	async reindex() {

@@ -1,9 +1,17 @@
-const MAP: Record<string, string> = { ä: 'ae', ö: 'oe', ü: 'ue', ß: 'ss', æ: 'ae', ø: 'o', å: 'a' };
+const REPLACEMENTS: Record<string, string> = {
+	ä: 'ae',
+	ö: 'oe',
+	ü: 'ue',
+	ß: 'ss',
+	æ: 'ae',
+	ø: 'o',
+	å: 'a'
+};
 
 export function slugify(input: string): string {
 	return input
 		.toLowerCase()
-		.replace(/[äöüßæøå]/g, (c) => MAP[c] ?? c)
+		.replace(/[äöüßæøå]/g, (character) => REPLACEMENTS[character] ?? character)
 		.normalize('NFD')
 		.replace(/[̀-ͯ]/g, '')
 		.replace(/[^a-z0-9]+/g, '-')

@@ -4,30 +4,30 @@ import { collection } from '../../server/content';
 import { getRuntime } from '../../server/runtime';
 
 /**
- * GET /llms.txt — Überblick für KI-Suchsysteme (Konvention llmstxt.org): Name, Beschreibung
- * und die veröffentlichten Seiten mit Titel und URL. Ergänzt sitemap.xml und JSON-LD.
+ * GET /llms.txt: overview for AI search systems (llmstxt.org convention) with site name,
+ * description and the published pages (title and URL). Complements sitemap.xml and JSON-LD.
  */
 export const GET = async (_event: RequestEvent) => {
 	const { registry, config, server } = getRuntime();
 	const base = server.origin;
 	const lines: string[] = [`# ${config.site.name}`, ''];
-	for (const def of Object.values(registry.collections)) {
-		const rows = await collection(def.name).list({
+	for (const definition of Object.values(registry.collections)) {
+		const rows = await collection(definition.name).list({
 			status: 'published',
 			lang: config.defaultLanguage,
 			limit: 200,
 			sort: 'title'
 		});
 		const items = rows.items
-			.map((r) => {
-				const path = def.path(r.slug, r.lang);
+			.map((row) => {
+				const path = definition.path(row.slug, row.lang);
 				if (!path) return null;
-				const excerpt = r.excerpt ? `: ${r.excerpt.replace(/\s+/g, ' ').trim()}` : '';
-				return `- [${r.title || r.slug}](${base}${localizePath(config, r.lang, path)})${excerpt}`;
+				const excerpt = row.excerpt ? `: ${row.excerpt.replace(/\s+/g, ' ').trim()}` : '';
+				return `- [${row.title || row.slug}](${base}${localizePath(config, row.lang, path)})${excerpt}`;
 			})
-			.filter((x): x is string => x !== null);
+			.filter((line): line is string => line !== null);
 		if (!items.length) continue;
-		lines.push(`## ${def.labelPlural}`, '', ...items, '');
+		lines.push(`## ${definition.labelPlural}`, '', ...items, '');
 	}
 	lines.push(`Sitemap: ${base}/sitemap.xml`);
 	return new Response(lines.join('\n') + '\n', {

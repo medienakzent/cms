@@ -1,4 +1,4 @@
-import { defineBlock, f } from '@medienakzent/cms';
+import { defineBlock, field } from '@medienakzent/cms';
 
 export default defineBlock({
 	name: 'hero',
@@ -7,20 +7,20 @@ export default defineBlock({
 	icon: 'image',
 	version: 2,
 	fields: {
-		title: f.text({ label: 'Titel', localized: true, required: true }),
-		subtitle: f.textarea({ label: 'Untertitel', localized: true, rows: 3 }),
-		image: f.media({ label: 'Bild', accept: 'image' }),
-		layout: f.select(
+		title: field.text({ label: 'Titel', localized: true, required: true }),
+		subtitle: field.textarea({ label: 'Untertitel', localized: true, rows: 3 }),
+		image: field.media({ label: 'Bild', accept: 'image' }),
+		layout: field.select(
 			[
 				{ value: 'left', label: 'Links' },
 				{ value: 'center', label: 'Zentriert' }
 			],
 			{ label: 'Ausrichtung', default: 'left' }
 		),
-		cta: f.link({ label: 'Button', localized: true })
+		cta: field.link({ label: 'Button', localized: true })
 	},
 	migrate: {
-		// v1 hatte kein `layout`
+		// v1 had no `layout`
 		1: (data) => ({ ...data, layout: 'left' })
 	}
 });

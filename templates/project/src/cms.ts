@@ -1,7 +1,6 @@
 /**
- * Registry des Projekts: sammelt Blocks, Collections und Mail-Vorlagen ein.
- * Neue Dateien in src/blocks, src/collections, src/mail werden automatisch erkannt —
- * hier muss nichts registriert werden. Diese Datei gehört dem Projekt.
+ * Project registry. New files in src/blocks, src/collections and src/mail are picked up
+ * automatically; nothing has to be registered here. This file belongs to the project.
  */
 import { defineRegistry } from '@medienakzent/cms';
 import config from './cms.config';

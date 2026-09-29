@@ -41,7 +41,7 @@ USER node
 COPY --from=build --chown=node:node /app/build ./build
 COPY --from=build --chown=node:node /app/node_modules ./node_modules
 COPY --from=build --chown=node:node /app/package.json ./package.json
-ENV PORT=3000 DATA_DIR=/data STORAGE_DIR=/storage BODY_SIZE_LIMIT=512M
+ENV PORT=3000 DATA_DIR=/data STORAGE_DIR=/storage BODY_SIZE_LIMIT=64M
 VOLUME ["/data", "/storage"]
 EXPOSE 3000
 CMD ["node", "build"]

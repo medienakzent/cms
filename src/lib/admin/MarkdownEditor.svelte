@@ -20,14 +20,13 @@
 	import PencilIcon from '@lucide/svelte/icons/pencil';
 
 	/**
-	 * Markdown-Editor des Projekts: Textarea mit Werkzeugleiste, Tastenkürzeln
-	 * (Strg+B, Strg+I, Strg+K) und Vorschau. Bilder kommen aus der Medienauswahl.
-	 * Der Wert bleibt reines Markdown — gerendert wird mit <Richtext>.
+	 * Markdown editor: textarea with toolbar, shortcuts (Ctrl+B, Ctrl+I, Ctrl+K) and preview.
+	 * Images come from the media picker. The value stays plain Markdown, rendered via <Richtext>.
 	 */
 	type Props = {
 		id?: string;
 		value: string;
-		onchange: (v: string) => void;
+		onchange: (value: string) => void;
 		rows?: number;
 		placeholder?: string;
 	};
@@ -38,7 +37,7 @@
 	let preview = $state(false);
 	let mediaOpen = $state(false);
 
-	/** Ersetzt den Bereich [start, end) und setzt die Auswahl neu. */
+	/** Replaces the range [start, end) and restores the selection. */
 	async function replace(
 		start: number,
 		end: number,
@@ -53,16 +52,16 @@
 	}
 
 	function selection() {
-		const el = textarea;
-		if (!el) return { start: value.length, end: value.length, text: '' };
+		const element = textarea;
+		if (!element) return { start: value.length, end: value.length, text: '' };
 		return {
-			start: el.selectionStart,
-			end: el.selectionEnd,
-			text: value.slice(el.selectionStart, el.selectionEnd)
+			start: element.selectionStart,
+			end: element.selectionEnd,
+			text: value.slice(element.selectionStart, element.selectionEnd)
 		};
 	}
 
-	/** Auswahl mit Markern umschließen; ist sie schon umschlossen, Marker entfernen (Toggle). */
+	/** Wraps the selection with markers; removes them if already wrapped (toggle). */
 	function wrap(before: string, after = before, placeholderText = 'Text') {
 		const { start, end, text } = selection();
 		const outerStart = start - before.length;
@@ -94,18 +93,18 @@
 		);
 	}
 
-	/** Zeilenpräfix für alle Zeilen der Auswahl setzen oder entfernen (Toggle). */
-	function prefixLines(prefix: string | ((i: number) => string), matcher: RegExp) {
+	/** Sets or removes a line prefix on every selected line (toggle). */
+	function prefixLines(prefix: string | ((lineIndex: number) => string), matcher: RegExp) {
 		const { start, end } = selection();
 		const lineStart = value.lastIndexOf('\n', start - 1) + 1;
-		const lineEndIdx = value.indexOf('\n', end);
-		const lineEnd = lineEndIdx === -1 ? value.length : lineEndIdx;
+		const lineEndIndex = value.indexOf('\n', end);
+		const lineEnd = lineEndIndex === -1 ? value.length : lineEndIndex;
 		const lines = value.slice(lineStart, lineEnd).split('\n');
-		const allPrefixed = lines.every((l) => matcher.test(l));
-		const next = lines.map((l, i) =>
+		const allPrefixed = lines.every((line) => matcher.test(line));
+		const next = lines.map((line, lineIndex) =>
 			allPrefixed
-				? l.replace(matcher, '')
-				: (typeof prefix === 'function' ? prefix(i) : prefix) + l.replace(matcher, '')
+				? line.replace(matcher, '')
+				: (typeof prefix === 'function' ? prefix(lineIndex) : prefix) + line.replace(matcher, '')
 		);
 		const text = next.join('\n');
 		void replace(lineStart, lineEnd, text, lineStart, lineStart + text.length);
@@ -120,53 +119,53 @@
 		const url = window.prompt('Link-Ziel (URL oder /pfad):', 'https://');
 		if (!url) return;
 		const label = text || 'Linktext';
-		const out = `[${label}](${url})`;
-		void replace(start, end, out, start + 1, start + 1 + label.length);
+		const markdown = `[${label}](${url})`;
+		void replace(start, end, markdown, start + 1, start + 1 + label.length);
 	}
 
-	function image(ref: MediaRef) {
+	function image(mediaRef: MediaRef) {
 		const { start, end } = selection();
-		const out = `![${ref.alt || ''}](${mediaUrl(ref, 'md')})`;
-		void replace(start, end, out, start + out.length, start + out.length);
+		const markdown = `![${mediaRef.alt || ''}](${mediaUrl(mediaRef, 'md')})`;
+		void replace(start, end, markdown, start + markdown.length, start + markdown.length);
 	}
 
-	function hr() {
+	function horizontalRule() {
 		const { start, end } = selection();
-		const pre = start > 0 && value[start - 1] !== '\n' ? '\n' : '';
-		const out = `${pre}\n---\n\n`;
-		void replace(start, end, out, start + out.length, start + out.length);
+		const leadingNewline = start > 0 && value[start - 1] !== '\n' ? '\n' : '';
+		const markdown = `${leadingNewline}\n---\n\n`;
+		void replace(start, end, markdown, start + markdown.length, start + markdown.length);
 	}
 
-	function onkeydown(e: KeyboardEvent) {
-		if (!(e.ctrlKey || e.metaKey)) return;
-		const key = e.key.toLowerCase();
+	function onkeydown(event: KeyboardEvent) {
+		if (!(event.ctrlKey || event.metaKey)) return;
+		const key = event.key.toLowerCase();
 		if (key === 'b') wrap('**');
 		else if (key === 'i') wrap('_');
 		else if (key === 'k') link();
 		else return;
-		e.preventDefault();
+		event.preventDefault();
 	}
 
-	type Tool = { icon: typeof BoldIcon; label: string; run: () => void } | 'sep';
+	type Tool = { icon: typeof BoldIcon; label: string; run: () => void } | 'separator';
 	const tools: Tool[] = [
 		{ icon: BoldIcon, label: 'Fett (Strg+B)', run: () => wrap('**') },
 		{ icon: ItalicIcon, label: 'Kursiv (Strg+I)', run: () => wrap('_') },
-		'sep',
+		'separator',
 		{ icon: Heading2Icon, label: 'Überschrift 2', run: () => heading(2) },
 		{ icon: Heading3Icon, label: 'Überschrift 3', run: () => heading(3) },
-		'sep',
+		'separator',
 		{ icon: ListIcon, label: 'Aufzählung', run: () => prefixLines('- ', /^[-*] /) },
 		{
 			icon: ListOrderedIcon,
 			label: 'Nummerierung',
-			run: () => prefixLines((i) => `${i + 1}. `, /^\d+\. /)
+			run: () => prefixLines((lineIndex) => `${lineIndex + 1}. `, /^\d+\. /)
 		},
 		{ icon: QuoteIcon, label: 'Zitat', run: () => prefixLines('> ', /^> /) },
-		'sep',
+		'separator',
 		{ icon: LinkIcon, label: 'Link (Strg+K)', run: link },
 		{ icon: ImageIcon, label: 'Bild aus Medien', run: () => (mediaOpen = true) },
 		{ icon: CodeIcon, label: 'Code', run: () => wrap('`', '`', 'code') },
-		{ icon: MinusIcon, label: 'Trennlinie', run: hr }
+		{ icon: MinusIcon, label: 'Trennlinie', run: horizontalRule }
 	];
 </script>
 
@@ -176,8 +175,8 @@
 		role="toolbar"
 		aria-label="Formatierung"
 	>
-		{#each tools as tool, i (i)}
-			{#if tool === 'sep'}
+		{#each tools as tool, index (index)}
+			{#if tool === 'separator'}
 				<span class="bg-border mx-1 h-5 w-px" aria-hidden="true"></span>
 			{:else}
 				<Button
@@ -187,7 +186,7 @@
 					aria-label={tool.label}
 					disabled={preview}
 					onclick={tool.run}
-					onmousedown={(e) => e.preventDefault()}
+					onmousedown={(event) => event.preventDefault()}
 				>
 					<tool.icon aria-hidden="true" />
 				</Button>
@@ -207,7 +206,7 @@
 			{rows}
 			{placeholder}
 			{value}
-			oninput={(e) => onchange(e.currentTarget.value)}
+			oninput={(event) => onchange(event.currentTarget.value)}
 			{onkeydown}
 			spellcheck="true"
 			class="placeholder:text-muted-foreground block w-full resize-y bg-transparent px-3 py-2 font-mono text-sm leading-relaxed outline-none"

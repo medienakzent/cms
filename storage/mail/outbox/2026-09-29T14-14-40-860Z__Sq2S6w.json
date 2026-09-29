@@ -1,10 +1,8 @@
 {
-  "id": "2026-09-29T14-14-40-860Z__Sq2S6w",
-  "from": "CMS Dev <noreply@localhost>",
-  "to": [
-    "admin@example.com"
-  ],
-  "subject": "Passwort zurücksetzen",
-  "text": "Hallo Julian Test,\n\nüber diesen Link können Sie ein neues Passwort für das CMS setzen (eine Stunde gültig):\n\nPasswort zurücksetzen <http://localhost:5173/api/auth/reset-password/83PQsr4G3XPIWstweISmSBcq?callbackURL=%2Fadmin%2Freset>\n\nFalls Sie das nicht angefordert haben, ignorieren Sie diese Nachricht.",
-  "html": "<!doctype html><html><body style=\"font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;font-size:15px;line-height:1.5;color:#111;max-width:640px;margin:0 auto;padding:24px\"><p>Hallo Julian Test,</p>\n<p>über diesen Link können Sie ein neues Passwort für das CMS setzen (eine Stunde gültig):</p>\n<p><a href=\"http://localhost:5173/api/auth/reset-password/83PQsr4G3XPIWstweISmSBcq?callbackURL=%2Fadmin%2Freset\">Passwort zurücksetzen</a></p>\n<p>Falls Sie das nicht angefordert haben, ignorieren Sie diese Nachricht.</p>\n</body></html>"
+	"id": "2026-09-29T14-14-40-860Z__Sq2S6w",
+	"from": "CMS Dev <noreply@localhost>",
+	"to": ["admin@example.com"],
+	"subject": "Passwort zurücksetzen",
+	"text": "Hallo Julian Test,\n\nüber diesen Link können Sie ein neues Passwort für das CMS setzen (eine Stunde gültig):\n\nPasswort zurücksetzen <http://localhost:5173/api/auth/reset-password/83PQsr4G3XPIWstweISmSBcq?callbackURL=%2Fadmin%2Freset>\n\nFalls Sie das nicht angefordert haben, ignorieren Sie diese Nachricht.",
+	"html": "<!doctype html><html><body style=\"font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;font-size:15px;line-height:1.5;color:#111;max-width:640px;margin:0 auto;padding:24px\"><p>Hallo Julian Test,</p>\n<p>über diesen Link können Sie ein neues Passwort für das CMS setzen (eine Stunde gültig):</p>\n<p><a href=\"http://localhost:5173/api/auth/reset-password/83PQsr4G3XPIWstweISmSBcq?callbackURL=%2Fadmin%2Freset\">Passwort zurücksetzen</a></p>\n<p>Falls Sie das nicht angefordert haben, ignorieren Sie diese Nachricht.</p>\n</body></html>"
 }

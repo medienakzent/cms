@@ -19,7 +19,9 @@ services:
       VIRTUAL_PORT: '3000'
       PROTOCOL_HEADER: x-forwarded-proto
       HOST_HEADER: x-forwarded-host
-      BODY_SIZE_LIMIT: 512M
+      ADDRESS_HEADER: x-forwarded-for
+      XFF_DEPTH: '1'
+      BODY_SIZE_LIMIT: ${BODY_SIZE_LIMIT:-64M}
     volumes:
       - cms-data:/data
       - cms-storage:/storage

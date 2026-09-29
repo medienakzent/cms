@@ -1,4 +1,4 @@
-import { defineCollection, f } from '@medienakzent/cms';
+import { defineCollection, field } from '@medienakzent/cms';
 
 export default defineCollection({
 	name: 'tags',
@@ -6,7 +6,7 @@ export default defineCollection({
 	labelPlural: 'Tags',
 	icon: 'tag',
 	fields: {
-		title: f.text({ label: 'Name', localized: true, required: true })
+		title: field.text({ label: 'Name', localized: true, required: true })
 	},
 	blocks: false,
 	sortBy: { field: 'title', direction: 'asc' }

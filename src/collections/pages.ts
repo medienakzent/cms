@@ -1,4 +1,4 @@
-import { defineCollection, f } from '@medienakzent/cms';
+import { defineCollection, field } from '@medienakzent/cms';
 
 export default defineCollection({
 	name: 'pages',
@@ -6,21 +6,21 @@ export default defineCollection({
 	labelPlural: 'Seiten',
 	icon: 'file-text',
 	fields: {
-		title: f.text({ label: 'Titel', localized: true, required: true }),
-		seo: f.group(
+		title: field.text({ label: 'Titel', localized: true, required: true }),
+		seo: field.group(
 			{
-				description: f.textarea({
+				description: field.textarea({
 					label: 'Meta-Beschreibung',
 					localized: true,
 					rows: 2,
 					maxLength: 160
 				}),
-				noindex: f.boolean({ label: 'Von Suchmaschinen ausschließen' })
+				noindex: field.boolean({ label: 'Von Suchmaschinen ausschließen' })
 			},
 			{ label: 'SEO' }
 		),
-		showInNav: f.boolean({ label: 'In Navigation anzeigen', default: true }),
-		navOrder: f.number({ label: 'Reihenfolge in Navigation', default: 0, integer: true })
+		showInNav: field.boolean({ label: 'In Navigation anzeigen', default: true }),
+		navOrder: field.number({ label: 'Reihenfolge in Navigation', default: 0, integer: true })
 	},
 	blocks: ['hero', 'text', 'image', 'gallery', 'cta', 'faq', 'contact-form'],
 	sortBy: { field: 'navOrder', direction: 'asc' },

@@ -1,19 +1,19 @@
 {
-  "id": "qxMgMgAeJ1",
-  "template": "contact",
-  "lang": "de",
-  "sentAt": "2026-09-29T10:03:24.059Z",
-  "status": "spam",
-  "transport": "-",
-  "to": [],
-  "replyTo": null,
-  "subject": "",
-  "messageId": null,
-  "error": "honeypot",
-  "data": {},
-  "meta": {
-    "ip": "127.0.0.1",
-    "userAgent": "node",
-    "url": "http://localhost:5173/kontakt"
-  }
+	"id": "qxMgMgAeJ1",
+	"template": "contact",
+	"lang": "de",
+	"sentAt": "2026-09-29T10:03:24.059Z",
+	"status": "spam",
+	"transport": "-",
+	"to": [],
+	"replyTo": null,
+	"subject": "",
+	"messageId": null,
+	"error": "honeypot",
+	"data": {},
+	"meta": {
+		"ip": "127.0.0.1",
+		"userAgent": "node",
+		"url": "http://localhost:5173/kontakt"
+	}
 }

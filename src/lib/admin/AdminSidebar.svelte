@@ -24,11 +24,11 @@
 
 	const navMain = $derived<ShellNavItem[]>([
 		{ id: 'dashboard', href: '/admin', label: 'Übersicht', icon: LayoutDashboardIcon },
-		...collections.map((c) => ({
-			id: c.name,
-			href: `/admin/${c.name}`,
-			label: c.labelPlural,
-			icon: iconFor(c.icon)
+		...collections.map((collection) => ({
+			id: collection.name,
+			href: `/admin/${collection.name}`,
+			label: collection.labelPlural,
+			icon: iconFor(collection.icon)
 		})),
 		{ id: 'media', href: '/admin/media', label: 'Medien', icon: ImagesIcon },
 		{ id: 'submissions', href: '/admin/submissions', label: 'Einsendungen', icon: InboxIcon },
@@ -54,12 +54,12 @@
 
 	async function reindex() {
 		try {
-			const r = await apiFetch<{ documents: number; media: number }>('/api/v1/reindex', {
+			const result = await apiFetch<{ documents: number; media: number }>('/api/v1/reindex', {
 				method: 'POST'
 			});
-			toast.success(`Index: ${r.documents} Dokumente, ${r.media} Medien`);
-		} catch (e) {
-			toast.error((e as Error).message);
+			toast.success(`Index: ${result.documents} Dokumente, ${result.media} Medien`);
+		} catch (error) {
+			toast.error((error as Error).message);
 		}
 	}
 

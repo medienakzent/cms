@@ -2,7 +2,7 @@ import { nanoid } from 'nanoid';
 import type { StorageAdapter } from '../../storage/types';
 import type { MailEnvelope, MailTransport } from '../transport';
 
-/** Entwicklung/Test: Mails werden nicht versendet, sondern unter `mail/outbox/` abgelegt. */
+/** Development/test: mails are not sent but stored under `mail/outbox/`. */
 export function createFileTransport(storage: StorageAdapter): MailTransport {
 	return {
 		kind: 'file',

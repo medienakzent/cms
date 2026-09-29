@@ -1,21 +1,16 @@
 import type { RequestEvent } from '@sveltejs/kit';
-import { api, readJsonBody } from '../../server/api';
+import { api, readJsonBody, requireSessionAdmin } from '../../server/api';
 import { apiKeys } from '../../server/api-keys';
 import { CmsError } from '../../server/errors';
 
-function requireSessionAdmin(event: RequestEvent) {
-	if (event.locals.user?.role !== 'admin' || event.locals.user.api)
-		throw new CmsError(403, 'Nur für angemeldete Administratoren');
-}
-
-/** GET /api/v1/api-keys — Liste (ohne Geheimnisse) */
+/** GET /api/v1/api-keys: list without secrets */
 export const GET = (event: RequestEvent) =>
 	api(async () => {
 		requireSessionAdmin(event);
 		return { items: await apiKeys.list() };
 	});
 
-/** POST /api/v1/api-keys { name, role } → { info, key } — der Schlüssel ist nur einmal sichtbar */
+/** POST /api/v1/api-keys { name, role } -> { info, key }; the key is shown only once */
 export const POST = (event: RequestEvent) =>
 	api(async () => {
 		requireSessionAdmin(event);
@@ -27,7 +22,7 @@ export const POST = (event: RequestEvent) =>
 		return apiKeys.create(name, role, event.locals.user!.name);
 	});
 
-/** DELETE /api/v1/api-keys/<id> — widerrufen (bleibt als widerrufen in der Liste) */
+/** DELETE /api/v1/api-keys/<id>: revoke (stays in the list as revoked) */
 export const DELETE_ITEM = (event: RequestEvent) =>
 	api(async () => {
 		requireSessionAdmin(event);

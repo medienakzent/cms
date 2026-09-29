@@ -1,87 +1,91 @@
 import type { FieldMap, TextField } from './fields';
+import { isValidName } from './name';
 import type { Migration } from './block';
 import type { Document } from './types';
 
-export interface CollectionDefinition<F extends FieldMap = FieldMap> {
-	/** Muss dem Dateinamen unter `src/collections/` entsprechen (`pages.ts` → `pages`). */
+export interface CollectionDefinition<Fields extends FieldMap = FieldMap> {
+	/** Must match the file name under `src/collections/` (`pages.ts` -> `pages`). */
 	name: string;
 	label: string;
 	labelPlural: string;
 	description?: string;
 	icon?: string;
 	version: number;
-	fields: F;
-	/** Erlaubte Block-Typen; `false` = Collection ohne Block-Bereich (z. B. Tags). */
+	fields: Fields;
+	/** Allowed block types; `false` = collection without a block area (tags, for example). */
 	blocks: readonly string[] | false;
-	/** Textfeld, das im Admin als Titel dient und den Slug-Vorschlag liefert. */
-	titleField: keyof F & string;
-	/** Optionales Feld für Kurzbeschreibung in Listen/Index. */
-	excerptField?: keyof F & string;
-	/** Feld für die Sortierung im Index (`updatedAt` = Zeitstempel). */
+	/** Text field used as the admin title and the slug suggestion. */
+	titleField: keyof Fields & string;
+	/** Optional field for the short description in lists and the index. */
+	excerptField?: keyof Fields & string;
+	/** Index sort order (`updatedAt` = timestamp). */
 	sortBy: { field: string; direction: 'asc' | 'desc' };
-	/** Öffentlicher Pfad eines Dokuments; `null` = nicht direkt aufrufbar. */
+	/** Public path of a document; `null` = not directly reachable. */
 	path: (slug: string, lang: string) => string | null;
 	migrate?: Record<number, Migration>;
 }
 
-export interface CollectionOptions<F extends FieldMap> {
+export interface CollectionOptions<Fields extends FieldMap> {
 	name: string;
 	label?: string;
 	labelPlural?: string;
 	description?: string;
 	icon?: string;
 	version?: number;
-	fields: F;
+	fields: Fields;
 	blocks?: readonly string[] | false;
-	titleField?: keyof F & string;
-	excerptField?: keyof F & string;
+	titleField?: keyof Fields & string;
+	excerptField?: keyof Fields & string;
 	sortBy?: { field: string; direction: 'asc' | 'desc' };
 	path?: (slug: string, lang: string) => string | null;
 	migrate?: Record<number, Migration>;
 }
 
-export function defineCollection<const F extends FieldMap>(
-	def: CollectionOptions<F>
-): CollectionDefinition<F> {
-	if (!/^[a-z][a-z0-9-]*$/.test(def.name)) {
-		throw new Error(`Collection-Name „${def.name}" ist ungültig (nur a-z, 0-9, -).`);
+export function defineCollection<const Fields extends FieldMap>(
+	options: CollectionOptions<Fields>
+): CollectionDefinition<Fields> {
+	if (!isValidName(options.name)) {
+		throw new Error(`Collection-Name „${options.name}" ist ungültig (nur a-z, 0-9, -).`);
 	}
-	const titleField = (def.titleField ?? 'title') as keyof F & string;
-	const tf = def.fields[titleField] as TextField | undefined;
-	if (!tf || tf.kind !== 'text') {
+	const titleField = (options.titleField ?? 'title') as keyof Fields & string;
+	const titleFieldDefinition = options.fields[titleField] as TextField | undefined;
+	if (!titleFieldDefinition || titleFieldDefinition.kind !== 'text') {
 		throw new Error(
-			`Collection „${def.name}": titleField „${titleField}" fehlt oder ist kein Textfeld.`
+			`Collection „${options.name}": titleField „${titleField}" fehlt oder ist kein Textfeld.`
 		);
 	}
 	return {
-		name: def.name,
-		label: def.label ?? def.name,
-		labelPlural: def.labelPlural ?? def.label ?? def.name,
-		description: def.description,
-		icon: def.icon,
-		version: def.version ?? 1,
-		fields: def.fields,
-		blocks: def.blocks ?? false,
+		name: options.name,
+		label: options.label ?? options.name,
+		labelPlural: options.labelPlural ?? options.label ?? options.name,
+		description: options.description,
+		icon: options.icon,
+		version: options.version ?? 1,
+		fields: options.fields,
+		blocks: options.blocks ?? false,
 		titleField,
-		excerptField: def.excerptField,
-		sortBy: def.sortBy ?? { field: 'updatedAt', direction: 'desc' },
-		path: def.path ?? (() => null),
-		migrate: def.migrate
+		excerptField: options.excerptField,
+		sortBy: options.sortBy ?? { field: 'updatedAt', direction: 'desc' },
+		path: options.path ?? (() => null),
+		migrate: options.migrate
 	};
 }
 
-/** Dokumenttyp einer Collection: `DocumentOf<typeof pages>`. */
-export type DocumentOf<C> = C extends CollectionDefinition<infer F> ? Document<F> : never;
+/** Document type of a collection: `DocumentOf<typeof pages>`. */
+export type DocumentOf<Collection> =
+	Collection extends CollectionDefinition<infer Fields> ? Document<Fields> : never;
 
 /**
- * Globale Inhaltsdatei `src/cms.content.ts`: bündelt zusätzliche Collections an
- * einer Stelle — Alternative oder Ergänzung zu einzelnen Dateien in src/collections/.
+ * Global content file `src/cms.content.ts`: bundles additional collections in one place,
+ * as an alternative or addition to single files in src/collections/.
  *
  *   export default defineContent({ collections: [defineCollection({...}), ...] });
  */
 export interface ContentDefinition {
 	collections: CollectionDefinition[];
 }
-export function defineContent(def: { collections?: CollectionDefinition[] }): ContentDefinition {
-	return { collections: def.collections ?? [] };
+export function defineContent(options: {
+	collections?: CollectionDefinition[];
+}): ContentDefinition {
+	return { collections: options.collections ?? [] };
 }

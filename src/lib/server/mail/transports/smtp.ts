@@ -1,7 +1,7 @@
 import nodemailer from 'nodemailer';
 import type { MailEnvelope, MailTransport } from '../transport';
 
-/** SMTP über nodemailer. `SMTP_URL`, z. B. smtp://user:pass@mail.example.com:587 oder smtps://…:465 */
+/** SMTP via nodemailer. `SMTP_URL`, e.g. smtp://user:pass@mail.example.com:587 or smtps://…:465 */
 export function createSmtpTransport(url: string): MailTransport {
 	const transporter = nodemailer.createTransport(url);
 	return {

@@ -6,13 +6,13 @@
 	type Props = {
 		fields: FieldMap;
 		value: Record<string, unknown>;
-		onchange: (v: Record<string, unknown>) => void;
-		/** Pfad-Präfix für Fehlerzuordnung (`''` an der Wurzel, sonst mit Punkt am Ende). */
+		onchange: (value: Record<string, unknown>) => void;
+		/** Path prefix for error mapping (`''` at the root, otherwise ending with a dot). */
 		path?: string;
 		errors: Record<string, string>;
 		lang: string;
 		blockDefs: Record<string, AdminBlock>;
-		/** Sprach-Kennzeichen anzeigen (unterhalb eines lokalisierten Elternfelds nicht). */
+		/** Show the language scope badge (not below a localized parent field). */
 		showScope?: boolean;
 	};
 
@@ -27,8 +27,8 @@
 		showScope = true
 	}: Props = $props();
 
-	function set(key: string, v: unknown) {
-		onchange({ ...value, [key]: v });
+	function set(key: string, fieldValue: unknown) {
+		onchange({ ...value, [key]: fieldValue });
 	}
 </script>
 
@@ -39,7 +39,7 @@
 				{field}
 				name={key}
 				value={value?.[key]}
-				onchange={(v) => set(key, v)}
+				onchange={(fieldValue) => set(key, fieldValue)}
 				path={`${path}${key}`}
 				{errors}
 				{lang}

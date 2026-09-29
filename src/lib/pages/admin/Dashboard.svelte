@@ -10,17 +10,17 @@
 <h1 class="mb-6 text-2xl font-semibold">Übersicht</h1>
 
 <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-	{#each data.collections as c (c.name)}
-		{@const Icon = iconFor(c.icon)}
-		<a href="/admin/{c.name}" class="block">
+	{#each data.collections as collection (collection.name)}
+		{@const Icon = iconFor(collection.icon)}
+		<a href="/admin/{collection.name}" class="block">
 			<Card.Root class="hover:border-primary h-full transition-colors">
 				<Card.Header>
 					<Card.Title class="flex items-center gap-2"
-						><Icon class="text-muted-foreground size-4" /> {c.labelPlural}</Card.Title
+						><Icon class="text-muted-foreground size-4" /> {collection.labelPlural}</Card.Title
 					>
 					<Card.Description
-						>{data.counts[c.name] ?? 0} Dokument(e) · {c.blocks.length
-							? `${c.blocks.length} Block-Typen`
+						>{data.counts[collection.name] ?? 0} Dokument(e) · {collection.blocks.length
+							? `${collection.blocks.length} Block-Typen`
 							: 'ohne Blocks'}</Card.Description
 					>
 				</Card.Header>
@@ -47,9 +47,9 @@
 
 <h2 class="mt-10 mb-3 text-lg font-semibold">Registrierte Blocks</h2>
 <ul class="text-muted-foreground flex flex-wrap gap-2 text-sm">
-	{#each data.blocks as b (b.name)}
+	{#each data.blocks as block (block.name)}
 		<li class="border-border rounded-md border px-2 py-1">
-			<span class="text-foreground">{b.label}</span> · {b.name} v{b.version}
+			<span class="text-foreground">{block.label}</span> · {block.name} v{block.version}
 		</li>
 	{/each}
 </ul>

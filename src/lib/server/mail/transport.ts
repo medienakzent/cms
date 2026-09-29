@@ -8,8 +8,8 @@ export interface MailEnvelope {
 }
 
 /**
- * Versandweg. Implementierungen: smtp (nodemailer), microsoft (Graph API),
- * google (Gmail API mit Service-Account), file (Entwicklung: Ablage im Storage).
+ * Delivery channel. Implementations: smtp (nodemailer), microsoft (Graph API),
+ * google (Gmail API with service account), file (development: stored in the storage).
  */
 export interface MailTransport {
 	readonly kind: string;
@@ -17,8 +17,8 @@ export interface MailTransport {
 }
 
 export function parseAddress(value: string): { name: string; address: string } {
-	const m = /^\s*(?:"?([^"<]*)"?\s*)?<([^>]+)>\s*$/.exec(value);
-	if (m) return { name: (m[1] ?? '').trim(), address: m[2].trim() };
+	const match = /^\s*(?:"?([^"<]*)"?\s*)?<([^>]+)>\s*$/.exec(value);
+	if (match) return { name: (match[1] ?? '').trim(), address: match[2].trim() };
 	return { name: '', address: value.trim() };
 }
 

@@ -1,10 +1,8 @@
 {
-  "id": "2026-09-29T10-53-34-723Z__UaATNR",
-  "from": "CMS Dev <noreply@localhost>",
-  "to": [
-    "bea@example.com"
-  ],
-  "subject": "Ihre Bewerbung ist eingegangen",
-  "text": "Hallo Bea,\n\nvielen Dank für Ihre Bewerbung. Ihre Unterlagen:\n\n- Portfolio (PDF): p.pdf <http://localhost:5173/api/mail/download/6yhutJtJhSfTvWuFxyDC8oZG/portfolio__p.pdf> (1 KB)",
-  "html": "<!doctype html><html><body style=\"font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;font-size:15px;line-height:1.5;color:#111;max-width:640px;margin:0 auto;padding:24px\"><p>Hallo Bea,</p>\n<p>vielen Dank für Ihre Bewerbung. Ihre Unterlagen:</p>\n<ul>\n<li><strong>Portfolio (PDF):</strong> <a href=\"http://localhost:5173/api/mail/download/6yhutJtJhSfTvWuFxyDC8oZG/portfolio__p.pdf\">p.pdf</a> (1 KB)</li>\n</ul>\n</body></html>"
+	"id": "2026-09-29T10-53-34-723Z__UaATNR",
+	"from": "CMS Dev <noreply@localhost>",
+	"to": ["bea@example.com"],
+	"subject": "Ihre Bewerbung ist eingegangen",
+	"text": "Hallo Bea,\n\nvielen Dank für Ihre Bewerbung. Ihre Unterlagen:\n\n- Portfolio (PDF): p.pdf <http://localhost:5173/api/mail/download/6yhutJtJhSfTvWuFxyDC8oZG/portfolio__p.pdf> (1 KB)",
+	"html": "<!doctype html><html><body style=\"font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;font-size:15px;line-height:1.5;color:#111;max-width:640px;margin:0 auto;padding:24px\"><p>Hallo Bea,</p>\n<p>vielen Dank für Ihre Bewerbung. Ihre Unterlagen:</p>\n<ul>\n<li><strong>Portfolio (PDF):</strong> <a href=\"http://localhost:5173/api/mail/download/6yhutJtJhSfTvWuFxyDC8oZG/portfolio__p.pdf\">p.pdf</a> (1 KB)</li>\n</ul>\n</body></html>"
 }

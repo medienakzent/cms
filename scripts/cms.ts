@@ -25,7 +25,8 @@ const [cmd, ...rest] = process.argv.slice(2);
 const args = rest.filter((a) => !a.startsWith('--'));
 const flags: Record<string, string> = {};
 for (let i = 0; i < rest.length; i++) {
-	if (rest[i].startsWith('--')) flags[rest[i].slice(2)] = rest[i + 1] && !rest[i + 1].startsWith('--') ? rest[++i] : '1';
+	if (rest[i].startsWith('--'))
+		flags[rest[i].slice(2)] = rest[i + 1] && !rest[i + 1].startsWith('--') ? rest[++i] : '1';
 }
 
 async function call(path: string, init: RequestInit = {}) {
@@ -61,10 +62,18 @@ const print = (d: unknown) => console.log(JSON.stringify(d, null, 2));
 
 switch (cmd) {
 	case 'list':
-		print(await call(`/${args[0]}${q({ lang: flags.lang, status: flags.status ?? 'all', q: flags.q, limit: flags.limit })}`));
+		print(
+			await call(
+				`/${args[0]}${q({ lang: flags.lang, status: flags.status ?? 'all', q: flags.q, limit: flags.limit })}`
+			)
+		);
 		break;
 	case 'get':
-		print(await call(`/${args[0]}/${args[1]}${q({ lang: flags.lang, editable: flags.editable, status: 'all', fallback: flags.fallback })}`));
+		print(
+			await call(
+				`/${args[0]}/${args[1]}${q({ lang: flags.lang, editable: flags.editable, status: 'all', fallback: flags.fallback })}`
+			)
+		);
 		break;
 	case 'put': {
 		const body = JSON.parse(await readFile(args[2], 'utf8'));
@@ -74,7 +83,12 @@ switch (cmd) {
 	}
 	case 'create': {
 		const body = JSON.parse(await readFile(args[2], 'utf8'));
-		print(await call(`/${args[0]}`, json({ ...body, slug: args[1], lang: flags.lang, status: flags.status })));
+		print(
+			await call(
+				`/${args[0]}`,
+				json({ ...body, slug: args[1], lang: flags.lang, status: flags.status })
+			)
+		);
 		break;
 	}
 	case 'delete':

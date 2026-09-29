@@ -1,12 +1,12 @@
 {
-  "lang": "de",
-  "status": "published",
-  "updatedAt": "2026-09-29T09:31:43.351Z",
-  "updatedBy": "test@test.de",
-  "publishedAt": "2026-09-29T09:31:43.351Z",
-  "fields": {
-    "title": "Test",
-    "excerpt": ""
-  },
-  "blocks": {}
+	"lang": "de",
+	"status": "published",
+	"updatedAt": "2026-09-29T09:31:43.351Z",
+	"updatedBy": "test@test.de",
+	"publishedAt": "2026-09-29T09:31:43.351Z",
+	"fields": {
+		"title": "Test",
+		"excerpt": ""
+	},
+	"blocks": {}
 }

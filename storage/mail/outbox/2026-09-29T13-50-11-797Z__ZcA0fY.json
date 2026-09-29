@@ -1,10 +1,8 @@
 {
-  "id": "2026-09-29T13-50-11-797Z__ZcA0fY",
-  "from": "CMS Dev <noreply@localhost>",
-  "to": [
-    "a@b.de"
-  ],
-  "subject": "Ihre Anfrage ist eingegangen",
-  "text": "Hallo A,\n\nvielen Dank für Ihre Nachricht. Wir melden uns so schnell wie möglich.\n\n> x",
-  "html": "<!doctype html><html><body style=\"font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;font-size:15px;line-height:1.5;color:#111;max-width:640px;margin:0 auto;padding:24px\"><p>Hallo A,</p>\n<p>vielen Dank für Ihre Nachricht. Wir melden uns so schnell wie möglich.</p>\n<blockquote>\n<p>x</p>\n</blockquote>\n</body></html>"
+	"id": "2026-09-29T13-50-11-797Z__ZcA0fY",
+	"from": "CMS Dev <noreply@localhost>",
+	"to": ["a@b.de"],
+	"subject": "Ihre Anfrage ist eingegangen",
+	"text": "Hallo A,\n\nvielen Dank für Ihre Nachricht. Wir melden uns so schnell wie möglich.\n\n> x",
+	"html": "<!doctype html><html><body style=\"font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;font-size:15px;line-height:1.5;color:#111;max-width:640px;margin:0 auto;padding:24px\"><p>Hallo A,</p>\n<p>vielen Dank für Ihre Nachricht. Wir melden uns so schnell wie möglich.</p>\n<blockquote>\n<p>x</p>\n</blockquote>\n</body></html>"
 }

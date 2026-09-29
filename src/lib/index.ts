@@ -1,8 +1,5 @@
-/**
- * Öffentliche Schnittstelle des CMS-Kerns (client-sicher, kein Node-Code).
- * Server-Funktionen: `@medienakzent/cms/server`.
- */
-export { f, fieldLabel, optionLabel, optionValue } from './fields';
+/** Public client-safe API of the CMS core; server functions live in `@medienakzent/cms/server`. */
+export { field, fieldLabel, optionLabel, optionValue } from './fields';
 export type * from './fields';
 export { defineBlock, migrateBlockData } from './block';
 export type { BlockDefinition, BlockProps, Migration } from './block';
@@ -12,8 +9,17 @@ export { defineConfig, localizePath } from './config';
 export type { CmsConfig, LanguageConfig } from './config';
 export type * from './types';
 export { slugify, isValidSlug } from './slug';
-export { emptyValues, isEmptyValue } from './localize';
-export { defaultValue, normalizeFields, validateFields, validateBlocks } from './validate';
+export {
+	defaultValue,
+	emptyValues,
+	isEmptyValue,
+	normalizeFields,
+	validateFields,
+	validateBlocks
+} from './validate';
+export { renderMarkdown, safeUrl } from './markdown';
+export { isValidName, NAME_RE } from './name';
+export { formatBytes, formatDate, formatDateTime } from './format';
 export { mediaUrl } from './media-url';
 export { defineMail, localizedText } from './mail';
 export type { MailTemplateDefinition, LocalizedText } from './mail';

@@ -5,7 +5,7 @@ import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 const config = {
 	preprocess: vitePreprocess(),
 	kit: {
-		// Node-Server: Admin, API, Auth, Uploads und Mail laufen serverseitig — ein Prozess.
+		// Node server: admin, API, auth, uploads and mail run server-side in one process.
 		adapter: adapter({ out: 'build' })
 	}
 };

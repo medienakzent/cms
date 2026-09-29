@@ -15,7 +15,7 @@ Nichts muss registriert werden. Die Registry (`@medienakzent/cms/registry`) samm
 
 1. **Ordnername = `name`** in `defineBlock`. Nur `a-z`, `0-9`, `-`.
 2. **Genau eine `.svelte`-Datei** pro Ordner. Hilfskomponenten gehören nach `src/lib/components/`.
-3. **Props kommen ausschließlich aus `BlockProps<typeof def>`.** Keine eigenen Prop-Typen.
+3. **Props kommen ausschließlich aus `BlockProps<typeof definition>`.** Keine eigenen Prop-Typen.
    Die Komponente erhält die Felder EINER Sprache, bereits zusammengeführt und normalisiert:
    - `text | textarea | richtext | date` → `string` (nie `undefined`)
    - `number` → `number | null`
@@ -39,7 +39,7 @@ Nichts muss registriert werden. Die Registry (`@medienakzent/cms/registry`) samm
 
 ```ts
 // src/blocks/example/block.ts
-import { defineBlock, f } from '@medienakzent/cms';
+import { defineBlock, field } from '@medienakzent/cms';
 
 export default defineBlock({
 	name: 'example',
@@ -47,9 +47,9 @@ export default defineBlock({
 	icon: 'sparkles',
 	version: 1,
 	fields: {
-		title: f.text({ label: 'Titel', localized: true, required: true }),
-		image: f.media({ label: 'Bild', accept: 'image' }),
-		variant: f.select(['light', 'dark'], { label: 'Variante', default: 'light' })
+		title: field.text({ label: 'Titel', localized: true, required: true }),
+		image: field.media({ label: 'Bild', accept: 'image' }),
+		variant: field.select(['light', 'dark'], { label: 'Variante', default: 'light' })
 	}
 });
 ```
@@ -59,9 +59,9 @@ export default defineBlock({
 <script lang="ts">
 	import type { BlockProps } from '@medienakzent/cms';
 	import { mediaUrl } from '@medienakzent/cms';
-	import type def from './block';
+	import type definition from './block';
 
-	let { title, image, variant }: BlockProps<typeof def> = $props();
+	let { title, image, variant }: BlockProps<typeof definition> = $props();
 </script>
 
 <section class={variant === 'dark' ? 'bg-black text-white' : ''}>
