@@ -128,16 +128,22 @@ export async function sendMail(
 		}
 	}
 	if (total > def.maxTotalSize) issues.push({ path: '_files', message: `Alle Dateien zusammen höchstens ${formatBytes(def.maxTotalSize)}` });
-	if (issues.length) throw validation(issues);
+
+	// Textfelder prüfen, bevor Dateien abgelegt werden — alle Probleme in einer Antwort.
+	const preview = normalizeFields(def.fields, input);
+	validateFields(def.fields, preview, { strict: true, blocks: {} }, issues);
+	if (def.replyToField) {
+		const v = preview[def.replyToField];
+		if (typeof v !== 'string' || !isEmail(v)) issues.push({ path: def.replyToField, message: 'Gültige E-Mail-Adresse erwartet' });
+	}
+	const fileKeys = new Set(Object.entries(def.fields).filter(([, f]) => f.kind === 'file').map(([k]) => k));
+	const merged = issues.filter((i) => !fileKeys.has(i.path) || i.message !== 'Pflichtfeld');
+	if (merged.length) throw validation(merged);
 	const origin = (opts.meta?.origin || serverConfig().origin).replace(/\/+$/, '');
 	const stored = checked.length ? await storeFiles(checked, origin) : null;
 
 	const data = normalizeFields(def.fields, { ...input, ...(stored?.refs ?? {}) });
 	validateFields(def.fields, data, { strict: true, blocks: {} }, issues);
-	if (def.replyToField) {
-		const v = data[def.replyToField];
-		if (typeof v !== 'string' || !isEmail(v)) issues.push({ path: def.replyToField, message: 'Gültige E-Mail-Adresse erwartet' });
-	}
 	if (issues.length) throw validation(issues);
 
 	const extra = { lang, ip: opts.meta?.ip ?? '', url: opts.meta?.url ?? '', date: new Date().toLocaleString('de-DE') };

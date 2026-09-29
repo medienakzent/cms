@@ -50,7 +50,10 @@ export function normalizeField(field: Field, v: unknown): unknown {
 		case 'number':
 			return typeof v === 'number' && Number.isFinite(v) ? v : (field.default ?? null);
 		case 'boolean':
-			return typeof v === 'boolean' ? v : (field.default ?? false);
+			// Formulare liefern Strings ('on', 'ja', 'true'); alles andere gilt als nicht gesetzt.
+			if (typeof v === 'boolean') return v;
+			if (typeof v === 'string') return ['true', 'on', '1', 'ja', 'yes'].includes(v.trim().toLowerCase());
+			return field.default ?? false;
 		case 'select':
 			return typeof v === 'string' ? v : (field.default ?? null);
 		case 'multiselect':
@@ -137,6 +140,11 @@ export function validateField(
 ): void {
 	if (field.required && ctx.strict && isEmpty(v)) {
 		issues.push({ path, message: 'Pflichtfeld' });
+		return;
+	}
+	// Pflicht-Checkbox (z. B. Einwilligung) muss gesetzt sein.
+	if (field.kind === 'boolean' && field.required && ctx.strict && v !== true) {
+		issues.push({ path, message: 'Bitte bestätigen' });
 		return;
 	}
 	switch (field.kind) {
