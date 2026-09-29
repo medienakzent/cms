@@ -8,7 +8,9 @@
 	import FieldsForm from './FieldsForm.svelte';
 	import FieldEditor from './FieldEditor.svelte';
 	import BlocksEditor from './BlocksEditor.svelte';
-	import BlockRenderer from '../render/BlockRenderer.svelte';
+	import { getCmsContext } from '../context';
+	import { localizePath } from '../config';
+	import { PREVIEW_MESSAGE, PREVIEW_READY_MESSAGE } from '../preview';
 	import type { FieldMap } from '../fields';
 	import { Button } from '@compdata/ui/button';
 	import { Badge } from '@compdata/ui/badge';
@@ -60,6 +62,35 @@
 		blocks.length > 0 && blocks.every((block) => expandedBlocks.has(block.id))
 	);
 	let preview = $state(false);
+	let previewFrame = $state<HTMLIFrameElement | null>(null);
+	const siteConfig = getCmsContext().config;
+	const previewFrameSrc = $derived(localizePath(siteConfig, lang, '/cms-preview'));
+
+	// The frame runs inside the site layout (its stylesheet and data); it receives the unsaved state.
+	function postPreview() {
+		previewFrame?.contentWindow?.postMessage(
+			{
+				type: PREVIEW_MESSAGE,
+				lang,
+				fields: $state.snapshot(fields),
+				blocks: $state.snapshot(blocks)
+			},
+			window.location.origin
+		);
+	}
+	$effect(() => {
+		if (!preview) return;
+		postPreview();
+	});
+	$effect(() => {
+		const onMessage = (event: MessageEvent<{ type?: string }>) => {
+			if (event.origin !== window.location.origin || event.data?.type !== PREVIEW_READY_MESSAGE)
+				return;
+			postPreview();
+		};
+		window.addEventListener('message', onMessage);
+		return () => window.removeEventListener('message', onMessage);
+	});
 
 	const PREVIEW_KEY = 'cms.editor.preview';
 	$effect(() => {
@@ -356,7 +387,7 @@
 				>
 					<div class="border-border bg-muted/40 flex items-center gap-2 border-b px-3 py-2 text-xs">
 						<span class="font-medium">Live-Vorschau</span>
-						<span class="text-muted-foreground">{lang.toUpperCase()} · ohne Seitenrahmen</span>
+						<span class="text-muted-foreground">{lang.toUpperCase()} · im Seitenlayout</span>
 						{#if previewHref}
 							<a
 								href={previewHref}
@@ -371,13 +402,12 @@
 							</a>
 						{/if}
 					</div>
-					<div class="overflow-auto">
-						{#if blocks.length}
-							<BlockRenderer {blocks} />
-						{:else}
-							<p class="text-muted-foreground p-8 text-center text-sm">Noch keine Blocks.</p>
-						{/if}
-					</div>
+					<iframe
+						bind:this={previewFrame}
+						src={previewFrameSrc}
+						title="Live-Vorschau"
+						class="h-[70vh] w-full bg-white 2xl:h-[calc(100vh-6rem)]"
+					></iframe>
 				</div>
 			</aside>
 		{/if}

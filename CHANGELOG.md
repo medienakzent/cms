@@ -2,6 +2,17 @@
 
 Alle relevanten Änderungen. Format: Datum, Version, Abschnitte Neu / Geändert / Breaking.
 
+## 0.5.1 — 2026-09-29
+
+### Geändert
+
+- **Live-Vorschau im Seitenlayout**: Der Editor rendert die Vorschau in einem Frame der Route
+  `/cms-preview` (Stub unter `src/routes/(site)/[[lang=lang]]/cms-preview`). Sie läuft im Layout
+  der Website und lädt damit deren Stylesheet, Fonts und Layout-Daten; der ungespeicherte Stand kommt
+  per `postMessage` (nur gleiche Origin). Die Route ist nur angemeldet erreichbar (sonst 404).
+  Vorher wurden Blocks im Admin ohne Website-Styles gerendert.
+- Captcha-Komponente rendert ohne Konfiguration nichts, statt in der Vorschau zu brechen.
+
 ## 0.5.0 — 2026-09-29
 
 Sicherheitsreview und Code-Stil.

@@ -55,7 +55,8 @@ src/cms.config.ts            Sprachen, Routing, Bildvarianten
 src/blocks/<name>/           block.ts + <Name>.svelte  (Konvention: README dort)
 src/collections/<name>.ts    Collections; alternativ gebündelt in src/cms.content.ts
 src/mail/<name>.ts           Formulare / Mail-Vorlagen
-src/routes/(site)/           Website: Layout, Design, Zuordnung Pfad → Collection (Kunde)
+src/routes/(site)/           Website: Layout, Design, Zuordnung Pfad → Collection (Kunde); darin der
+                             Stub cms-preview (Vorschau-Frame des Editors)
 src/app.css, src/admin.css   Website-Styles bzw. Markenwerte des Admins
 src/routes/admin, api, media, hooks.server.ts, params/   Stubs (generiert)
 ```

@@ -90,7 +90,8 @@ Konfiguration, Website-Layout) und laufen als ein Node-Prozess in einem Containe
 
 - Alles unter `/api/v1` bleibt hinter Sitzung oder API-Token (Hook). Öffentlich sind nur
   `/api/mail/<vorlage>`, `/api/mail/download/<token>/…`, `/api/captcha/challenge`, `/api/health`,
-  `/sitemap.xml`, `/llms.txt` und `/media/…`. Neue öffentliche Routen sind eine bewusste Entscheidung
+  `/sitemap.xml`, `/llms.txt` und `/media/…`; `/cms-preview` (Vorschau-Frame im Seitenlayout) nur
+  angemeldet, sonst 404. Neue öffentliche Routen sind eine bewusste Entscheidung
   mit Rate-Limit und ohne Personendaten.
 - Nutzer- und Schlüsselverwaltung nur mit Admin-Sitzung, nie per API-Zugang (`locals.user.api`).
   API-Zugänge tragen dieselben Rollen wie Nutzer; Rechteprüfungen gelten für beide gleich.

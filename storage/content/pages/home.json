@@ -1,52 +1,52 @@
 {
-  "id": "tTnXIOzadWBr",
-  "collection": "pages",
-  "slug": "home",
-  "schemaVersion": 1,
-  "createdAt": "2026-09-29T09:18:14.077Z",
-  "createdBy": "system",
-  "updatedAt": "2026-09-29T15:18:27.888Z",
-  "updatedBy": "Julian Test",
-  "fields": {
-    "seo": {
-      "noindex": false
-    },
-    "showInNav": true,
-    "navOrder": 0
-  },
-  "blocks": [
-    {
-      "id": "seed-hero",
-      "type": "hero",
-      "version": 2,
-      "data": {
-        "image": null,
-        "layout": "center"
-      }
-    },
-    {
-      "id": "seed-text",
-      "type": "text",
-      "version": 1,
-      "data": {
-        "width": "narrow"
-      }
-    },
-    {
-      "id": "D5grOn4C",
-      "type": "gallery",
-      "version": 1,
-      "data": {
-        "columns": 3
-      }
-    },
-    {
-      "id": "kontakt",
-      "type": "contact-form",
-      "version": 1,
-      "data": {
-        "template": "contact"
-      }
-    }
-  ]
+	"id": "tTnXIOzadWBr",
+	"collection": "pages",
+	"slug": "home",
+	"schemaVersion": 1,
+	"createdAt": "2026-09-29T09:18:14.077Z",
+	"createdBy": "system",
+	"updatedAt": "2026-09-29T15:18:27.888Z",
+	"updatedBy": "Julian Test",
+	"fields": {
+		"seo": {
+			"noindex": false
+		},
+		"showInNav": true,
+		"navOrder": 0
+	},
+	"blocks": [
+		{
+			"id": "seed-hero",
+			"type": "hero",
+			"version": 2,
+			"data": {
+				"image": null,
+				"layout": "center"
+			}
+		},
+		{
+			"id": "seed-text",
+			"type": "text",
+			"version": 1,
+			"data": {
+				"width": "narrow"
+			}
+		},
+		{
+			"id": "D5grOn4C",
+			"type": "gallery",
+			"version": 1,
+			"data": {
+				"columns": 3
+			}
+		},
+		{
+			"id": "kontakt",
+			"type": "contact-form",
+			"version": 1,
+			"data": {
+				"template": "contact"
+			}
+		}
+	]
 }
