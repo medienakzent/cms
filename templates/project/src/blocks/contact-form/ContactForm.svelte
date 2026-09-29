@@ -2,6 +2,7 @@
 	import { page } from '$app/state';
 	import type { BlockProps } from '@medienakzent/cms';
 	import { Richtext } from '@medienakzent/cms/render';
+	import { Captcha } from '@medienakzent/cms/forms';
 	import type def from './block';
 
 	let { title, intro, template, successText, errorText }: BlockProps<typeof def> = $props();
@@ -69,6 +70,9 @@
 				<textarea name="message" required rows="6" maxlength="5000" class="rounded-md border px-3 py-2"></textarea>
 				{#if issues.message}<span class="text-red-600">{issues.message}</span>{/if}
 			</label>
+			<!-- Captcha: Konfiguration kommt aus dem Layout-Load (cms.forms.captcha()) -->
+			<Captcha config={page.data.captcha} />
+			{#if issues._captcha}<p class="text-red-600">{issues._captcha}</p>{/if}
 			{#if status === 'error'}<p class="text-red-600">{errorText}</p>{/if}
 			<button type="submit" disabled={status === 'sending'} class="bg-primary text-primary-foreground rounded-md px-5 py-2.5 font-medium disabled:opacity-60">
 				{status === 'sending' ? 'Wird gesendet …' : 'Absenden'}

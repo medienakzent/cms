@@ -1,0 +1,28 @@
+{
+  "id": "XQz0Z_uuWK",
+  "template": "contact",
+  "lang": "de",
+  "sentAt": "2026-09-29T13:50:53.133Z",
+  "status": "sent",
+  "transport": "file",
+  "to": [
+    "office@example.com"
+  ],
+  "replyTo": "a@b.de",
+  "subject": "Kontaktanfrage von A",
+  "messageId": "2026-09-29T13-50-53-134Z__VY-un9",
+  "error": null,
+  "data": {
+    "name": "A",
+    "email": "a@b.de",
+    "phone": "",
+    "message": "x"
+  },
+  "meta": {
+    "origin": "http://localhost:5173",
+    "ip": "127.0.0.1",
+    "userAgent": "node",
+    "url": ""
+  },
+  "uploadToken": null
+}

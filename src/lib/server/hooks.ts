@@ -31,6 +31,7 @@ export function createHandle(registry: Registry, options: HandleOptions): Handle
 	const userLimiter = createRateLimiter({ windowMs: 60_000, max: rl.perMinute });
 	const anonLimiter = createRateLimiter({ windowMs: 60_000, max: rl.anonPerMinute });
 	const mailLimiter = createRateLimiter({ windowMs: 60_000, max: rl.mailPerMinute });
+	const captchaLimiter = createRateLimiter({ windowMs: 60_000, max: rl.captchaPerMinute });
 	const adminPath = options.adminPath ?? '/admin';
 
 	return async ({ event, resolve }) => {
@@ -41,6 +42,13 @@ export function createHandle(registry: Registry, options: HandleOptions): Handle
 
 		// Auth-Endpunkte (Login, OAuth-Callbacks, Session) bedient Better Auth direkt.
 		if (pathname.startsWith('/api/auth/')) return auth.handler(event.request);
+
+		// Captcha-Aufgaben: öffentlich, eigenes (großzügigeres) Rate-Limit je IP.
+		if (pathname.startsWith('/api/captcha/')) {
+			const r = captchaLimiter.check(`ip:${event.getClientAddress()}`);
+			if (!r.ok) return jsonError(429, 'Zu viele Anfragen', { 'retry-after': String(r.retryAfter) });
+			return resolve(event);
+		}
 
 		// Öffentliche Formular-API: nur Rate-Limit je IP, keine Anmeldung.
 		if (pathname.startsWith('/api/mail/') && !pathname.startsWith('/api/mail/download/')) {

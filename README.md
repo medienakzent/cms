@@ -215,6 +215,56 @@ escaped, Markdown wird zu HTML plus Textfassung.
   `GET|DELETE /api/v1/submissions/<id>` — nie öffentlich.
 - Beispiel-Block `contact-form` rendert ein Formular gegen diese API.
 
+## Captcha
+
+Jedes Formular ist geschützt; die Prüfung sitzt in `mail.send`. Standard ist **ALTCHA**:
+selbst gehostetes Proof-of-Work, keine Drittanbieter, keine Cookies, keine Einwilligung nötig.
+Alternativ `CAPTCHA_PROVIDER=turnstile` mit `TURNSTILE_SITE_KEY`/`TURNSTILE_SECRET_KEY`,
+oder `none` für Tests. Einbau im Formular:
+
+```svelte
+<script>
+	import { Captcha } from '@medienakzent/cms/forms';
+	import { page } from '$app/state';   // data.captcha kommt aus dem Layout-Load: cms.forms.captcha()
+</script>
+<form …>
+	…
+	<Captcha config={page.data.captcha} />
+</form>
+```
+
+Bei fehlender oder ungültiger Antwort liefert die API 422 mit `issues[].path === '_captcha'`.
+Einzelne Vorlagen: `defineMail({ …, captcha: false })`.
+
+## Datenschutz-Banner und Tracking
+
+```ts
+// cms.config.ts
+import { defineConfig, defineConsent } from '@medienakzent/cms';
+import { ga4, matomo, script } from '@medienakzent/cms/forms';
+
+export default defineConfig({
+	…,
+	consent: defineConsent({
+		version: 1,                 // erhöhen, wenn sich Dienste ändern → erneut fragen
+		privacyHref: '/datenschutz',
+		categories: [{ id: 'analytics', label: { de: 'Statistik', en: 'Analytics' }, description: { de: '…', en: '…' } }],
+		services: [matomo({ url: 'https://stats.example.de/', siteId: 1 }), ga4({ measurementId: 'G-XXXX' })]
+	})
+});
+```
+
+```svelte
+<!-- Layout -->
+<Consent config={registry.config.consent} lang={data.lang} />
+<button onclick={openConsent}>Datenschutz-Einstellungen</button>
+```
+
+Dienste laden erst nach Einwilligung ihrer Kategorie, Seitenwechsel werden gemeldet,
+`track('name', props)` sendet Ereignisse. Die Entscheidung liegt in Cookie und localStorage
+(`cms_consent`, 180 Tage) mit Versionsnummer. Ohne optionale Dienste erscheint kein Banner.
+Gestaltung über die Klassen `cms-consent*` und CSS-Variablen `--cms-consent-*`.
+
 ## REST-API (Auszug)
 
 | Methode | Pfad | Zweck |
@@ -229,7 +279,8 @@ escaped, Markdown wird zu HTML plus Textfassung.
 | GET | `/api/v1/<coll>/<slug>/versions` · POST `…/versions/<id>/restore` | Versionen |
 | GET/POST | `/api/v1/media` · PATCH/DELETE `/api/v1/media/<id>` | Medien |
 | POST | `/api/v1/reindex` | Index neu aufbauen (Admin) |
-| POST | `/api/mail/<vorlage>` | Öffentlich: Formular senden (Rate-Limit, Honeypot) |
+| POST | `/api/mail/<vorlage>` | Öffentlich: Formular senden (Captcha, Rate-Limit, Honeypot) |
+| GET | `/api/captcha/challenge` | Öffentlich: ALTCHA-Aufgabe (Rate-Limit) |
 | GET | `/api/v1/submissions?template=&status=&limit=&offset=` · GET/DELETE `/api/v1/submissions/<id>` | Einsendungen (geschützt) |
 
 ## Datenbank-Adapter

@@ -34,6 +34,8 @@ export interface MailTemplateDefinition<F extends FieldMap = FieldMap> {
 	honeypot: string;
 	/** Obergrenze aller Datei-Uploads zusammen (Bytes). Default 32 MB. */
 	maxTotalSize: number;
+	/** Captcha verlangen (Default true; Provider über CAPTCHA_PROVIDER). */
+	captcha: boolean;
 }
 
 export interface MailTemplateOptions<F extends FieldMap> {
@@ -47,6 +49,7 @@ export interface MailTemplateOptions<F extends FieldMap> {
 	autoReply?: MailTemplateDefinition<F>['autoReply'];
 	honeypot?: string;
 	maxTotalSize?: number;
+	captcha?: boolean;
 }
 
 export function defineMail<const F extends FieldMap>(def: MailTemplateOptions<F>): MailTemplateDefinition<F> {
@@ -69,7 +72,8 @@ export function defineMail<const F extends FieldMap>(def: MailTemplateOptions<F>
 		body: def.body,
 		autoReply: def.autoReply,
 		honeypot: def.honeypot ?? 'website',
-		maxTotalSize: def.maxTotalSize ?? 32 * 1024 * 1024
+		maxTotalSize: def.maxTotalSize ?? 32 * 1024 * 1024,
+		captcha: def.captcha ?? true
 	};
 }
 

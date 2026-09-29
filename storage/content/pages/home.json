@@ -5,8 +5,8 @@
   "schemaVersion": 1,
   "createdAt": "2026-09-29T09:18:14.077Z",
   "createdBy": "system",
-  "updatedAt": "2026-09-29T10:42:55.758Z",
-  "updatedBy": "test@test.de",
+  "updatedAt": "2026-09-29T13:51:11.340Z",
+  "updatedBy": "Julian Test",
   "fields": {
     "seo": {
       "noindex": false
@@ -38,6 +38,14 @@
       "version": 1,
       "data": {
         "columns": 3
+      }
+    },
+    {
+      "id": "kontakt",
+      "type": "contact-form",
+      "version": 1,
+      "data": {
+        "template": "contact"
       }
     }
   ]

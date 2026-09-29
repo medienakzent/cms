@@ -46,7 +46,19 @@ export function buildServerConfig(env: Env) {
 			/** Aufbewahrung hochgeladener Formulardateien in Tagen; 0 = unbegrenzt. */
 			uploadRetentionDays: Number(env.MAIL_UPLOAD_RETENTION_DAYS ?? 180) || 0
 		},
+		captcha: {
+			/** altcha (Default) | turnstile | none */
+			provider: (['altcha', 'turnstile', 'none'].includes(env.CAPTCHA_PROVIDER ?? '') ? env.CAPTCHA_PROVIDER : 'altcha') as 'altcha' | 'turnstile' | 'none',
+			/** HMAC-Geheimnis für ALTCHA-Aufgaben (Default: AUTH_SECRET) */
+			secret: env.CAPTCHA_SECRET || env.AUTH_SECRET || 'dev-captcha-secret',
+			/** Rechenaufwand der ALTCHA-Aufgabe (PBKDF2-Iterationen); höher = mehr Schutz, langsamer */
+			altchaCost: num(env.ALTCHA_COST, 1000),
+			turnstileSiteKey: env.TURNSTILE_SITE_KEY || '',
+			turnstileSecret: env.TURNSTILE_SECRET_KEY || ''
+		},
 		rateLimit: {
+			/** Captcha-Aufgaben pro Minute je IP */
+			captchaPerMinute: num(env.RATE_LIMIT_CAPTCHA_PER_MINUTE, 60),
 			/** Formular-Sendungen pro Minute je IP auf /api/mail */
 			mailPerMinute: num(env.RATE_LIMIT_MAIL_PER_MINUTE, 5),
 			/** Anfragen pro Minute je angemeldetem Nutzer bzw. API-Token auf /api/v1 */

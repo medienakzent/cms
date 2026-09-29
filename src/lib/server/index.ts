@@ -11,6 +11,7 @@ import { collection, reindexContent, SYSTEM_ACTOR } from './content';
 import { media, reindexMedia } from './media';
 import { mail } from './mail';
 import { getRuntime } from './runtime';
+import { captchaClientConfig } from './captcha';
 
 export { CmsError } from './errors';
 export type { Actor, CollectionApi, GetOptions } from './content';
@@ -28,6 +29,7 @@ export type { MailTransport, MailEnvelope } from './mail/transport';
 export { api, actorOf, requireAdmin, readJsonBody, parseDocumentBody } from './api';
 export { adminCollections, adminBlocks, toAdminCollection, toAdminBlock } from './admin';
 export { createHandle } from './hooks';
+export { captchaClientConfig, verifyCaptcha } from './captcha';
 export type { HandleOptions } from './hooks';
 
 export const cms = {
@@ -43,6 +45,8 @@ export const cms = {
 	collection,
 	media,
 	mail,
+	/** Client-Konfiguration für Formulare (Captcha) — im Layout-Load an die Seite geben. */
+	forms: { captcha: captchaClientConfig },
 	systemActor: SYSTEM_ACTOR,
 	async reindex() {
 		const content = await reindexContent();

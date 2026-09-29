@@ -61,6 +61,7 @@ Konfiguration, Website-Layout) und laufen als ein Node-Prozess in einem Containe
 - Neue Feldart: `fields.ts` (Typ + Builder), `types.ts` (`InferField`), `validate.ts`
   (Default, Normalisierung, Prüfung), `admin/FieldEditor.svelte` (Widget), ggf. `query.ts`
   (filterbar?) und `facets.ts`, `localize.ts` nur wenn verschachtelt.
+- Formulare: Captcha-Prüfung bleibt zentral in `mail.send`; neue Provider nur in `server/captcha.ts` und `forms/Captcha.svelte`. Consent-Adapter gehören nach `src/lib/tracking`.
 - Neue Server-Funktion: in `content.ts`/`mail/index.ts` implementieren, dann REST-Route in
   `src/lib/routes/api`, dann Stub. Nie umgekehrt.
 - Texte der Oberfläche sind Deutsch; Codekommentare erklären das Warum, nicht das Was.

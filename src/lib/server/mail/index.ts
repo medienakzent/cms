@@ -8,6 +8,7 @@ import { CmsError, notFound, validation } from '../errors';
 import { getStorage } from '../storage';
 import { renderTemplate, toHtml, toText } from './render';
 import { checkFile, formatBytes, pruneUploads, storeFiles, type CheckedFile } from './uploads';
+import { stripCaptchaFields, verifyCaptcha } from '../captcha';
 import type { MailEnvelope, MailTransport } from './transport';
 import { isEmail } from './transport';
 
@@ -112,8 +113,15 @@ export async function sendMail(
 		return { id, status: 'spam' };
 	}
 
-	// Datei-Felder: prüfen, Gesamtgröße, ablegen — Referenzen wandern in die Daten.
+	// Captcha zuerst: ohne gültige Antwort wird nichts weiter angefasst.
 	const issues: ValidationIssue[] = [];
+	if (def.captcha) {
+		const captchaError = await verifyCaptcha(input, opts.meta?.ip ?? '');
+		if (captchaError) issues.push({ path: '_captcha', message: captchaError });
+	}
+	input = stripCaptchaFields(input);
+
+	// Datei-Felder: prüfen, Gesamtgröße, ablegen — Referenzen wandern in die Daten.
 	const checked: CheckedFile[] = [];
 	let total = 0;
 	for (const [key, field] of Object.entries(def.fields)) {

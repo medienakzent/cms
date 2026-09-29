@@ -2,6 +2,7 @@
 	import '../../app.css';
 	import { page } from '$app/state';
 	import { localizePath, setCmsContext } from '@medienakzent/cms';
+	import { Consent, openConsent } from '@medienakzent/cms/forms';
 	import registry from '../../cms';
 
 	let { data, children } = $props();
@@ -48,4 +49,12 @@
 	{@render children()}
 </main>
 
-<footer class="text-muted-foreground border-border mt-16 border-t py-8 text-center text-sm">{data.siteName}</footer>
+<footer class="text-muted-foreground border-border mt-16 border-t py-8 text-center text-sm">
+	{data.siteName}
+	{#if config.consent}
+		· <button type="button" class="underline" onclick={openConsent}>Datenschutz-Einstellungen</button>
+	{/if}
+</footer>
+
+<!-- Datenschutz-Banner: erscheint nur, wenn in cms.config.ts optionale Dienste eingetragen sind. -->
+<Consent config={config.consent} lang={data.lang} />

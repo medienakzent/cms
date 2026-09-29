@@ -1,0 +1,11 @@
+{
+  "id": "2026-09-29T13-50-43-433Z__vU3g3c",
+  "from": "CMS Dev <noreply@localhost>",
+  "to": [
+    "office@example.com"
+  ],
+  "replyTo": "a@b.de",
+  "subject": "Kontaktanfrage von A",
+  "text": "Neue Kontaktanfrage\n\nName: A\nE-Mail: a@b.de\nNachricht: x\n\n---\nGesendet am 29.9.2026, 13:50:43 über ",
+  "html": "<!doctype html><html><body style=\"font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;font-size:15px;line-height:1.5;color:#111;max-width:640px;margin:0 auto;padding:24px\"><h2>Neue Kontaktanfrage</h2>\n<p><strong>Name:</strong> A\n<strong>E-Mail:</strong> <a href=\"mailto:a@b.de\">a@b.de</a>\n<strong>Nachricht:</strong> x</p>\n<hr>\n<p>Gesendet am 29.9.2026, 13:50:43 über </p>\n</body></html>"
+}

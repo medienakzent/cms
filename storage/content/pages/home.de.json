@@ -1,8 +1,8 @@
 {
   "lang": "de",
   "status": "published",
-  "updatedAt": "2026-09-29T10:42:55.758Z",
-  "updatedBy": "test@test.de",
+  "updatedAt": "2026-09-29T13:51:11.340Z",
+  "updatedBy": "Julian Test",
   "publishedAt": "2026-09-29T09:18:14.077Z",
   "fields": {
     "title": "Startseite",
@@ -53,6 +53,12 @@
           "caption": ""
         }
       ]
+    },
+    "kontakt": {
+      "title": "Kontakt",
+      "intro": "Schreiben Sie uns.",
+      "successText": "Danke!",
+      "errorText": "Fehler."
     }
   }
 }

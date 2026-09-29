@@ -3,8 +3,12 @@ export interface LanguageConfig {
 	label: string;
 }
 
+import type { ConsentConfig } from './consent';
+
 export interface CmsConfig {
 	site: { name: string };
+	/** Datenschutz-Banner und Dienste (siehe consent.ts, defineConsent). Ohne Angabe: kein Banner. */
+	consent: ConsentConfig | null;
 	languages: LanguageConfig[];
 	defaultLanguage: string;
 	routing: {
@@ -22,6 +26,7 @@ export interface CmsConfig {
 
 export interface CmsConfigInput {
 	site: { name: string };
+	consent?: ConsentConfig;
 	languages: LanguageConfig[];
 	defaultLanguage?: string;
 	routing?: Partial<CmsConfig['routing']>;
@@ -35,6 +40,7 @@ export function defineConfig(input: CmsConfigInput): CmsConfig {
 	}
 	return {
 		site: input.site,
+		consent: input.consent ?? null,
 		languages: input.languages,
 		defaultLanguage,
 		routing: {

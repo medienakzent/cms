@@ -2,6 +2,16 @@
 
 Alle relevanten Änderungen. Format: Datum, Version, Abschnitte Neu / Geändert / Breaking.
 
+## 0.2.0 — 2026-09-29
+
+### Neu
+- **Captcha für alle Formulare.** Prüfung zentral in `mail.send`; Provider per `CAPTCHA_PROVIDER`: `altcha` (Default, selbst gehostetes Proof-of-Work ohne Drittanbieter und Cookies), `turnstile` (Cloudflare) oder `none`. Widget `<Captcha config={data.captcha} />` aus `@medienakzent/cms/forms`, Konfiguration über `cms.forms.captcha()` im Layout-Load. Route `GET /api/captcha/challenge` mit eigenem Rate-Limit, Replay-Schutz. Pro Vorlage abschaltbar mit `captcha: false`.
+- **Datenschutz-Banner und Tracking.** `consent: defineConsent({ categories, services, texts })` in `cms.config.ts`; Komponente `<Consent config={config.consent} lang />` im Layout; Zustand in Cookie und localStorage mit Versionsnummer; Dienste laden erst nach Einwilligung, Seitenwechsel werden gemeldet. Adapter `ga4()` (Consent Mode), `matomo()`, `script()`; `openConsent()` für Footer-Links, `track()` für Ereignisse. Ohne optionale Dienste erscheint kein Banner.
+
+### Geändert
+- Neues Paket-Entry `@medienakzent/cms/forms`. Neue Umgebungsvariablen (alle mit Defaults): `CAPTCHA_PROVIDER`, `CAPTCHA_SECRET`, `ALTCHA_COST`, `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY`, `RATE_LIMIT_CAPTCHA_PER_MINUTE`.
+- Formulare bestehender Projekte brauchen das Widget, sonst antwortet die API mit 422 (`_captcha`). Übergangsweise `CAPTCHA_PROVIDER=none`.
+
 ## 0.1.2 — 2026-09-29
 
 ### Neu

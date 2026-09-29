@@ -22,3 +22,7 @@ export type { Filter, FilterOp, ListQuery, ListQueryInput, Sort } from './query'
 export { defineRegistry, allowedBlocks } from './registry';
 export type { Registry, RegistryInput, BlockComponent } from './registry';
 export { setCmsContext, getCmsContext } from './context';
+export { CAPTCHA_FIELD } from './captcha';
+export type { CaptchaProvider, CaptchaClientConfig } from './captcha';
+export { defineConsent, DEFAULT_CONSENT_TEXTS } from './consent';
+export type { ConsentConfig, ConsentCategory, ConsentService, ConsentTexts, ConsentDecisions } from './consent';
