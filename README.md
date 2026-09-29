@@ -1,4 +1,4 @@
-# @compdata/cms
+# @medienakzent/cms
 
 Block-basiertes CMS für SvelteKit als npm-Paket: Übersetzung pro Feld, Versionierung,
 Storage als Wahrheit, SQLite als Default-Index (PostgreSQL möglich), Anmeldung per lokalem
@@ -24,7 +24,7 @@ das Paket und ergänzen nur eigene Dateien; alles läuft in einem Node-Prozess.
 
 ```bash
 mkdir mein-projekt && cd mein-projekt
-npm init -y >/dev/null && npm install github:compdataitgmbh/cms#v0.1.0
+npm init -y >/dev/null && npm install github:medienakzent/cms#v0.1.0
 npx cms init .                 # Gerüst, Stubs, Docker, .env.example, AGENTS.md
 cp .env.example .env           # AUTH_SECRET setzen
 docker compose -f docker-compose.dev.yml up -d --build
@@ -64,7 +64,7 @@ src/routes/admin, api, media, hooks.server.ts, params/   Stubs (generiert)
 
 `src/lib` ist das Paket (Build mit `svelte-package` nach `dist`), `src/routes` samt
 `src/blocks`, `src/collections`, `src/mail` ist die Spielwiese — ein Beispiel-Kundenprojekt,
-das das Paket über den Alias `@compdata/cms` importiert. Entwicklung im Container:
+das das Paket über den Alias `@medienakzent/cms` importiert. Entwicklung im Container:
 
 ```bash
 docker compose -f docker-compose.dev.yml up -d --build
@@ -76,7 +76,7 @@ docker exec -w /app cms-dev npm run package   # Paket bauen + publint
 ## Inhalte im Code nutzen
 
 ```ts
-import { cms } from '@compdata/cms/server';
+import { cms } from '@medienakzent/cms/server';
 
 const page = await cms.collection('pages').get('about', { lang: 'en' });    // veröffentlicht, mit Fallback
 const pages = await cms.collection('pages').list({ lang: 'de', limit: 10 });
@@ -85,7 +85,7 @@ await cms.collection('pages').save('about', 'de', { fields, blocks }, { actor, s
 
 ```svelte
 <script lang="ts">
-	import { BlockRenderer } from '@compdata/cms/render';
+	import { BlockRenderer } from '@medienakzent/cms/render';
 	let { data } = $props();
 </script>
 <BlockRenderer blocks={data.doc.blocks} />
@@ -99,7 +99,7 @@ Zwei gleichwertige Wege, beide ohne Registrierung:
 - gebündelt in `src/cms.content.ts`:
 
 ```ts
-import { defineCollection, defineContent, f } from '@compdata/cms';
+import { defineCollection, defineContent, f } from '@medienakzent/cms';
 
 export default defineContent({
 	collections: [

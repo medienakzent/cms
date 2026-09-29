@@ -1,4 +1,4 @@
-import { defineCollection, f } from '@compdata/cms';
+import { defineCollection, f } from '@medienakzent/cms';
 
 export default defineCollection({
 	name: 'tags',

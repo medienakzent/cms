@@ -1,12 +1,12 @@
 # AGENTS.md — __PROJECT_NAME__
 
-Dieses Projekt nutzt `@compdata/cms`. Diese Datei gilt für Menschen und KI-Agenten;
+Dieses Projekt nutzt `@medienakzent/cms`. Diese Datei gilt für Menschen und KI-Agenten;
 es gibt keine CLAUDE.md.
 
 ## Aufteilung
 
-- **Paket (nicht anfassen):** `node_modules/@compdata/cms`. Änderungen am CMS gehören ins
-  Paket-Repo `compdataitgmbh/cms`, nicht hierher.
+- **Paket (nicht anfassen):** `node_modules/@medienakzent/cms`. Änderungen am CMS gehören ins
+  Paket-Repo `medienakzent/cms`, nicht hierher.
 - **Generierte Stubs (nicht bearbeiten):** Dateien mit Header `@generated` unter `src/routes/admin`,
   `src/routes/api`, `src/routes/media`, `src/hooks.server.ts`, `src/params/lang.ts`.
   Sie werden bei `npm install`/`npm update` automatisch aktualisiert (`npx cms sync`).
@@ -38,7 +38,7 @@ es gibt keine CLAUDE.md.
   Prüfen mit `docker exec -w /app __PROJECT_NAME__-dev npm run check`.
 - Produktion: `docker compose -f docker-compose.prod.yml up -d --build` — ein Container,
   ein Node-Prozess (Website, Admin, API, Mail). Volumes: `/data` (Index), `/storage` (Inhalte).
-- CMS aktualisieren: Tag in `package.json` erhöhen (`github:compdataitgmbh/cms#vX.Y.Z`),
+- CMS aktualisieren: Tag in `package.json` erhöhen (`github:medienakzent/cms#vX.Y.Z`),
   `npm install`, `npx cms check`, CHANGELOG des Pakets lesen.
 - Alle Umgebungsvariablen sind in `.env.example` dokumentiert.
 

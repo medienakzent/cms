@@ -1,6 +1,6 @@
 <script lang="ts">
 	import '../../admin.css';
-	import Layout from '@compdata/cms/pages/admin/Layout.svelte';
+	import Layout from '@medienakzent/cms/pages/admin/Layout.svelte';
 	import registry from '../../cms';
 
 	let { data, children } = $props();

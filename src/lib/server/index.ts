@@ -1,5 +1,5 @@
 /**
- * Server-API des CMS: `import { cms } from '@compdata/cms/server'`.
+ * Server-API des CMS: `import { cms } from '@medienakzent/cms/server'`.
  *
  *   const page = await cms.collection('pages').get('about', { lang: 'de' });
  *   await cms.collection('pages').save('about', 'de', input, { actor });

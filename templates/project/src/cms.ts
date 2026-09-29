@@ -3,7 +3,7 @@
  * Neue Dateien in src/blocks, src/collections, src/mail werden automatisch erkannt —
  * hier muss nichts registriert werden. Diese Datei gehört dem Projekt.
  */
-import { defineRegistry } from '@compdata/cms';
+import { defineRegistry } from '@medienakzent/cms';
 import config from './cms.config';
 
 export default defineRegistry({

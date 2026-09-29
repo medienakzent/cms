@@ -1,1 +1,1 @@
-export { GET } from '@compdata/cms/routes/api/collections';
+export { GET } from '@medienakzent/cms/routes/api/collections';

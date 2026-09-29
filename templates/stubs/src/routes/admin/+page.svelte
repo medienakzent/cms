@@ -1,5 +1,5 @@
 <script lang="ts">
-	import Page from '@compdata/cms/pages/admin/Dashboard.svelte';
+	import Page from '@medienakzent/cms/pages/admin/Dashboard.svelte';
 
 	let { data } = $props();
 </script>

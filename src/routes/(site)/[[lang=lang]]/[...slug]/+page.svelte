@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { BlockRenderer } from '@compdata/cms/render';
+	import { BlockRenderer } from '@medienakzent/cms/render';
 
 	let { data } = $props();
 	const seo = $derived(data.doc.fields.seo as { description?: string; noindex?: boolean } | undefined);

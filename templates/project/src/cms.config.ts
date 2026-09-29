@@ -1,4 +1,4 @@
-import { defineConfig } from '@compdata/cms';
+import { defineConfig } from '@medienakzent/cms';
 
 /** Sprachen, Routing, Medien. Struktur (Blocks, Collections) liegt in src/blocks und src/collections. */
 export default defineConfig({

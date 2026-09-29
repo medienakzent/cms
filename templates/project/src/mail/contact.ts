@@ -1,4 +1,4 @@
-import { defineMail, f } from '@compdata/cms';
+import { defineMail, f } from '@medienakzent/cms';
 
 /**
  * Kontaktformular. Empfänger über `to` oder MAIL_TO_DEFAULT; Reply-To ist die

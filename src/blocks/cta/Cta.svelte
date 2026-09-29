@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { BlockProps } from '@compdata/cms';
+	import type { BlockProps } from '@medienakzent/cms';
 	import type def from './block';
 
 	let { title, text, link, tone }: BlockProps<typeof def> = $props();

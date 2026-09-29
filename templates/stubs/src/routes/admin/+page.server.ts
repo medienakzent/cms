@@ -1,1 +1,1 @@
-export { load } from '@compdata/cms/routes/admin/dashboard';
+export { load } from '@medienakzent/cms/routes/admin/dashboard';

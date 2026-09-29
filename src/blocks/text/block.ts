@@ -1,4 +1,4 @@
-import { defineBlock, f } from '@compdata/cms';
+import { defineBlock, f } from '@medienakzent/cms';
 
 export default defineBlock({
 	name: 'text',

@@ -1,1 +1,1 @@
-export { POST } from '@compdata/cms/routes/api/status';
+export { POST } from '@medienakzent/cms/routes/api/status';

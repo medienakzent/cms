@@ -1,6 +1,6 @@
 /**
  * Öffentliche Schnittstelle des CMS-Kerns (client-sicher, kein Node-Code).
- * Server-Funktionen: `@compdata/cms/server`.
+ * Server-Funktionen: `@medienakzent/cms/server`.
  */
 export { f, fieldLabel, optionLabel, optionValue } from './fields';
 export type * from './fields';

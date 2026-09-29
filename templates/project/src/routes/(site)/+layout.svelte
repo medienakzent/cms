@@ -1,7 +1,7 @@
 <script lang="ts">
 	import '../../app.css';
 	import { page } from '$app/state';
-	import { localizePath, setCmsContext } from '@compdata/cms';
+	import { localizePath, setCmsContext } from '@medienakzent/cms';
 	import registry from '../../cms';
 
 	let { data, children } = $props();

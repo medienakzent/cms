@@ -1,6 +1,6 @@
 <script lang="ts">
-	import type { BlockProps } from '@compdata/cms';
-	import { Richtext } from '@compdata/cms/render';
+	import type { BlockProps } from '@medienakzent/cms';
+	import { Richtext } from '@medienakzent/cms/render';
 	import type def from './block';
 
 	let { title, items }: BlockProps<typeof def> = $props();

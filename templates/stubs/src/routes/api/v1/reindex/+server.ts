@@ -1,1 +1,1 @@
-export { POST } from '@compdata/cms/routes/api/reindex';
+export { POST } from '@medienakzent/cms/routes/api/reindex';

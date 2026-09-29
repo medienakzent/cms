@@ -1,4 +1,4 @@
-import { defineMail, f } from '@compdata/cms';
+import { defineMail, f } from '@medienakzent/cms';
 
 const MB = 1024 * 1024;
 

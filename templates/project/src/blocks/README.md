@@ -8,7 +8,7 @@ src/blocks/hero/
   Hero.svelte   # Darstellung; Props werden aus block.ts abgeleitet
 ```
 
-Nichts muss registriert werden. Die Registry (`@compdata/cms/registry`) sammelt alle
+Nichts muss registriert werden. Die Registry (`@medienakzent/cms/registry`) sammelt alle
 `block.ts` ein, der Renderer alle `.svelte`-Dateien. Verstöße brechen den Start.
 
 ## Regeln
@@ -32,14 +32,14 @@ Nichts muss registriert werden. Die Registry (`@compdata/cms/registry`) sammelt 
 6. **Keine Datenzugriffe in Blocks.** Blocks rendern nur ihre Props. Wer Daten aus
    anderen Collections braucht, lädt sie in der Route (`+page.server.ts`) und reicht
    sie über ein `reference`-Feld + Lookup durch.
-7. **Richtext** wird mit `<Richtext source={body} />` aus `@compdata/cms/render` gerendert.
-8. **Bilder** über `mediaUrl(image, 'md')` aus `@compdata/cms` — Varianten: `thumb`, `md`, `lg`.
+7. **Richtext** wird mit `<Richtext source={body} />` aus `@medienakzent/cms/render` gerendert.
+8. **Bilder** über `mediaUrl(image, 'md')` aus `@medienakzent/cms` — Varianten: `thumb`, `md`, `lg`.
 
 ## Vorlage
 
 ```ts
 // src/blocks/example/block.ts
-import { defineBlock, f } from '@compdata/cms';
+import { defineBlock, f } from '@medienakzent/cms';
 
 export default defineBlock({
 	name: 'example',
@@ -57,8 +57,8 @@ export default defineBlock({
 ```svelte
 <!-- src/blocks/example/Example.svelte -->
 <script lang="ts">
-	import type { BlockProps } from '@compdata/cms';
-	import { mediaUrl } from '@compdata/cms';
+	import type { BlockProps } from '@medienakzent/cms';
+	import { mediaUrl } from '@medienakzent/cms';
 	import type def from './block';
 
 	let { title, image, variant }: BlockProps<typeof def> = $props();

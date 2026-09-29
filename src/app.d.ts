@@ -1,4 +1,4 @@
-import type { SessionUser } from '@compdata/cms/server';
+import type { SessionUser } from '@medienakzent/cms/server';
 
 declare global {
 	namespace App {

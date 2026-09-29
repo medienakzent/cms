@@ -1,6 +1,6 @@
 /*
- * Admin-Stylesheet von @compdata/cms. Im Kundenprojekt aus src/admin.css einbinden:
- *   @import '@compdata/cms/admin.css';
+ * Admin-Stylesheet von @medienakzent/cms. Im Kundenprojekt aus src/admin.css einbinden:
+ *   @import '@medienakzent/cms/admin.css';
  * Danach eigene @theme-Werte (Markenfarbe, Schrift) setzen.
  */
 @import 'tailwindcss';
@@ -8,7 +8,7 @@
 @import '@compdata/ui/theme.css';
 
 /* Tailwind 4 scannt node_modules nicht: Klassen der Lib-Bausteine explizit einsammeln.
-   Pfade relativ zu dieser Datei (node_modules/@compdata/cms/admin.css). */
+   Pfade relativ zu dieser Datei (node_modules/@medienakzent/cms/admin.css). */
 @source '../ui/dist';
 @source './dist';
 /* Entwicklung im Paket-Repo selbst: */

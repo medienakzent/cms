@@ -1,7 +1,7 @@
 import { getContext, setContext } from 'svelte';
 import type { Registry } from './registry';
 
-const KEY = Symbol.for('@compdata/cms');
+const KEY = Symbol.for('@medienakzent/cms');
 
 /** Registry für Komponenten bereitstellen — im Wurzel-Layout der Website und im Admin-Layout. */
 export function setCmsContext(registry: Registry): Registry {

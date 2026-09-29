@@ -1,4 +1,4 @@
-import { defineConfig } from '@compdata/cms';
+import { defineConfig } from '@medienakzent/cms';
 
 /**
  * Projektweite CMS-Konfiguration. Struktur (Blocks, Collections) liegt in

@@ -1,1 +1,1 @@
-export { GET, PUT, DELETE } from '@compdata/cms/routes/api/document';
+export { GET, PUT, DELETE } from '@medienakzent/cms/routes/api/document';

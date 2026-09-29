@@ -1,11 +1,11 @@
 {
-	"name": "@compdata/cms",
+	"name": "@medienakzent/cms",
 	"version": "0.1.0",
 	"description": "Block-basiertes CMS für SvelteKit: Übersetzung pro Feld, Versionierung, Storage als Wahrheit, Formulare mit Mail-Versand — Kundenprojekte erweitern nur um eigene Dateien.",
 	"license": "MIT",
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/compdataitgmbh/cms.git"
+		"url": "git+https://github.com/medienakzent/cms.git"
 	},
 	"type": "module",
 	"bin": {

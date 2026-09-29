@@ -1,5 +1,5 @@
 /* Admin-Oberfläche: Grundlage aus dem Paket, darunter eigene Markenwerte. */
-@import '@compdata/cms/admin.css';
+@import '@medienakzent/cms/admin.css';
 
 @theme {
 	--color-primary: oklch(0.6359 0.11088 212.171);

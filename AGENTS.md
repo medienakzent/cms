@@ -1,17 +1,17 @@
-# AGENTS.md — @compdata/cms
+# AGENTS.md — @medienakzent/cms
 
 Anleitung für Menschen und KI-Agenten, die an diesem Repository arbeiten. Sie gilt
 vor allen Standardannahmen. Es gibt bewusst keine CLAUDE.md; alles steht hier.
 
 ## Was das ist
 
-`@compdata/cms` ist ein Block-basiertes CMS als npm-Paket für SvelteKit. Kundenprojekte
+`@medienakzent/cms` ist ein Block-basiertes CMS als npm-Paket für SvelteKit. Kundenprojekte
 installieren das Paket, ergänzen **nur eigene Dateien** (Blocks, Collections, Mail-Vorlagen,
 Konfiguration, Website-Layout) und laufen als ein Node-Prozess in einem Container.
 
 - `src/lib/` — das Paket. Wird mit `svelte-package` nach `dist/` gebaut.
 - `src/routes/`, `src/blocks/`, `src/collections/`, `src/mail/`, `src/cms.ts`, `src/cms.config.ts` —
-  die **Spielwiese**: ein Beispiel-Kundenprojekt im selben Repo. Der Alias `@compdata/cms` zeigt
+  die **Spielwiese**: ein Beispiel-Kundenprojekt im selben Repo. Der Alias `@medienakzent/cms` zeigt
   auf `src/lib`, damit die Spielwiese das Paket exakt wie ein Kunde importiert.
 - `templates/stubs/` — generierte Dateien für Kundenprojekte (Routen, Hooks, Param-Matcher).
 - `templates/project/` — Projektgerüst, das `cms init` einmalig anlegt.
@@ -80,7 +80,7 @@ Konfiguration, Website-Layout) und laufen als ein Node-Prozess in einem Containe
   **Keine `Co-Authored-By`-Zeilen und keine Tool-Signaturen.**
 - Kein Commit ohne grünes `npm run check` und `npm run test`.
 - Releases: Version in `package.json` erhöhen, CHANGELOG ergänzen, Tag `vX.Y.Z`. Kundenprojekte
-  pinnen den Tag (`github:compdataitgmbh/cms#vX.Y.Z`).
+  pinnen den Tag (`github:medienakzent/cms#vX.Y.Z`).
 
 ## Was bewusst nicht im Paket liegt
 

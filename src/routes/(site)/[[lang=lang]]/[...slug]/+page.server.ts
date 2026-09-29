@@ -1,4 +1,4 @@
-import { cms } from '@compdata/cms/server';
+import { cms } from '@medienakzent/cms/server';
 import { error, redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 

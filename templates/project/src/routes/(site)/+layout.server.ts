@@ -1,5 +1,5 @@
-import { localizePath } from '@compdata/cms';
-import { cms } from '@compdata/cms/server';
+import { localizePath } from '@medienakzent/cms';
+import { cms } from '@medienakzent/cms/server';
 import type { LayoutServerLoad } from './$types';
 
 /** Website-Layout: Navigation aus veröffentlichten Seiten der aktuellen Sprache. */

@@ -1,1 +1,1 @@
-export { DOWNLOAD as GET } from '@compdata/cms/routes/api/mail';
+export { DOWNLOAD as GET } from '@medienakzent/cms/routes/api/mail';

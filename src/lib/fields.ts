@@ -38,7 +38,7 @@ export interface TextareaField extends FieldBase {
 	rows?: number;
 	maxLength?: number;
 }
-/** Markdown. Gerendert wird mit `<Richtext>` aus `@compdata/cms/render`. */
+/** Markdown. Gerendert wird mit `<Richtext>` aus `@medienakzent/cms/render`. */
 export interface RichtextField extends FieldBase {
 	kind: 'richtext';
 	default?: string;

@@ -1,1 +1,1 @@
-export { RESTORE as POST } from '@compdata/cms/routes/api/versions';
+export { RESTORE as POST } from '@medienakzent/cms/routes/api/versions';
