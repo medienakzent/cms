@@ -2,6 +2,14 @@
 
 Alle relevanten Änderungen. Format: Datum, Version, Abschnitte Neu / Geändert / Breaking.
 
+## 0.5.4 — 2026-09-29
+
+### Geändert
+
+- Bildvorschauen im Admin (Medien, Medienauswahl, Bildfelder) erkennen automatisch, ob das Bild hell ist,
+  und legen dann einen dunklen Hintergrund darunter — weiße Logos auf Transparenz bleiben sichtbar.
+  Die Erkennung läuft im Browser über eine kleine Abtastung der deckenden Pixel.
+
 ## 0.5.3 — 2026-09-29
 
 ### Geändert

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { contrastBackdrop } from './thumbnail-tone';
 	import type { Field } from '../fields';
 	import { fieldLabel, optionLabel, optionValue } from '../fields';
 	import { defaultValue } from '../validate';
@@ -214,6 +215,7 @@
 						src={mediaUrl(media, 'thumb')}
 						alt={media.alt}
 						class="size-24 rounded object-cover"
+						use:contrastBackdrop
 					/>
 				{:else}
 					<div

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { contrastBackdrop } from './thumbnail-tone';
 	import type { MediaItem, MediaRef } from '../types';
 	import { mediaUrl } from '../media-url';
 	import { apiFetch } from './api-client';
@@ -136,6 +137,7 @@
 								alt={mediaItem.alt}
 								class="aspect-square w-full rounded object-cover"
 								loading="lazy"
+								use:contrastBackdrop
 							/>
 						{:else}
 							<div

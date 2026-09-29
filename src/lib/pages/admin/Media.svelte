@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { contrastBackdrop } from '../../admin/thumbnail-tone';
 	import { invalidateAll } from '$app/navigation';
 	import { mediaUrl } from '../../media-url';
 	import type { MediaItem } from '../../types';
@@ -104,6 +105,7 @@
 					alt={mediaItem.alt}
 					class="aspect-[4/3] w-full rounded object-cover"
 					loading="lazy"
+					use:contrastBackdrop
 				/>
 			{:else}
 				<div
