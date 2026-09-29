@@ -2,6 +2,15 @@
 
 Alle relevanten Änderungen. Format: Datum, Version, Abschnitte Neu / Geändert / Breaking.
 
+## 0.5.2 — 2026-09-29
+
+### Geändert
+
+- **Eigene Seiten zum Anlegen**: Konten unter `/admin/users/new`, API-Zugänge unter
+  `/admin/users/api-keys/new` (neue Stubs). Die Nutzerseite verlinkt dorthin und zeigt nur noch die
+  Listen; Feldfehler der API erscheinen am jeweiligen Feld, der neue Schlüssel wird einmalig auf der
+  Anlage-Seite angezeigt.
+
 ## 0.5.1 — 2026-09-29
 
 ### Geändert

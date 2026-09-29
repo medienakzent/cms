@@ -6,38 +6,25 @@
 	import { ConfirmDialog } from '@compdata/ui/confirm-dialog';
 	import { Input } from '@compdata/ui/input';
 	import { Label } from '@compdata/ui/label';
+	import PlusIcon from '@lucide/svelte/icons/plus';
 	import { SearchableSelect } from '@compdata/ui/select';
 	import * as Table from '@compdata/ui/table';
 	import BanIcon from '@lucide/svelte/icons/ban';
-	import CopyIcon from '@lucide/svelte/icons/copy';
 	import KeyIcon from '@lucide/svelte/icons/key-round';
 	import TrashIcon from '@lucide/svelte/icons/trash-2';
 	import { toast } from 'svelte-sonner';
 	import { apiFetch } from '../../admin/api-client';
+	import { ADMIN_ROLES } from '../../admin/roles';
 	import type { AdminLayoutData } from '../../routes/admin/layout';
 	import type { AdminUser, load } from '../../routes/admin/users';
 
 	let { data }: { data: AdminLayoutData & Awaited<ReturnType<typeof load>> } = $props();
 
-	const roles = [
-		{ value: 'admin', label: 'Administrator' },
-		{ value: 'editor', label: 'Redakteur' }
-	];
-
 	let busy = $state(false);
-	// Create account
-	let name = $state('');
-	let email = $state('');
-	let password = $state('');
-	let role = $state('editor');
 	// Dialogs
 	let toDelete = $state<AdminUser | null>(null);
 	let passwordUser = $state<AdminUser | null>(null);
 	let newPassword = $state('');
-	// API keys
-	let keyName = $state('');
-	let keyRole = $state('editor');
-	let createdKey = $state<{ name: string; key: string } | null>(null);
 	let keyToRevoke = $state<{ id: string; name: string } | null>(null);
 
 	async function run(action: () => Promise<unknown>, successMessage: string) {
@@ -53,14 +40,6 @@
 		}
 	}
 
-	function create(event: SubmitEvent) {
-		event.preventDefault();
-		void run(async () => {
-			await apiFetch('/api/v1/users', { method: 'POST', json: { name, email, password, role } });
-			name = email = password = '';
-			role = 'editor';
-		}, 'Konto angelegt');
-	}
 	const setRole = (user: AdminUser, newRole: string) =>
 		run(
 			() => apiFetch(`/api/v1/users/${user.id}`, { method: 'PATCH', json: { role: newRole } }),
@@ -86,31 +65,19 @@
 			toDelete = null;
 		}, 'Konto entfernt');
 
-	function createKey(event: SubmitEvent) {
-		event.preventDefault();
-		void run(async () => {
-			const result = await apiFetch<{ key: string }>('/api/v1/api-keys', {
-				method: 'POST',
-				json: { name: keyName, role: keyRole }
-			});
-			createdKey = { name: keyName, key: result.key };
-			keyName = '';
-		}, 'API-Zugang angelegt');
-	}
 	const revokeKey = () =>
 		run(async () => {
 			await apiFetch(`/api/v1/api-keys/${keyToRevoke!.id}`, { method: 'DELETE' });
 			keyToRevoke = null;
 		}, 'API-Zugang widerrufen');
-	function copyKey() {
-		if (createdKey)
-			navigator.clipboard.writeText(createdKey.key).then(() => toast.success('Kopiert'));
-	}
 </script>
 
-<h1 class="mb-6 text-2xl font-semibold">
-	Nutzer <span class="text-muted-foreground text-base font-normal">({data.users.length})</span>
-</h1>
+<div class="mb-6 flex flex-wrap items-center justify-between gap-3">
+	<h1 class="text-2xl font-semibold">
+		Nutzer <span class="text-muted-foreground text-base font-normal">({data.users.length})</span>
+	</h1>
+	<Button href="/admin/users/new"><PlusIcon aria-hidden="true" /> Konto anlegen</Button>
+</div>
 
 <Table.Table>
 	<Table.TableHeader>
@@ -133,7 +100,7 @@
 				<Table.TableCell>{user.email}</Table.TableCell>
 				<Table.TableCell>
 					<SearchableSelect
-						options={roles}
+						options={ADMIN_ROLES}
 						value={user.role}
 						onSelect={(selectedRole) => setRole(user, selectedRole)}
 						disabled={busy || user.id === data.user?.id}
@@ -173,72 +140,23 @@
 	</Table.TableBody>
 </Table.Table>
 
-<section class="border-border mt-6 max-w-lg rounded-lg border p-4">
-	<h2 class="mb-3 font-medium">Konto anlegen</h2>
-	<form onsubmit={create} class="grid gap-3">
-		<div class="grid gap-1">
-			<Label for="u-name">Name</Label><Input id="u-name" bind:value={name} required />
-		</div>
-		<div class="grid gap-1">
-			<Label for="u-email">E-Mail</Label><Input
-				id="u-email"
-				type="email"
-				bind:value={email}
-				required
-			/>
-		</div>
-		<div class="grid gap-1">
-			<Label for="u-pw">Passwort (mind. 8 Zeichen)</Label>
-			<Input
-				id="u-pw"
-				type="password"
-				bind:value={password}
-				required
-				minlength={8}
-				autocomplete="new-password"
-			/>
-		</div>
-		<div class="grid gap-1">
-			<Label>Rolle</Label><SearchableSelect
-				options={roles}
-				value={role}
-				onSelect={(selectedRole) => (role = selectedRole)}
-			/>
-		</div>
-		<div><Button type="submit" disabled={busy}>Anlegen</Button></div>
-	</form>
-	<p class="text-muted-foreground mt-3 text-xs">
-		Neue Nutzer melden sich mit E-Mail und Passwort an und können es über „Passwort vergessen"
-		selbst ändern.
-	</p>
-</section>
-
 <section class="mt-10">
-	<h2 class="mb-1 text-lg font-semibold">API-Zugänge</h2>
-	<p class="text-muted-foreground mb-4 text-sm">
-		Schlüssel für Skripte und Integrationen mit denselben Rollen wie Nutzer. Verwendung: Header
-		<code>Authorization: Bearer &lt;schlüssel&gt;</code> auf <code>/api/v1</code>. Die
-		Nutzerverwaltung bleibt Browser-Konten vorbehalten.
-	</p>
-
-	{#if createdKey}
-		<div class="border-primary bg-primary/5 mb-4 rounded-lg border p-4">
-			<p class="mb-2 text-sm font-medium">
-				Neuer Schlüssel „{createdKey.name}" — jetzt kopieren, er wird nicht erneut angezeigt:
+	<div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+		<div>
+			<h2 class="text-lg font-semibold">API-Zugänge</h2>
+			<p class="text-muted-foreground text-sm">
+				Schlüssel für Skripte und Integrationen mit denselben Rollen wie Nutzer, Header
+				<code>Authorization: Bearer &lt;schlüssel&gt;</code> auf <code>/api/v1</code>.
 			</p>
-			<div class="flex flex-wrap items-center gap-2">
-				<code class="bg-background rounded border px-2 py-1 text-sm break-all"
-					>{createdKey.key}</code
-				>
-				<Button size="sm" variant="outline" onclick={copyKey}
-					><CopyIcon aria-hidden="true" /> Kopieren</Button
-				>
-				<Button size="sm" variant="ghost" onclick={() => (createdKey = null)}>Schließen</Button>
-			</div>
 		</div>
-	{/if}
+		<Button variant="outline" href="/admin/users/api-keys/new"
+			><PlusIcon aria-hidden="true" /> API-Zugang anlegen</Button
+		>
+	</div>
 
-	{#if data.apiKeys.length}
+	{#if !data.apiKeys.length}
+		<p class="text-muted-foreground text-sm">Noch keine API-Zugänge.</p>
+	{:else}
 		<Table.Table>
 			<Table.TableHeader>
 				<Table.TableRow>
@@ -283,25 +201,6 @@
 			</Table.TableBody>
 		</Table.Table>
 	{/if}
-
-	<form
-		onsubmit={createKey}
-		class="border-border mt-4 flex max-w-2xl flex-wrap items-end gap-3 rounded-lg border p-4"
-	>
-		<div class="grid min-w-48 flex-1 gap-1">
-			<Label for="k-name">Name (z. B. „Import-Skript")</Label>
-			<Input id="k-name" bind:value={keyName} required maxlength={80} />
-		</div>
-		<div class="grid gap-1">
-			<Label>Rolle</Label><SearchableSelect
-				options={roles}
-				value={keyRole}
-				onSelect={(selectedRole) => (keyRole = selectedRole)}
-				class="w-44"
-			/>
-		</div>
-		<Button type="submit" disabled={busy}>Schlüssel anlegen</Button>
-	</form>
 </section>
 
 <ConfirmDialog

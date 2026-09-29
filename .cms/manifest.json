@@ -105,6 +105,22 @@
 			"hash": "06dcc2e15edbd6977f30d63f9926904c10b55ab2",
 			"modified": false
 		},
+		"src/routes/admin/users/api-keys/new/+page.server.ts": {
+			"hash": "053cc17436431b75dbe1fd262bc36ab78c9d59f3",
+			"modified": false
+		},
+		"src/routes/admin/users/api-keys/new/+page.svelte": {
+			"hash": "469b93ec03ea080734972173b16ec2cfde171bc5",
+			"modified": false
+		},
+		"src/routes/admin/users/new/+page.server.ts": {
+			"hash": "68323077640d15fad184a675230a78dad967f00a",
+			"modified": false
+		},
+		"src/routes/admin/users/new/+page.svelte": {
+			"hash": "2582de0fbc12b959ddace12485dc043389c41349",
+			"modified": false
+		},
 		"src/routes/api/captcha/challenge/+server.ts": {
 			"hash": "b4e71cadb4d8241a794440417ed39b40216b5733",
 			"modified": false
