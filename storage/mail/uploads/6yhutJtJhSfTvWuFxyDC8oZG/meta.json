@@ -1,0 +1,13 @@
+{
+  "token": "6yhutJtJhSfTvWuFxyDC8oZG",
+  "storedAt": "2026-09-29T10:53:34.720Z",
+  "files": [
+    {
+      "name": "p.pdf",
+      "size": 1033,
+      "mime": "application/pdf",
+      "path": "mail/uploads/6yhutJtJhSfTvWuFxyDC8oZG/portfolio__p.pdf",
+      "url": "http://localhost:5173/api/mail/download/6yhutJtJhSfTvWuFxyDC8oZG/portfolio__p.pdf"
+    }
+  ]
+}

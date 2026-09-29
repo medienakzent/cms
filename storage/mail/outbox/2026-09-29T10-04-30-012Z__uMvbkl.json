@@ -1,0 +1,10 @@
+{
+  "id": "2026-09-29T10-04-30-012Z__uMvbkl",
+  "from": "CMS Dev <noreply@localhost>",
+  "to": [
+    "f@x.de"
+  ],
+  "subject": "Ihre Anfrage ist eingegangen",
+  "text": "Hallo Form,\n\nvielen Dank für Ihre Nachricht. Wir melden uns so schnell wie möglich.\n\n> Ohne JS",
+  "html": "<!doctype html><html><body style=\"font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;font-size:15px;line-height:1.5;color:#111;max-width:640px;margin:0 auto;padding:24px\"><p>Hallo Form,</p>\n<p>vielen Dank für Ihre Nachricht. Wir melden uns so schnell wie möglich.</p>\n<blockquote>\n<p>Ohne JS</p>\n</blockquote>\n</body></html>"
+}

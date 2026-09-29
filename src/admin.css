@@ -1,0 +1,8 @@
+/* Spielwiese im Paket-Repo: Admin-CSS direkt aus der Paketwurzel. */
+@import '../admin.css';
+
+@theme {
+	--color-primary: oklch(0.6359 0.11088 212.171);
+	--color-primary-light: oklch(0.8346 0.0335 213.39);
+	--color-primary-dark: oklch(0.4616 0.0802 211.33);
+}

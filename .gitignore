@@ -1,0 +1,30 @@
+node_modules
+/build
+/.svelte-kit
+*.tsbuildinfo
+vite.config.ts.timestamp-*
+
+# Laufzeitdaten: Index-Datenbank
+/data
+
+# Storage: Medien und Versionshistorie sind Laufzeitdaten; Inhalte (storage/content)
+# dürfen versioniert werden — je nach Projekt hier anpassen.
+/storage/media
+/storage/history
+
+.env
+.env.*
+!.env.example
+.dev-ssh
+
+.DS_Store
+*.log
+.claude
+.playwright-mcp
+
+# Paket-Build
+/dist
+# Stub-Manifest der Spielwiese wird versioniert (kein Ignore)
+
+# Temporäre Testprojekte (cms init im Container)
+/.tmp

@@ -1,0 +1,26 @@
+{
+  "id": "azxdyC6UEO",
+  "template": "contact",
+  "lang": "de",
+  "sentAt": "2026-09-29T10:03:24.040Z",
+  "status": "sent",
+  "transport": "file",
+  "to": [
+    "office@example.com"
+  ],
+  "replyTo": "max@example.com",
+  "subject": "Kontaktanfrage von Max Muster",
+  "messageId": "2026-09-29T10-03-24-047Z__2Ck7Ff",
+  "error": null,
+  "data": {
+    "name": "Max Muster",
+    "email": "max@example.com",
+    "phone": "",
+    "message": "Hallo,\n*Test* <b>x</b>"
+  },
+  "meta": {
+    "ip": "127.0.0.1",
+    "userAgent": "node",
+    "url": "http://localhost:5173/kontakt"
+  }
+}

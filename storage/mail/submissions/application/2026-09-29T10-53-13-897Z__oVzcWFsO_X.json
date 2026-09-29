@@ -1,0 +1,40 @@
+{
+  "id": "oVzcWFsO_X",
+  "template": "application",
+  "lang": "de",
+  "sentAt": "2026-09-29T10:53:13.897Z",
+  "status": "sent",
+  "transport": "file",
+  "to": [
+    "office@example.com"
+  ],
+  "replyTo": "anna@example.com",
+  "subject": "Bewerbung von Anna Test",
+  "messageId": "2026-09-29T10-53-13-904Z__W9T9ap",
+  "error": null,
+  "data": {
+    "name": "Anna Test",
+    "email": "anna@example.com",
+    "motivation": "Ich möchte …",
+    "portfolio": {
+      "name": "Portfolio Anna.pdf",
+      "size": 2070,
+      "mime": "application/pdf",
+      "path": "mail/uploads/dPQynB9uHLA3oJzecL_hebqW/portfolio__Portfolio_Anna.pdf",
+      "url": "http://localhost:5173/api/mail/download/dPQynB9uHLA3oJzecL_hebqW/portfolio__Portfolio_Anna.pdf"
+    },
+    "cv": {
+      "name": "cv.pdf",
+      "size": 2070,
+      "mime": "application/pdf",
+      "path": "mail/uploads/dPQynB9uHLA3oJzecL_hebqW/cv__cv.pdf",
+      "url": "http://localhost:5173/api/mail/download/dPQynB9uHLA3oJzecL_hebqW/cv__cv.pdf"
+    }
+  },
+  "meta": {
+    "origin": "http://localhost:5173",
+    "ip": "127.0.0.1",
+    "userAgent": "node",
+    "url": ""
+  }
+}

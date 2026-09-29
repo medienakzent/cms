@@ -1,0 +1,58 @@
+{
+  "lang": "de",
+  "status": "published",
+  "updatedAt": "2026-09-29T10:42:55.758Z",
+  "updatedBy": "test@test.de",
+  "publishedAt": "2026-09-29T09:18:14.077Z",
+  "fields": {
+    "title": "Startseite",
+    "seo": {
+      "description": ""
+    }
+  },
+  "blocks": {
+    "seed-hero": {
+      "title": "Willkommen im CMS",
+      "subtitle": "Dieses CMS rendert Seiten aus Blocks. Melde dich unter /admin an, um Inhalte zu pflegen.",
+      "cta": null
+    },
+    "seed-text": {
+      "body": "Blocks liegen unter `src/blocks/<name>/`, Collections unter `src/collections/`. Die Struktur ist die einzige Quelle der Wahrheit — siehe `src/blocks/README.md`."
+    },
+    "D5grOn4C": {
+      "title": "Testgalerie",
+      "items": [
+        {
+          "image": {
+            "id": "NfNHOkdftrMF",
+            "src": "media/2026/09/NfNHOkdftrMF.jpg",
+            "mime": "image/jpeg",
+            "kind": "image",
+            "width": 623,
+            "height": 137,
+            "alt": "",
+            "variants": {
+              "thumb": "media/2026/09/NfNHOkdftrMF__thumb.webp"
+            }
+          },
+          "caption": ""
+        },
+        {
+          "image": {
+            "id": "NfNHOkdftrMF",
+            "src": "media/2026/09/NfNHOkdftrMF.jpg",
+            "mime": "image/jpeg",
+            "kind": "image",
+            "width": 623,
+            "height": 137,
+            "alt": "",
+            "variants": {
+              "thumb": "media/2026/09/NfNHOkdftrMF__thumb.webp"
+            }
+          },
+          "caption": ""
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,78 @@
+/*
+ * Admin-Stylesheet von @compdata/cms. Im Kundenprojekt aus src/admin.css einbinden:
+ *   @import '@compdata/cms/admin.css';
+ * Danach eigene @theme-Werte (Markenfarbe, Schrift) setzen.
+ */
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import '@compdata/ui/theme.css';
+
+/* Tailwind 4 scannt node_modules nicht: Klassen der Lib-Bausteine explizit einsammeln.
+   Pfade relativ zu dieser Datei (node_modules/@compdata/cms/admin.css). */
+@source '../ui/dist';
+@source './dist';
+/* Entwicklung im Paket-Repo selbst: */
+@source './src/lib';
+@source './node_modules/@compdata/ui/dist';
+
+@theme {
+	--font-display:
+		'Ubuntu Sans', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+}
+
+@layer base {
+	body {
+		@apply font-display;
+	}
+}
+
+/* Richtext-Vorschau im Editor */
+.prose {
+	@apply text-foreground leading-relaxed;
+}
+.prose > :first-child {
+	margin-top: 0;
+}
+.prose h1,
+.prose h2,
+.prose h3,
+.prose h4 {
+	@apply mt-6 mb-2 font-semibold tracking-tight;
+}
+.prose h1 {
+	@apply text-3xl;
+}
+.prose h2 {
+	@apply text-2xl;
+}
+.prose h3 {
+	@apply text-xl;
+}
+.prose p {
+	@apply my-3;
+}
+.prose a {
+	@apply text-primary underline underline-offset-4;
+}
+.prose ul,
+.prose ol {
+	@apply my-3 ps-6;
+}
+.prose ul {
+	@apply list-disc;
+}
+.prose ol {
+	@apply list-decimal;
+}
+.prose blockquote {
+	@apply border-border text-muted-foreground my-3 border-s-4 ps-4 italic;
+}
+.prose code {
+	@apply bg-muted rounded px-1.5 py-0.5 font-mono text-[0.9em];
+}
+.prose pre {
+	@apply bg-muted my-3 overflow-x-auto rounded-md p-3;
+}
+.prose img {
+	@apply my-3 max-w-full rounded-md;
+}

@@ -1,0 +1,11 @@
+<script lang="ts">
+	import type { BlockProps } from '@compdata/cms';
+	import { Richtext } from '@compdata/cms/render';
+	import type def from './block';
+
+	let { body, width }: BlockProps<typeof def> = $props();
+</script>
+
+<section class="mx-auto px-6 py-10 {width === 'wide' ? 'max-w-6xl' : 'max-w-3xl'}">
+	<Richtext source={body} />
+</section>

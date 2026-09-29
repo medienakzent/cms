@@ -1,0 +1,23 @@
+{
+  "lang": "en",
+  "status": "published",
+  "updatedAt": "2026-09-29T09:23:14.931Z",
+  "updatedBy": "Julian Test",
+  "publishedAt": "2026-09-29T09:23:14.931Z",
+  "fields": {
+    "title": "Home",
+    "seo": {
+      "description": ""
+    }
+  },
+  "blocks": {
+    "seed-hero": {
+      "title": "Welcome to the CMS",
+      "subtitle": "",
+      "cta": null
+    },
+    "seed-text": {
+      "body": "Blocks live in `src/blocks/<name>/`, collections in `src/collections/`."
+    }
+  }
+}

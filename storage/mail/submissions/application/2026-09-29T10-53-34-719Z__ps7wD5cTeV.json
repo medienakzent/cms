@@ -1,0 +1,34 @@
+{
+  "id": "ps7wD5cTeV",
+  "template": "application",
+  "lang": "de",
+  "sentAt": "2026-09-29T10:53:34.719Z",
+  "status": "sent",
+  "transport": "file",
+  "to": [
+    "office@example.com"
+  ],
+  "replyTo": "bea@example.com",
+  "subject": "Bewerbung von Bea",
+  "messageId": "2026-09-29T10-53-34-722Z___A7BO-",
+  "error": null,
+  "data": {
+    "name": "Bea",
+    "email": "bea@example.com",
+    "motivation": "x",
+    "portfolio": {
+      "name": "p.pdf",
+      "size": 1033,
+      "mime": "application/pdf",
+      "path": "mail/uploads/6yhutJtJhSfTvWuFxyDC8oZG/portfolio__p.pdf",
+      "url": "http://localhost:5173/api/mail/download/6yhutJtJhSfTvWuFxyDC8oZG/portfolio__p.pdf"
+    },
+    "cv": null
+  },
+  "meta": {
+    "origin": "http://localhost:5173",
+    "ip": "127.0.0.1",
+    "userAgent": "node",
+    "url": ""
+  }
+}

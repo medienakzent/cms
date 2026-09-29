@@ -1,0 +1,11 @@
+{
+  "id": "2026-09-29T10-53-34-722Z___A7BO-",
+  "from": "CMS Dev <noreply@localhost>",
+  "to": [
+    "office@example.com"
+  ],
+  "replyTo": "bea@example.com",
+  "subject": "Bewerbung von Bea",
+  "text": "Neue Bewerbung\n\nName: Bea\nE-Mail: bea@example.com\nMotivation: x\nPortfolio (PDF): p.pdf <http://localhost:5173/api/mail/download/6yhutJtJhSfTvWuFxyDC8oZG/portfolio__p.pdf> (1 KB)\n\nUnterlagen\n\n- Portfolio (PDF): p.pdf <http://localhost:5173/api/mail/download/6yhutJtJhSfTvWuFxyDC8oZG/portfolio__p.pdf> (1 KB)\n\nDie Links sind nur mit dieser Adresse aufrufbar.",
+  "html": "<!doctype html><html><body style=\"font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;font-size:15px;line-height:1.5;color:#111;max-width:640px;margin:0 auto;padding:24px\"><h2>Neue Bewerbung</h2>\n<p><strong>Name:</strong> Bea\n<strong>E-Mail:</strong> <a href=\"mailto:bea@example.com\">bea@example.com</a>\n<strong>Motivation:</strong> x\n<strong>Portfolio (PDF):</strong> <a href=\"http://localhost:5173/api/mail/download/6yhutJtJhSfTvWuFxyDC8oZG/portfolio__p.pdf\">p.pdf</a> (1 KB)</p>\n<h3>Unterlagen</h3>\n<ul>\n<li><strong>Portfolio (PDF):</strong> <a href=\"http://localhost:5173/api/mail/download/6yhutJtJhSfTvWuFxyDC8oZG/portfolio__p.pdf\">p.pdf</a> (1 KB)</li>\n</ul>\n<p>Die Links sind nur mit dieser Adresse aufrufbar.</p>\n</body></html>"
+}
