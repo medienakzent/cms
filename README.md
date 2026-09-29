@@ -280,7 +280,10 @@ Gestaltung über die Klassen `cms-consent*` und CSS-Variablen `--cms-consent-*`.
 - `ORIGIN` auf die öffentliche https-URL setzen, `AUTH_SECRET` mit mindestens 32 Zeichen
   (`openssl rand -base64 32`), `API_TOKEN` nur, wenn Skripte die API brauchen.
 - Erster Nutzer registriert sich selbst und wird Admin; danach ist die Registrierung geschlossen,
-  weitere Konten legt ein Admin unter „Nutzer" an. `ALLOW_SIGNUP=1` nur bewusst setzen.
+  weitere Konten legt ein Admin unter „Nutzer" an (Rolle, Passwort, Sperren). `ALLOW_SIGNUP=1` nur bewusst setzen.
+- API-Zugänge für Skripte und Integrationen ebenfalls unter „Nutzer": Schlüssel mit Rolle admin oder
+  editor, `Authorization: Bearer <schlüssel>` auf `/api/v1`. Der Schlüssel ist nur beim Anlegen sichtbar
+  und jederzeit widerrufbar. `API_TOKEN` in der Umgebung ist nur ein Bootstrap-Token (z. B. für den Seed).
 - „Passwort vergessen" braucht einen funktionierenden Mail-Transport (`MAIL_TRANSPORT=smtp`).
 - Healthcheck: `GET /api/health` (200/503). Sitemap: `/sitemap.xml`, KI-Überblick: `/llms.txt`,
   `static/robots.txt` im Projekt anpassen.

@@ -2,6 +2,16 @@
 
 Alle relevanten Änderungen. Format: Datum, Version, Abschnitte Neu / Geändert / Breaking.
 
+## 0.4.0 — 2026-09-29
+
+### Neu
+- **API-Zugänge mit Rollen** unter „Nutzer": Schlüssel anlegen (Name, Rolle admin oder editor), einmalige Anzeige, Widerruf, Anzeige der letzten Nutzung. Gespeichert wird nur der Hash. Endpunkte `GET|POST /api/v1/api-keys`, `DELETE /api/v1/api-keys/<id>` (Admin-Sitzung).
+- **Konten sperren und entsperren** unter „Nutzer" (`PATCH /api/v1/users/<id>` mit `banned`).
+
+### Geändert
+- `API_TOKEN` aus der Umgebung bleibt als optionaler Bootstrap-Token mit Rolle admin (z. B. für Seeds); für den Betrieb sind verwaltete Schlüssel vorgesehen.
+- `SessionUser.api` kennzeichnet API-Zugänge; Nutzer- und Schlüsselverwaltung verlangen eine Browser-Sitzung.
+
 ## 0.3.0 — 2026-09-29
 
 Härtung für den Produktivbetrieb.

@@ -28,6 +28,8 @@ export interface SessionUser {
 	email: string;
 	image: string;
 	role: Role;
+	/** true für API-Zugänge (kein Browser-Konto) */
+	api?: boolean;
 }
 
 function createAuth(database: unknown, countUsers: () => Promise<number>) {

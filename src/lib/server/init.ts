@@ -2,6 +2,7 @@ import { getMigrations } from 'better-auth/db/migration';
 import { getAuth } from './auth';
 import { collection, reindexContent, SYSTEM_ACTOR } from './content';
 import { getRuntime } from './runtime';
+import { apiKeys } from './api-keys';
 import { getIndex } from './index/index';
 import { reindexMedia } from './media';
 import { getStorage } from './storage';
@@ -17,6 +18,7 @@ export function ensureReady(): Promise<void> {
 		ready = (async () => {
 			const index = await getIndex();
 			const { reset } = await index.ensureSchema();
+			await apiKeys.ensureSchema();
 			const auth = await getAuth();
 			const { runMigrations } = await getMigrations(auth.options);
 			await runMigrations();

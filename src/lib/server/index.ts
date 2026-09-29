@@ -31,6 +31,8 @@ export { adminCollections, adminBlocks, toAdminCollection, toAdminBlock } from '
 export { createHandle } from './hooks';
 export { captchaClientConfig, verifyCaptcha } from './captcha';
 export { sendSystemMail } from './mail';
+export { apiKeys } from './api-keys';
+export type { ApiKeyInfo } from './api-keys';
 export type { HandleOptions } from './hooks';
 
 export const cms = {

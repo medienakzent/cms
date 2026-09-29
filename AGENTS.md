@@ -89,7 +89,8 @@ Konfiguration, Website-Layout) und laufen als ein Node-Prozess in einem Containe
   `/api/mail/<vorlage>`, `/api/mail/download/<token>/…`, `/api/captcha/challenge`, `/api/health`,
   `/sitemap.xml`, `/llms.txt` und `/media/…`. Neue öffentliche Routen sind eine bewusste Entscheidung
   mit Rate-Limit und ohne Personendaten.
-- Nutzerverwaltung nur mit Admin-Sitzung, nie per API-Token.
+- Nutzer- und Schlüsselverwaltung nur mit Admin-Sitzung, nie per API-Zugang (`locals.user.api`).
+  API-Zugänge tragen dieselben Rollen wie Nutzer; Rechteprüfungen gelten für beide gleich.
 - Besucher-Eingaben (Formulare) werden escaped; Pfade aus URLs laufen durch `isValidSlug`, Tokens
   durch feste Muster; der Storage verweigert Pfade außerhalb seiner Wurzel.
 - Geheimnisse zeitkonstant vergleichen, nie loggen.

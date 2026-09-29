@@ -7,7 +7,7 @@ const ROLES = ['admin', 'editor'];
 
 function requireSessionAdmin(event: RequestEvent) {
 	// Nutzerverwaltung nur mit echter Sitzung eines Administrators — nicht per API-Token.
-	if (event.locals.user?.role !== 'admin' || event.locals.user.id === 'api')
+	if (event.locals.user?.role !== 'admin' || event.locals.user.api)
 		throw new CmsError(403, 'Nur für angemeldete Administratoren');
 }
 
@@ -39,7 +39,7 @@ export const PATCH_ITEM = (event: RequestEvent) =>
 	api(async () => {
 		requireSessionAdmin(event);
 		const id = event.params.id ?? '';
-		const body = await readJsonBody(event, ['role', 'password', 'name']);
+		const body = await readJsonBody(event, ['role', 'password', 'name', 'banned']);
 		const auth = await getAuth();
 		if (body.role !== undefined) {
 			if (typeof body.role !== 'string' || !ROLES.includes(body.role))
@@ -58,6 +58,17 @@ export const PATCH_ITEM = (event: RequestEvent) =>
 				body: { userId: id, newPassword: body.password },
 				headers: event.request.headers
 			});
+		}
+		if (body.banned !== undefined) {
+			if (typeof body.banned !== 'boolean') throw new CmsError(400, 'banned: true oder false');
+			if (id === event.locals.user!.id)
+				throw new CmsError(400, 'Das eigene Konto kann nicht gesperrt werden');
+			if (body.banned)
+				await auth.api.banUser({
+					body: { userId: id, banReason: 'Vom Administrator gesperrt' },
+					headers: event.request.headers
+				});
+			else await auth.api.unbanUser({ body: { userId: id }, headers: event.request.headers });
 		}
 		if (body.name !== undefined) {
 			if (typeof body.name !== 'string' || !body.name.trim()) throw new CmsError(400, 'Name fehlt');

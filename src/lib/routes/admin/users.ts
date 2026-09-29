@@ -1,4 +1,5 @@
 import { error, type ServerLoadEvent } from '@sveltejs/kit';
+import { apiKeys } from '../../server/api-keys';
 import { getAuth } from '../../server/auth';
 
 export interface AdminUser {
@@ -26,5 +27,9 @@ export async function load({ locals, request }: ServerLoadEvent) {
 		createdAt: u.createdAt instanceof Date ? u.createdAt.toISOString() : String(u.createdAt),
 		banned: !!(u as { banned?: boolean | null }).banned
 	}));
-	return { users, breadcrumbs: [{ label: 'Übersicht', href: '/admin' }, { label: 'Nutzer' }] };
+	return {
+		users,
+		apiKeys: await apiKeys.list(),
+		breadcrumbs: [{ label: 'Übersicht', href: '/admin' }, { label: 'Nutzer' }]
+	};
 }

@@ -6,6 +6,7 @@ import type { Env } from './env';
 import { ensureReady } from './init';
 import { createRateLimiter } from './rate-limit';
 import { initRuntime } from './runtime';
+import { apiKeys } from './api-keys';
 
 export interface HandleOptions {
 	/** Umgebung — im Kundenprojekt `env` aus `$env/dynamic/private`. */
@@ -78,15 +79,32 @@ export function createHandle(registry: Registry, options: HandleOptions): Handle
 			return resolve(event);
 		}
 
-		// API-Token für Skripte/CI — nur für /api/v1.
+		// API-Zugänge (Bearer) — nur für /api/v1: verwaltete Schlüssel mit Rolle (Admin → Nutzer),
+		// optional der Bootstrap-Token API_TOKEN aus der Umgebung (Rolle admin, z. B. für den Seed).
 		const bearer = event.request.headers.get('authorization')?.replace(/^Bearer\s+/i, '');
-		if (
-			pathname.startsWith('/api/v1/') &&
-			bearer &&
-			runtime.server.apiToken &&
-			safeEqual(bearer, runtime.server.apiToken)
-		) {
-			event.locals.user = { id: 'api', name: 'API', email: '', image: '', role: 'admin' };
+		event.locals.user = null;
+		if (pathname.startsWith('/api/v1/') && bearer) {
+			if (runtime.server.apiToken && safeEqual(bearer, runtime.server.apiToken)) {
+				event.locals.user = {
+					id: 'api:env',
+					name: 'API-Token (Umgebung)',
+					email: '',
+					image: '',
+					role: 'admin',
+					api: true
+				};
+			} else {
+				const key = await apiKeys.verify(bearer);
+				if (key)
+					event.locals.user = {
+						id: `api:${key.id}`,
+						name: key.name,
+						email: '',
+						image: '',
+						role: key.role,
+						api: true
+					};
+			}
 		} else {
 			event.locals.user = await getSessionUser(event.request.headers);
 		}
