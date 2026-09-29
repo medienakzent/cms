@@ -2,6 +2,11 @@
 
 Alle relevanten Änderungen. Format: Datum, Version, Abschnitte Neu / Geändert / Breaking.
 
+## 0.1.1 — 2026-09-29
+
+### Geändert
+- Anmeldung hinter einem Proxy: Better Auth akzeptiert die Origin aus `X-Forwarded-Proto`/`X-Forwarded-Host`; in der Entwicklung beide Schemata des Hosts. Behebt „Invalid origin" über `https://<projekt>.test`.
+
 ## 0.1.0 — 2026-09-29
 
 Erste Version als Paket.

@@ -37,8 +37,21 @@ function createAuth(database: unknown, countUsers: () => Promise<number>) {
 		database: database as any,
 		// Eigener Limiter von Better Auth für /api/auth (Login-Brute-Force); /api/v1 limitiert hooks.server.ts.
 		rateLimit: { enabled: true, window: 60, max: cfg.rateLimit.anonPerMinute },
-		trustedOrigins: (request?: Request) =>
-			request ? [cfg.origin, new URL(request.url).origin] : [cfg.origin],
+		// Vertrauenswürdige Origins: ORIGIN plus die Origin der Anfrage. Hinter einem
+		// Proxy (nginx-proxy, Plesk) kommt die Anfrage als http an, der Browser sendet aber
+		// https — deshalb zählen X-Forwarded-Proto/-Host mit; in der Entwicklung beide Schemata.
+		trustedOrigins: (request?: Request) => {
+			const list = [cfg.origin];
+			if (request) {
+				const url = new URL(request.url);
+				const host = request.headers.get('x-forwarded-host')?.split(',')[0].trim() || url.host;
+				const proto = request.headers.get('x-forwarded-proto')?.split(',')[0].trim();
+				list.push(`${url.protocol}//${host}`);
+				if (proto) list.push(`${proto}://${host}`);
+				if (!cfg.isProd) list.push(`http://${host}`, `https://${host}`);
+			}
+			return [...new Set(list)];
+		},
 		emailAndPassword: {
 			enabled: true,
 			disableSignUp: !cfg.allowSignup
