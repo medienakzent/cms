@@ -209,8 +209,10 @@ escaped, Markdown wird zu HTML plus Textfassung.
   `smtp` (nodemailer, `SMTP_URL`), `microsoft` (Graph `sendMail`, App-Registrierung mit
   `Mail.Send`), `google` (Gmail API, Service-Account mit domänenweiter Delegation).
   Eigene Transporte implementieren `MailTransport` aus `src/lib/cms/server/mail/transport.ts`.
-- Jede Sendung wird unter `storage/mail/submissions/` protokolliert und im Admin unter
-  „Anfragen" gelistet, inklusive Spam (Honeypot) und Fehlern.
+- Jede Einsendung wird unter `storage/mail/submissions/` gespeichert und im Admin unter
+  „Einsendungen" gelistet (Detail, Dateien, Löschen), inklusive Spam (Honeypot) und Fehlern.
+  Abruf per API nur mit Anmeldung oder Token: `GET /api/v1/submissions?template=&status=`,
+  `GET|DELETE /api/v1/submissions/<id>` — nie öffentlich.
 - Beispiel-Block `contact-form` rendert ein Formular gegen diese API.
 
 ## REST-API (Auszug)
@@ -228,6 +230,7 @@ escaped, Markdown wird zu HTML plus Textfassung.
 | GET/POST | `/api/v1/media` · PATCH/DELETE `/api/v1/media/<id>` | Medien |
 | POST | `/api/v1/reindex` | Index neu aufbauen (Admin) |
 | POST | `/api/mail/<vorlage>` | Öffentlich: Formular senden (Rate-Limit, Honeypot) |
+| GET | `/api/v1/submissions?template=&status=&limit=&offset=` · GET/DELETE `/api/v1/submissions/<id>` | Einsendungen (geschützt) |
 
 ## Datenbank-Adapter
 

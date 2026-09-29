@@ -2,6 +2,16 @@
 
 Alle relevanten Änderungen. Format: Datum, Version, Abschnitte Neu / Geändert / Breaking.
 
+## 0.1.2 — 2026-09-29
+
+### Neu
+- Bereich „Einsendungen" im Admin (`/admin/submissions`): Liste mit Filter nach Formular und Status, Seitenwechsel, Detailansicht mit allen Angaben, Dateien, Versand- und Herkunftsdaten, Löschen samt Dateien.
+- Geschützte REST-API `GET /api/v1/submissions`, `GET|DELETE /api/v1/submissions/<id>` — nur mit Anmeldung oder API-Token, nie öffentlich.
+- Einsendungen merken sich ihren Upload-Ordner (`uploadToken`).
+
+### Geändert
+- Ersetzt die frühere Seite „Anfragen" (`/admin/mail`); die Stubs werden per `cms sync` ausgetauscht.
+
 ## 0.1.1 — 2026-09-29
 
 ### Geändert

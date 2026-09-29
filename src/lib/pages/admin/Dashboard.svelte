@@ -21,6 +21,14 @@
 			</Card.Root>
 		</a>
 	{/each}
+	<a href="/admin/submissions" class="block">
+		<Card.Root class="hover:border-primary h-full transition-colors">
+			<Card.Header>
+				<Card.Title>Einsendungen</Card.Title>
+				<Card.Description>{data.submissionCount} Formular-Einsendung(en)</Card.Description>
+			</Card.Header>
+		</Card.Root>
+	</a>
 	<a href="/admin/media" class="block">
 		<Card.Root class="hover:border-primary h-full transition-colors">
 			<Card.Header>

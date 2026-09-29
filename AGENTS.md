@@ -49,7 +49,7 @@ Konfiguration, Website-Layout) und laufen als ein Node-Prozess in einem Containe
   sich der Index beim Start neu auf. Kein manuelles Migrieren nötig.
 - **Umgebungsvariablen:** neue Variablen brauchen Defaults; entfernte nur in Major.
 - Vor jedem Release: `npm run check`, `npm run test`, `npm run package` (publint) und die
-  Spielwiese im Browser prüfen (Login, Dokument speichern, Formular senden).
+  Spielwiese im Browser prüfen (Login, Dokument speichern, Formular senden, Einsendung öffnen).
 
 ## Arbeiten im Repo
 

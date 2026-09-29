@@ -1,5 +1,5 @@
 <script lang="ts">
-	import Page from '@medienakzent/cms/pages/admin/Mail.svelte';
+	import Page from '@medienakzent/cms/pages/admin/Submissions.svelte';
 
 	let { data } = $props();
 </script>

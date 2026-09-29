@@ -5,7 +5,7 @@
 	import type { AdminCollection } from './types';
 	import LayoutDashboardIcon from '@lucide/svelte/icons/layout-dashboard';
 	import ImagesIcon from '@lucide/svelte/icons/images';
-	import MailIcon from '@lucide/svelte/icons/mail';
+	import InboxIcon from '@lucide/svelte/icons/inbox';
 	import RefreshCwIcon from '@lucide/svelte/icons/refresh-cw';
 	import LayersIcon from '@lucide/svelte/icons/layers';
 	import { authClient } from './auth-client';
@@ -25,7 +25,7 @@
 		{ id: 'dashboard', href: '/admin', label: 'Übersicht', icon: LayoutDashboardIcon },
 		...collections.map((c) => ({ id: c.name, href: `/admin/${c.name}`, label: c.labelPlural, icon: iconFor(c.icon) })),
 		{ id: 'media', href: '/admin/media', label: 'Medien', icon: ImagesIcon },
-		{ id: 'mail', href: '/admin/mail', label: 'Anfragen', icon: MailIcon }
+		{ id: 'submissions', href: '/admin/submissions', label: 'Einsendungen', icon: InboxIcon }
 	]);
 
 	const navSecondary = $derived<ShellNavItem[]>([

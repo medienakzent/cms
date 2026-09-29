@@ -33,6 +33,8 @@ export interface MailSubmission {
 	error: string | null;
 	data: Record<string, unknown>;
 	meta: MailMeta;
+	/** Ordner der hochgeladenen Dateien (mail/uploads/<token>), falls vorhanden. */
+	uploadToken: string | null;
 }
 
 let transport: MailTransport | null = null;
@@ -106,7 +108,7 @@ export async function sendMail(
 	// Honeypot ausgefüllt → still ablegen, nicht senden, nach außen "ok".
 	const honey = input[def.honeypot];
 	if (typeof honey === 'string' && honey.trim() !== '') {
-		await record({ id, template: def.name, lang, sentAt, status: 'spam', transport: '-', to: [], replyTo: null, subject: '', messageId: null, error: 'honeypot', data: {}, meta: opts.meta ?? {} });
+		await record({ id, template: def.name, lang, sentAt, status: 'spam', transport: '-', to: [], replyTo: null, subject: '', messageId: null, error: 'honeypot', data: {}, meta: opts.meta ?? {}, uploadToken: null });
 		return { id, status: 'spam' };
 	}
 
@@ -155,7 +157,7 @@ export async function sendMail(
 
 	const envelope: MailEnvelope = { from: serverConfig().mail.from, to, replyTo: replyTo ?? undefined, subject, text: toText(bodyMd), html: toHtml(bodyMd) };
 	const tp = await getMailTransport();
-	const sub: MailSubmission = { id, template: def.name, lang, sentAt, status: 'sent', transport: tp.kind, to, replyTo, subject, messageId: null, error: null, data, meta: opts.meta ?? {} };
+	const sub: MailSubmission = { id, template: def.name, lang, sentAt, status: 'sent', transport: tp.kind, to, replyTo, subject, messageId: null, error: null, data, meta: opts.meta ?? {}, uploadToken: stored?.token ?? null };
 	try {
 		sub.messageId = (await tp.send(envelope)).messageId;
 		if (def.autoReply) {
@@ -176,21 +178,72 @@ export async function sendMail(
 	return { id, status: 'sent' };
 }
 
-/** Eingegangene Formular-Sendungen (neueste zuerst) aus dem Storage. */
-export async function listSubmissions(opts: { template?: string; limit?: number } = {}): Promise<MailSubmission[]> {
-	const storage = getStorage();
-	const files = (await storage.list(opts.template ? `mail/submissions/${opts.template}` : 'mail/submissions')).sort().reverse().slice(0, opts.limit ?? 200);
-	const out: MailSubmission[] = [];
-	for (const f of files) {
-		const raw = await storage.read(f);
-		if (!raw) continue;
-		try {
-			out.push(JSON.parse(raw) as MailSubmission);
-		} catch {
-			/* defekte Datei überspringen */
-		}
+const SUB_FILE = /\/(\d{4}-\d{2}-\d{2}T[0-9-]+Z)__([A-Za-z0-9_-]+)\.json$/;
+
+async function readSubmission(file: string): Promise<MailSubmission | null> {
+	const raw = await getStorage().read(file);
+	if (!raw) return null;
+	try {
+		const s = JSON.parse(raw) as Partial<MailSubmission> & Omit<MailSubmission, "uploadToken">;
+		return { ...s, uploadToken: s.uploadToken ?? null };
+	} catch {
+		return null; // defekte Datei überspringen
 	}
-	return out;
+}
+
+export interface SubmissionQuery {
+	template?: string;
+	status?: MailSubmission['status'] | 'all';
+	limit?: number;
+	offset?: number;
+}
+
+/**
+ * Formular-Einsendungen (neueste zuerst) aus dem Storage. Nur für angemeldete
+ * Nutzer/API-Token — nie über öffentliche Routen ausliefern.
+ */
+export async function listSubmissions(opts: SubmissionQuery = {}): Promise<{ items: MailSubmission[]; total: number }> {
+	const storage = getStorage();
+	let files = (await storage.list(opts.template ? `mail/submissions/${opts.template}` : 'mail/submissions')).filter((f) => SUB_FILE.test(f));
+	// Dateiname beginnt mit dem Zeitstempel → Sortierung ohne Lesen der Dateien.
+	files = files.sort((a, b) => (a.split('/').at(-1)! < b.split('/').at(-1)! ? 1 : -1));
+	const status = opts.status ?? 'all';
+	const items: MailSubmission[] = [];
+	const limit = Math.min(Math.max(opts.limit ?? 50, 1), 500);
+	const offset = Math.max(opts.offset ?? 0, 0);
+	let total = 0;
+	for (const f of files) {
+		const s = await readSubmission(f);
+		if (!s || (status !== 'all' && s.status !== status)) continue;
+		if (total >= offset && items.length < limit) items.push(s);
+		total++;
+	}
+	return { items, total };
+}
+
+async function findSubmissionFile(id: string): Promise<string | null> {
+	if (!/^[A-Za-z0-9_-]{6,32}$/.test(id)) return null;
+	const files = await getStorage().list('mail/submissions');
+	return files.find((f) => f.endsWith(`__${id}.json`)) ?? null;
+}
+
+export async function getSubmission(id: string): Promise<MailSubmission | null> {
+	const file = await findSubmissionFile(id);
+	return file ? readSubmission(file) : null;
+}
+
+/** Einsendung samt hochgeladener Dateien entfernen. */
+export async function deleteSubmission(id: string): Promise<void> {
+	const file = await findSubmissionFile(id);
+	if (!file) throw notFound('Einsendung');
+	const sub = await readSubmission(file);
+	const storage = getStorage();
+	if (sub?.uploadToken) {
+		const dir = `mail/uploads/${sub.uploadToken}`;
+		if (storage.removeDir) await storage.removeDir(dir);
+		else for (const f of await storage.list(dir)) await storage.remove(f);
+	}
+	await storage.remove(file);
 }
 
 export const mail = {
@@ -200,5 +253,7 @@ export const mail = {
 		return getRuntime().registry.mail;
 	},
 	submissions: listSubmissions,
+	submission: getSubmission,
+	deleteSubmission,
 	transport: getMailTransport
 };
