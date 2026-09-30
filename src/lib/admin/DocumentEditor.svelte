@@ -72,6 +72,8 @@
 			{
 				type: PREVIEW_MESSAGE,
 				lang,
+				collection: collection.name,
+				slug: doc.slug,
 				fields: $state.snapshot(fields),
 				blocks: $state.snapshot(blocks)
 			},

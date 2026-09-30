@@ -75,6 +75,7 @@ Konfiguration, Website-Layout) und laufen als ein Node-Prozess in einem Containe
   Props ausschließlich `BlockProps<typeof definition>`. Keine Datenzugriffe in Blocks.
 - `src/collections/<name>.ts`, Dateiname = `name`; alternativ gebündelt in `src/cms.content.ts`.
 - `src/mail/<name>.ts`, Dateiname = `name`.
+- `src/previews/<collection>.svelte` (optional), Dateiname = Collection; Props `PreviewProps<typeof collection>`.
 - `localized: true` markiert übersetzbare Felder; ganz oder gar nicht, in `list` nicht verschachtelt.
 - Schema-Änderung an einem Block = `version` erhöhen und `migrate` liefern.
 

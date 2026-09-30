@@ -12,8 +12,11 @@ import type { CollectionDefinition, ContentDefinition } from './collection';
 import type { CmsConfig } from './config';
 import type { Field } from './fields';
 import type { MailTemplateDefinition } from './mail';
+import type { PreviewProps } from './preview';
 
 export type BlockComponent = Component<Record<string, unknown>>;
+/** Preview of a collection in the editor frame; receives `PreviewProps`. */
+export type PreviewComponent = Component<PreviewProps>;
 
 export interface Registry {
 	config: CmsConfig;
@@ -21,6 +24,8 @@ export interface Registry {
 	components: Record<string, BlockComponent>;
 	collections: Record<string, CollectionDefinition>;
 	mail: Record<string, MailTemplateDefinition>;
+	/** Live preview per collection; collections without one preview their blocks. */
+	previews: Record<string, PreviewComponent>;
 }
 
 export interface RegistryInput {
@@ -35,6 +40,8 @@ export interface RegistryInput {
 	content?: Record<string, unknown>;
 	/** Glob `mail/<name>.ts` */
 	mail?: Record<string, unknown>;
+	/** Glob `previews/<collection>.svelte` (optional): editor live preview of a collection */
+	previews?: Record<string, unknown>;
 }
 
 const folderOf = (path: string) => path.split('/').at(-2) ?? '';
@@ -64,7 +71,8 @@ export function defineRegistry(input: RegistryInput): Registry {
 		blocks: {},
 		components: {},
 		collections: {},
-		mail: {}
+		mail: {},
+		previews: {}
 	};
 
 	for (const [path, moduleExport] of Object.entries(input.blocks)) {
@@ -120,6 +128,13 @@ export function defineRegistry(input: RegistryInput): Registry {
 				`${path}: Mail-Name „${definition.name}" muss dem Dateinamen „${fileOf(path)}" entsprechen.`
 			);
 		registry.mail[definition.name] = definition;
+	}
+
+	for (const [path, component] of Object.entries(input.previews ?? {})) {
+		const name = fileOf(path);
+		if (!registry.collections[name])
+			throw new Error(`${path}: keine Collection „${name}" — Dateiname = Name der Collection.`);
+		registry.previews[name] = component as PreviewComponent;
 	}
 
 	for (const collection of Object.values(registry.collections)) {

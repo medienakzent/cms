@@ -55,6 +55,7 @@ src/cms.config.ts            Sprachen, Routing, Bildvarianten
 src/blocks/<name>/           block.ts + <Name>.svelte  (Konvention: README dort)
 src/collections/<name>.ts    Collections; alternativ gebündelt in src/cms.content.ts
 src/mail/<name>.ts           Formulare / Mail-Vorlagen
+src/previews/<collection>.svelte  Live-Vorschau einer Collection im Editor (optional)
 src/routes/(site)/           Website: Layout, Design, Zuordnung Pfad → Collection (Kunde); darin der
                              Stub cms-preview (Vorschau-Frame des Editors)
 src/app.css, src/admin.css   Website-Styles bzw. Markenwerte des Admins
@@ -127,6 +128,30 @@ export default defineContent({
 
 Jeder Typ bekommt automatisch Admin-Liste und Editor, Storage-Ordner, Index mit
 Facetten und die REST-Endpunkte unter `/api/v1/<name>`.
+
+## Live-Vorschau eigener Collections
+
+Die Live-Vorschau neben dem Editor läuft im Seitenlayout (`/cms-preview`) und zeigt ohne weiteres
+die **Blocks** des Dokuments. Collections, deren Seite vor allem aus **Feldern** besteht (z. B.
+Künstler, Veranstaltungen), bekommen eine eigene Vorschau: `src/previews/<collection>.svelte`,
+Dateiname = Name der Collection. Sie erhält den ungespeicherten Stand:
+
+```svelte
+<!-- src/previews/artists.svelte -->
+<script lang="ts">
+	import type { PreviewProps } from '@medienakzent/cms';
+	import type artists from '../collections/artists';
+	import ArtistDetail from '$lib/components/ArtistDetail.svelte';
+
+	let { slug, fields, blocks }: PreviewProps<typeof artists> = $props();
+</script>
+
+<ArtistDetail {slug} {fields} {blocks} />
+```
+
+Am besten nutzen Route und Vorschau dieselbe Komponente. `fields` kann unvollständig sein (neues
+Dokument, leere Pflichtfelder) — die Komponente muss damit umgehen. Projekte vor 0.7.0 ergänzen in
+`src/cms.ts`: `previews: import.meta.glob('./previews/*.svelte', { eager: true, import: 'default' })`.
 
 ## Abfragen (Filter, Sortierung)
 

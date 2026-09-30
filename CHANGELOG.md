@@ -13,6 +13,12 @@ Alle relevanten Änderungen. Format: Datum, Version, Abschnitte Neu / Geändert 
 - `StorageAdapter.readStream(path, range?)` (optional) liest Dateien oder Bereiche als Stream;
   Adapter ohne diese Methode funktionieren weiter (Rückfall auf `readBytes`). Typ `ByteRange`
   exportiert aus `@medienakzent/cms/server`.
+- **Live-Vorschau für eigene Collections:** `src/previews/<collection>.svelte` rendert im
+  Vorschau-Frame des Editors den ungespeicherten Stand einer Collection, deren Seite aus Feldern
+  statt Blocks besteht (Props `PreviewProps<typeof collection>`). Der Editor schickt dafür
+  zusätzlich Collection und Slug. Ohne eigene Vorschau bleibt es bei den Blocks. Bestehende
+  Projekte ergänzen in `src/cms.ts`:
+  `previews: import.meta.glob('./previews/*.svelte', { eager: true, import: 'default' })`.
 
 ### Geändert
 

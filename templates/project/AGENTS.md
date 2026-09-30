@@ -18,6 +18,7 @@ es gibt keine CLAUDE.md.
   - `src/blocks/<name>/` — je ein `block.ts` und genau eine `.svelte`-Datei
   - `src/collections/<name>.ts` oder gebündelt `src/cms.content.ts`
   - `src/mail/<name>.ts` — Formulare und Mail-Vorlagen
+  - `src/previews/<collection>.svelte` — Live-Vorschau einer Collection, deren Seite aus Feldern besteht (optional)
   - `src/routes/(site)/` — Website-Layout, Seitenzuordnung, Design; `src/app.css` — Website-Styles
   - `src/admin.css` — Markenwerte für den Admin
   - `static/`, `.env`, Docker-Dateien

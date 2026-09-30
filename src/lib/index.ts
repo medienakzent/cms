@@ -34,7 +34,8 @@ export {
 } from './query';
 export type { Filter, FilterOp, ListQuery, ListQueryInput, Sort } from './query';
 export { defineRegistry, allowedBlocks } from './registry';
-export type { Registry, RegistryInput, BlockComponent } from './registry';
+export type { Registry, RegistryInput, BlockComponent, PreviewComponent } from './registry';
+export type { PreviewProps } from './preview';
 export { setCmsContext, getCmsContext } from './context';
 export { CAPTCHA_FIELD } from './captcha';
 export type { CaptchaClientConfig } from './captcha';
