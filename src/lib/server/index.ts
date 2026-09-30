@@ -20,7 +20,7 @@ export { ensureReady } from './init';
 export { getAuth, getSessionUser, authOptions, toSessionUser } from './auth';
 export type { SessionUser, Role } from './auth';
 export { getStorage, paths } from './storage';
-export type { StorageAdapter } from './storage';
+export type { ByteRange, StorageAdapter } from './storage';
 export { initRuntime, getRuntime, serverConfig, siteConfig } from './runtime';
 export type { Runtime } from './runtime';
 export type { ServerConfig, Env } from './env';

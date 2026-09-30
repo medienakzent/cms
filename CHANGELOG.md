@@ -2,6 +2,23 @@
 
 Alle relevanten Änderungen. Format: Datum, Version, Abschnitte Neu / Geändert / Breaking.
 
+## Unveröffentlicht
+
+### Neu
+
+- **Medien mit Byte-Bereichen:** `/media/…` beantwortet `Range`-Anfragen mit `206 Partial Content`
+  (`Content-Range`, `Accept-Ranges: bytes`), ungültige Bereiche mit `416`, `If-Range` wird gegen
+  den ETag geprüft. Videos lassen sich damit vorspulen und in Schleife abspielen, Safari (iOS/macOS)
+  spielt sie überhaupt erst ab. Dateien werden gestreamt statt ganz in den Speicher geladen.
+- `StorageAdapter.readStream(path, range?)` (optional) liest Dateien oder Bereiche als Stream;
+  Adapter ohne diese Methode funktionieren weiter (Rückfall auf `readBytes`). Typ `ByteRange`
+  exportiert aus `@medienakzent/cms/server`.
+
+### Geändert
+
+- `/media/…` liefert keine versteckten Dateien mehr aus (Pfadsegmente mit `.` am Anfang, z. B.
+  `.DS_Store`); `..` ist damit ebenfalls abgedeckt.
+
 ## 0.6.2 — 2026-09-30
 
 ### Geändert

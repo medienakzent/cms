@@ -2,7 +2,7 @@ import { serverConfig } from '../runtime';
 import { FsStorage } from './fs';
 import type { StorageAdapter } from './types';
 
-export type { StorageAdapter } from './types';
+export type { ByteRange, StorageAdapter } from './types';
 
 let instance: StorageAdapter | null = null;
 

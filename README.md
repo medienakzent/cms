@@ -358,5 +358,6 @@ mit `all/get/run/exec/transaction`. Better Auth legt seine Tabellen selbst an.
 ## Storage-Adapter
 
 `src/lib/server/storage/types.ts` — Default ist das Dateisystem (`STORAGE_DIR`).
-Ein S3-Adapter implementiert dieselben sieben Methoden; Pfad-Konventionen liegen
+Ein S3-Adapter implementiert dieselben sieben Methoden, optional `readStream` für Byte-Bereiche
+(Video-Streaming; ohne sie liest die Medien-Route die ganze Datei); Pfad-Konventionen liegen
 zentral in `storage/index.ts`.

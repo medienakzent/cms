@@ -1,6 +1,7 @@
-import { mkdir, readFile, readdir, rename, rm, stat, writeFile } from 'node:fs/promises';
+import { mkdir, open, readFile, readdir, rename, rm, stat, writeFile } from 'node:fs/promises';
 import { dirname, join, normalize, resolve, sep } from 'node:path';
-import type { StorageAdapter } from './types';
+import { Readable } from 'node:stream';
+import type { ByteRange, StorageAdapter } from './types';
 
 export class FsStorage implements StorageAdapter {
 	private root: string;
@@ -33,6 +34,23 @@ export class FsStorage implements StorageAdapter {
 			if ((error as NodeJS.ErrnoException).code === 'ENOENT') return null;
 			throw error;
 		}
+	}
+
+	async readStream(path: string, range?: ByteRange): Promise<ReadableStream<Uint8Array> | null> {
+		let handle: import('node:fs/promises').FileHandle;
+		try {
+			handle = await open(this.absolutePath(path), 'r');
+		} catch (error) {
+			if ((error as NodeJS.ErrnoException).code === 'ENOENT') return null;
+			throw error;
+		}
+		// autoClose releases the handle when the stream ends, fails or the client cancels.
+		const stream = handle.createReadStream({
+			start: range?.start,
+			end: range?.end,
+			autoClose: true
+		});
+		return Readable.toWeb(stream) as ReadableStream<Uint8Array>;
 	}
 
 	async write(path: string, data: string | Buffer): Promise<void> {
