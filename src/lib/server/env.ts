@@ -20,6 +20,16 @@ function mailTransport(value: string | undefined): MailTransportName {
 	);
 }
 
+function timeZone(value: string | undefined): string {
+	const zone = value || 'Europe/Berlin';
+	try {
+		new Intl.DateTimeFormat('de-DE', { timeZone: zone });
+	} catch {
+		throw new Error(`ANALYTICS_TIMEZONE „${zone}" ist keine gültige Zeitzone`);
+	}
+	return zone;
+}
+
 function list(value: string | undefined): string[] {
 	return (value ?? '')
 		.split(',')
@@ -85,9 +95,19 @@ export function buildServerConfig(env: Env) {
 			/** Proof-of-work cost (PBKDF2 iterations); higher = more protection, slower */
 			cost: positiveNumber(env.ALTCHA_COST, 1000)
 		},
+		analytics: {
+			/** Cookieless visitor statistics; ANALYTICS=0 switches collection off. */
+			enabled: env.ANALYTICS !== '0',
+			/** Raw visits are deleted after this many days. */
+			retentionDays: positiveNumber(env.ANALYTICS_RETENTION_DAYS, 395),
+			/** Days and hours are counted in this time zone. */
+			timeZone: timeZone(env.ANALYTICS_TIMEZONE)
+		},
 		rateLimit: {
 			/** Captcha challenges per minute per IP */
 			captchaPerMinute: positiveNumber(env.RATE_LIMIT_CAPTCHA_PER_MINUTE, 60),
+			/** Page view signals per minute per IP on /api/analytics */
+			analyticsPerMinute: positiveNumber(env.RATE_LIMIT_ANALYTICS_PER_MINUTE, 120),
 			/** Form submissions per minute per IP on /api/mail */
 			mailPerMinute: positiveNumber(env.RATE_LIMIT_MAIL_PER_MINUTE, 5),
 			/** Requests per minute per signed-in user or API token on /api/v1 */

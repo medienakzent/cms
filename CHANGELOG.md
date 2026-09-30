@@ -2,6 +2,26 @@
 
 Alle relevanten Änderungen. Format: Datum, Version, Abschnitte Neu / Geändert / Breaking.
 
+## 0.6.0 — 2026-09-30
+
+### Neu
+
+- **Besucherstatistik ohne Cookies**: Der Hook fügt in Website-Seiten ein kleines Messskript ein
+  (`POST /api/analytics`, Rate-Limit je IP). Die Übersicht im Admin zeigt Aufrufe, Besuche, Seiten pro
+  Besuch, Besuchsdauer, Absprungrate, Verlauf, Seiten, Herkunft, Verweise, Kampagnen, Einstiegs- und
+  Ausstiegsseiten, häufige Wege, Besuchstiefe, Uhrzeit, Geräte, Browser, Systeme und Sprachen;
+  `/admin/analytics?path=…` wertet einzelne Seiten aus. API: `GET /api/v1/analytics`,
+  Server: `cms.analytics.report()`. Neue Stubs für beide Routen und die Admin-Seite.
+- Datenschutz: keine IP, kein User-Agent, kein Speicher im Browser; Besuche nur innerhalb eines Tages
+  erkennbar (Salt nur im Arbeitsspeicher). DNT/GPC, Bots und angemeldete Nutzer werden nicht gezählt.
+- Neue Umgebungsvariablen mit Defaults: `ANALYTICS` (1), `ANALYTICS_RETENTION_DAYS` (395),
+  `ANALYTICS_TIMEZONE` (Europe/Berlin), `RATE_LIMIT_ANALYTICS_PER_MINUTE` (120).
+
+### Geändert
+
+- Zählertexte im Admin und in der CLI mit korrekter Einzahl/Mehrzahl statt „Datei(en)", „Problem(e)" usw.
+- „Block hinzufügen" steht rechts als hervorgehobener Button.
+
 ## 0.5.5 — 2026-09-29
 
 ### Geändert

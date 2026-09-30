@@ -12,6 +12,7 @@
 	import TrashIcon from '@lucide/svelte/icons/trash-2';
 	import CopyIcon from '@lucide/svelte/icons/copy';
 	import ChevronRightIcon from '@lucide/svelte/icons/chevron-right';
+	import PlusIcon from '@lucide/svelte/icons/plus';
 
 	type Props = {
 		blocks: RenderBlock[];
@@ -167,15 +168,17 @@
 	{/each}
 
 	{#if options.length}
-		<div class="flex items-center gap-2">
+		<div class="flex items-center justify-end gap-2">
 			<SearchableSelect
 				{options}
 				value={null}
 				onSelect={add}
-				placeholder="Block hinzufügen …"
+				placeholder="Block hinzufügen"
 				searchable={options.length > 6}
 				ariaLabel="Block hinzufügen"
-				class="w-64"
+				align="end"
+				triggerIcon={PlusIcon}
+				class="bg-primary text-primary-foreground hover:bg-primary/90 dark:bg-primary dark:hover:bg-primary/90 w-auto border-transparent font-medium"
 			/>
 		</div>
 	{/if}

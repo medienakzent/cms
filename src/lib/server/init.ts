@@ -3,9 +3,11 @@ import { getAuth } from './auth';
 import { collection, reindexContent, SYSTEM_ACTOR } from './content';
 import { getRuntime } from './runtime';
 import { apiKeys } from './api-keys';
+import { analytics } from './analytics';
 import { getIndex } from './index/index';
 import { reindexMedia } from './media';
 import { getStorage } from './storage';
+import { formatCount } from '../format';
 
 let ready: Promise<void> | null = null;
 
@@ -19,6 +21,7 @@ export function ensureReady(): Promise<void> {
 			const index = await getIndex();
 			const { reset } = await index.ensureSchema();
 			await apiKeys.ensureSchema();
+			await analytics.ensureSchema();
 			const auth = await getAuth();
 			const { runMigrations } = await getMigrations(auth.options);
 			await runMigrations();
@@ -31,7 +34,7 @@ export function ensureReady(): Promise<void> {
 				const result = await reindexContent();
 				await reindexMedia();
 				console.log(
-					`[cms] Index aufgebaut: ${result.documents} Dokumente, ${result.languages} Sprachfassungen`
+					`[cms] Index aufgebaut: ${formatCount(result.documents, 'Dokument', 'Dokumente')}, ${formatCount(result.languages, 'Sprachfassung', 'Sprachfassungen')}`
 				);
 			}
 		})().catch((error) => {

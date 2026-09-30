@@ -276,6 +276,28 @@ Dienste laden erst nach Einwilligung ihrer Kategorie, Seitenwechsel werden gemel
 (`cms_consent`, 180 Tage) mit Versionsnummer. Ohne optionale Dienste erscheint kein Banner.
 Gestaltung über die Klassen `cms-consent*` und CSS-Variablen `--cms-consent-*`.
 
+## Besucherstatistik
+
+Das CMS zählt Besuche selbst, ohne Cookies, ohne Speicher im Browser und ohne Drittanbieter.
+Der Hook fügt in jede Website-Seite ein kleines Skript ein; es meldet Pfad, Herkunft und
+sichtbare Verweildauer an `POST /api/analytics` (öffentlich, Rate-Limit je IP).
+
+- **Auswertung** auf der Übersicht im Admin (Aufrufe, Besuche, Seiten pro Besuch, Besuchsdauer,
+  Absprungrate, Verlauf, Seiten, Herkunft, Verweise, Kampagnen `utm_*`, Einstiegs- und
+  Ausstiegsseiten, häufige Wege, Besuchstiefe, Uhrzeit, Geräte, Browser, Systeme, Sprachen) und pro
+  Seite unter `/admin/analytics?path=/pfad` (Aufrufe, Verweildauer, Einstiege, Ausstiege, woher und
+  wohin). Per API: `GET /api/v1/analytics?days=30&path=/pfad`, im Server-Code `cms.analytics.report()`.
+- **Datenschutz:** Ein Besuch wird über einen Hash aus IP, User-Agent und einem Salt erkannt, der nur im
+  Arbeitsspeicher liegt und um Mitternacht wechselt — Besuche lassen sich weder über Tage noch nach
+  einem Neustart verknüpfen. Gespeichert werden zufällige Besuchs-IDs, Pfade ohne Query, der Host
+  des Verweises und grobe Kategorien (Gerät, Browser, System, Sprache); nie IP oder User-Agent.
+  „Do Not Track" und „Global Privacy Control" werden beachtet, Bots und angemeldete Nutzer nicht
+  gezählt. Rohdaten werden nach `ANALYTICS_RETENTION_DAYS` (Default 395) gelöscht.
+- In der Datenschutzerklärung des Kunden einen Absatz zur Reichweitenmessung ergänzen
+  (berechtigtes Interesse, keine Cookies, keine Weitergabe). `ANALYTICS=0` schaltet alles ab.
+- Die Tabellen `cms_analytics_*` sind Betriebsdaten, kein Index: `cms.reindex()` stellt sie nicht
+  wieder her — `/data` sichern.
+
 ## Produktivbetrieb
 
 - `ORIGIN` auf die öffentliche https-URL setzen, `AUTH_SECRET` mit mindestens 32 Zeichen
@@ -321,6 +343,8 @@ Gestaltung über die Klassen `cms-consent*` und CSS-Variablen `--cms-consent-*`.
 | GET      | `/api/health` · `/sitemap.xml` · `/llms.txt`                                                   | Öffentlich: Betrieb und Auffindbarkeit                      |
 | POST     | `/api/mail/<vorlage>`                                                                          | Öffentlich: Formular senden (Captcha, Rate-Limit, Honeypot) |
 | GET      | `/api/captcha/challenge`                                                                       | Öffentlich: ALTCHA-Aufgabe (Rate-Limit)                     |
+| POST     | `/api/analytics`                                                                               | Öffentlich: Messsignal der Besucherstatistik (Rate-Limit)   |
+| GET      | `/api/v1/analytics?days=&path=`                                                                | Besucherstatistik (geschützt)                               |
 | GET      | `/api/v1/submissions?template=&status=&limit=&offset=` · GET/DELETE `/api/v1/submissions/<id>` | Einsendungen (geschützt)                                    |
 
 ## Datenbank-Adapter

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { formatDateTime } from '../format';
+	import { formatCount, formatDateTime } from '../format';
 	import { beforeNavigate, goto, invalidateAll } from '$app/navigation';
 	import type { Document, DocumentStatus, RenderBlock, VersionInfo } from '../types';
 	import type { LanguageConfig } from '../config';
@@ -167,7 +167,9 @@
 		} catch (error) {
 			if (error instanceof ApiError && error.status === 422) {
 				errors = issuesToMap(error.issues);
-				toast.error(`${error.issues.length} Problem(e) — bitte Felder prüfen`);
+				toast.error(
+					`${formatCount(error.issues.length, 'Problem', 'Probleme')} — bitte Felder prüfen`
+				);
 			} else toast.error((error as Error).message);
 		} finally {
 			busy = false;
@@ -339,10 +341,11 @@
 					>
 						<Settings2Icon class="text-muted-foreground size-4" aria-hidden="true" />
 						<span class="font-medium">Einstellungen</span>
-						{#if settingsErrorCount}<Badge variant="signal">{settingsErrorCount} Problem(e)</Badge
+						{#if settingsErrorCount}<Badge variant="signal"
+								>{formatCount(settingsErrorCount, 'Problem', 'Probleme')}</Badge
 							>{/if}
 						<span class="text-muted-foreground ms-auto text-xs"
-							>{Object.keys(settingsFields).length} Felder</span
+							>{formatCount(Object.keys(settingsFields).length, 'Feld', 'Felder')}</span
 						>
 						<ChevronDownIcon
 							class="size-4 transition-transform {settingsOpen ? 'rotate-180' : ''}"

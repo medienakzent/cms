@@ -2,6 +2,7 @@
 	import { contrastBackdrop } from '../../admin/thumbnail-tone';
 	import { invalidateAll } from '$app/navigation';
 	import { mediaUrl } from '../../media-url';
+	import { formatCount } from '../../format';
 	import type { MediaItem } from '../../types';
 	import { apiFetch } from '../../admin/api-client';
 	import type { load } from '../../routes/admin/media';
@@ -31,7 +32,7 @@
 				method: 'POST',
 				body: form
 			});
-			toast.success(`${result.items.length} Datei(en) hochgeladen`);
+			toast.success(`${formatCount(result.items.length, 'Datei', 'Dateien')} hochgeladen`);
 			await invalidateAll();
 		} catch (error) {
 			toast.error((error as Error).message);

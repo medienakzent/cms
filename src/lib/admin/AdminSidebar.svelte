@@ -11,6 +11,7 @@
 	import LayersIcon from '@lucide/svelte/icons/layers';
 	import { authClient } from './auth-client';
 	import { apiFetch } from './api-client';
+	import { formatCount } from '../format';
 	import { toast } from 'svelte-sonner';
 
 	type Props = {
@@ -57,7 +58,9 @@
 			const result = await apiFetch<{ documents: number; media: number }>('/api/v1/reindex', {
 				method: 'POST'
 			});
-			toast.success(`Index: ${result.documents} Dokumente, ${result.media} Medien`);
+			toast.success(
+				`Index: ${formatCount(result.documents, 'Dokument', 'Dokumente')}, ${formatCount(result.media, 'Datei', 'Dateien')}`
+			);
 		} catch (error) {
 			toast.error((error as Error).message);
 		}

@@ -1,5 +1,6 @@
 import type { Field, FieldMap } from './fields';
 import { optionValue } from './fields';
+import { formatCount } from './format';
 import type { BlockDefinition } from './block';
 import type { FileRef, Link, MediaRef, RenderBlock, ValidationIssue } from './types';
 
@@ -219,9 +220,15 @@ export function validateField(
 		case 'list': {
 			const items = Array.isArray(value) ? value : [];
 			if (field.min !== undefined && context.strict && items.length < field.min)
-				issues.push({ path, message: `Mindestens ${field.min} Einträge` });
+				issues.push({
+					path,
+					message: `Mindestens ${formatCount(field.min, 'Eintrag', 'Einträge')}`
+				});
 			if (field.max !== undefined && items.length > field.max)
-				issues.push({ path, message: `Höchstens ${field.max} Einträge` });
+				issues.push({
+					path,
+					message: `Höchstens ${formatCount(field.max, 'Eintrag', 'Einträge')}`
+				});
 			items.forEach((item, index) =>
 				validateField(field.of, item, `${path}[${index}]`, context, issues)
 			);
@@ -249,7 +256,7 @@ export function validateField(
 				path
 			);
 			if (field.max !== undefined && Array.isArray(value) && value.length > field.max)
-				issues.push({ path, message: `Höchstens ${field.max} Blocks` });
+				issues.push({ path, message: `Höchstens ${formatCount(field.max, 'Block', 'Blocks')}` });
 			break;
 	}
 }

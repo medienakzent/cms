@@ -8,6 +8,7 @@ import { ensureReady } from './init';
 import { createRateLimiter } from './rate-limit';
 import { initRuntime } from './runtime';
 import { apiKeys } from './api-keys';
+import { ANALYTICS_ENDPOINT, ANALYTICS_SCRIPT } from './analytics/script';
 
 export interface HandleOptions {
 	/** Environment; in the customer project `env` from `$env/dynamic/private`. */
@@ -59,6 +60,10 @@ export function createHandle(registry: Registry, options: HandleOptions): Handle
 	const anonLimiter = createRateLimiter({ windowMs: 60_000, max: rateLimit.anonPerMinute });
 	const mailLimiter = createRateLimiter({ windowMs: 60_000, max: rateLimit.mailPerMinute });
 	const captchaLimiter = createRateLimiter({ windowMs: 60_000, max: rateLimit.captchaPerMinute });
+	const analyticsLimiter = createRateLimiter({
+		windowMs: 60_000,
+		max: rateLimit.analyticsPerMinute
+	});
 	const adminPath = options.adminPath ?? '/admin';
 
 	return async ({ event, resolve }) => {
@@ -76,6 +81,14 @@ export function createHandle(registry: Registry, options: HandleOptions): Handle
 			const result = captchaLimiter.check(`ip:${event.getClientAddress()}`);
 			if (!result.ok)
 				return jsonError(429, 'Zu viele Anfragen', { 'retry-after': String(result.retryAfter) });
+			return resolve(event);
+		}
+
+		// Visitor statistics: public, rate limit per IP; the route skips signed-in users.
+		if (pathname === ANALYTICS_ENDPOINT) {
+			const result = analyticsLimiter.check(`ip:${event.getClientAddress()}`);
+			if (!result.ok) return new Response(null, { status: 429 });
+			event.locals.user = await getSessionUser(event.request.headers);
 			return resolve(event);
 		}
 
@@ -149,6 +162,19 @@ export function createHandle(registry: Registry, options: HandleOptions): Handle
 				});
 			}
 			return harden(await resolve(event));
+		}
+
+		// Website pages of visitors carry the statistics script; editors and the preview are not counted.
+		if (
+			runtime.server.analytics.enabled &&
+			!event.locals.user &&
+			event.request.method === 'GET' &&
+			!pathname.startsWith('/api/') &&
+			!pathname.endsWith('/cms-preview')
+		) {
+			return resolve(event, {
+				transformPageChunk: ({ html }) => html.replace('</body>', `${ANALYTICS_SCRIPT}</body>`)
+			});
 		}
 		return resolve(event);
 	};

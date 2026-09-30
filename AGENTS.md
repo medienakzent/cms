@@ -89,7 +89,8 @@ Konfiguration, Website-Layout) und laufen als ein Node-Prozess in einem Containe
 ## Sicherheitsregeln
 
 - Alles unter `/api/v1` bleibt hinter Sitzung oder API-Token (Hook). Öffentlich sind nur
-  `/api/mail/<vorlage>`, `/api/mail/download/<token>/…`, `/api/captcha/challenge`, `/api/health`,
+  `/api/mail/<vorlage>`, `/api/mail/download/<token>/…`, `/api/captcha/challenge`, `/api/analytics`
+  (Messsignal, ohne Personendaten), `/api/health`,
   `/sitemap.xml`, `/llms.txt` und `/media/…`; `/cms-preview` (Vorschau-Frame im Seitenlayout) nur
   angemeldet, sonst 404. Neue öffentliche Routen sind eine bewusste Entscheidung
   mit Rate-Limit und ohne Personendaten.
@@ -98,6 +99,8 @@ Konfiguration, Website-Layout) und laufen als ein Node-Prozess in einem Containe
 - Besucher-Eingaben (Formulare) werden escaped; Pfade aus URLs laufen durch `isValidSlug`, Tokens
   durch feste Muster; der Storage verweigert Pfade außerhalb seiner Wurzel.
 - Geheimnisse zeitkonstant vergleichen, nie loggen.
+- Besucherstatistik bleibt cookielos: keine IP, kein User-Agent, keine Query-Strings in der DB, kein
+  Speicher im Browser; der Salt für die Besuchserkennung lebt nur im Arbeitsspeicher.
 - Zugriffsentscheidungen im Hook nur auf dem dekodierten Pfad (`decodeURIComponent`); SvelteKit
   routet dekodiert, ein roher `startsWith` ist umgehbar. Redirect-Ziele (`returnTo`, `_redirect`)
   nur seiteninterne Pfade. Markdown von Redakteuren nur über `renderMarkdown` ausgeben, nie roh in

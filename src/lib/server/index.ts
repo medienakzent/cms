@@ -12,6 +12,7 @@ import { media, reindexMedia } from './media';
 import { mail } from './mail';
 import { getRuntime } from './runtime';
 import { captchaClientConfig } from './captcha';
+import { analytics } from './analytics';
 
 export { CmsError } from './errors';
 export type { Actor, CollectionApi, GetOptions } from './content';
@@ -33,6 +34,7 @@ export { captchaClientConfig, verifyCaptcha } from './captcha';
 export { sendSystemMail } from './mail';
 export { apiKeys } from './api-keys';
 export type { ApiKeyInfo } from './api-keys';
+export type { AnalyticsReport, Breakdown, PageRow } from './analytics';
 export type { HandleOptions } from './hooks';
 
 export const cms = {
@@ -48,6 +50,8 @@ export const cms = {
 	collection,
 	media,
 	mail,
+	/** Cookieless visitor statistics: `cms.analytics.report({ days: 30, path: '/about' })`. */
+	analytics: { report: analytics.report, activeNow: analytics.activeNow },
 	/** Client configuration for forms (captcha); pass it to the page in the layout load. */
 	forms: { captcha: captchaClientConfig },
 	systemActor: SYSTEM_ACTOR,

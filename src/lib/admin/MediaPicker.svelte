@@ -2,6 +2,7 @@
 	import { contrastBackdrop } from './thumbnail-tone';
 	import type { MediaItem, MediaRef } from '../types';
 	import { mediaUrl } from '../media-url';
+	import { formatCount } from '../format';
 	import { apiFetch } from './api-client';
 	import { Modal } from '@compdata/ui/modal';
 	import { Button } from '@compdata/ui/button';
@@ -78,7 +79,7 @@
 				method: 'POST',
 				body: form
 			});
-			toast.success(`${result.items.length} Datei(en) hochgeladen`);
+			toast.success(`${formatCount(result.items.length, 'Datei', 'Dateien')} hochgeladen`);
 			if (result.items.length === 1) choose(result.items[0]);
 			else await load();
 		} catch (uploadError) {

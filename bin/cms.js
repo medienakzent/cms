@@ -204,7 +204,11 @@ function check(root) {
 			problems++;
 		}
 	}
-	console.log(problems ? `${problems} Problem(e).` : 'Alle Stubs aktuell und unverändert.');
+	console.log(
+		problems
+			? `${problems} ${problems === 1 ? 'Problem' : 'Probleme'}.`
+			: 'Alle Stubs aktuell und unverändert.'
+	);
 	return problems;
 }
 
