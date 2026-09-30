@@ -2,7 +2,7 @@
 
 Alle relevanten Änderungen. Format: Datum, Version, Abschnitte Neu / Geändert / Breaking.
 
-## Unveröffentlicht
+## 0.7.0 — 2026-09-30
 
 ### Neu
 
