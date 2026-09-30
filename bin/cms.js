@@ -199,6 +199,24 @@ function missingNativeDependencies(root) {
 	);
 }
 
+/**
+ * Git dependencies must point at prebuilt releases (tags `release/vX.Y.Z`): a plain source tag
+ * makes npm run `prepare` with all devDependencies on every install, which breaks on servers
+ * without `node` in PATH (Plesk/nodenv) and slows every deployment down.
+ */
+const RELEASE_DEPENDENCIES = ['@medienakzent/cms', '@compdata/ui'];
+
+function sourceDependencies(root) {
+	const projectFile = join(root, 'package.json');
+	if (!existsSync(projectFile)) return [];
+	const project = JSON.parse(readFileSync(projectFile, 'utf8'));
+	const dependencies = { ...project.dependencies, ...project.devDependencies };
+	return RELEASE_DEPENDENCIES.filter((name) => {
+		const specification = dependencies[name];
+		return specification?.startsWith('github:') && !specification.includes('#release/');
+	}).map((name) => `${name} (${dependencies[name]})`);
+}
+
 function warnNativeDependencies(missing) {
 	console.warn(
 		`package.json: unter "dependencies" fehlt ${missing.join(', ')} — sonst stürzt der Produktions-Build (node build) ab. Eintragen, dann npm install.`
@@ -211,6 +229,13 @@ function check(root) {
 	const missing = missingNativeDependencies(root);
 	if (missing.length) {
 		warnNativeDependencies(missing);
+		problems++;
+	}
+	const unbuilt = sourceDependencies(root);
+	if (unbuilt.length && root !== PACKAGE_DIR) {
+		console.warn(
+			`package.json: ${unbuilt.join(', ')} ${unbuilt.length === 1 ? 'zeigt' : 'zeigen'} auf einen Quell-Tag — bitte das vorgebaute Release pinnen (#release/vX.Y.Z), sonst baut npm das Paket bei jeder Installation.`
+		);
 		problems++;
 	}
 	if (manifest.version !== PACKAGE.version) {

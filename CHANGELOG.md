@@ -2,6 +2,20 @@
 
 Alle relevanten Änderungen. Format: Datum, Version, Abschnitte Neu / Geändert / Breaking.
 
+## 0.8.3 — 2026-09-30
+
+### Geändert
+
+- **Vorgebaute Releases:** Jede Version erscheint zusätzlich als Tag `release/vX.Y.Z` auf dem Branch
+  `releases`, mit fertigem `dist/` und ohne `prepare`/devDependencies. Kundenprojekte pinnen
+  `github:medienakzent/cms#release/vX.Y.Z` und `github:medienakzent/ui#release/v0.1.5`; npm baut beim
+  Installieren nichts mehr. Vorher lief bei jeder Installation `prepare` samt Vite/esbuild, was auf
+  Plesk-Servern mit nodenv scheiterte (`nodenv: node: command not found`).
+- `scripts/release.js` (`npm run release`) erzeugt die Releases für dieses Paket und für
+  `medienakzent/ui`. `cms check` meldet Git-Abhängigkeiten, die noch auf einen Quell-Tag zeigen.
+- Auf dem Server muss `node` für Installationsskripte (`postinstall`, better-sqlite3, sharp) weiterhin
+  im PATH sein; bei Plesk mit nodenv z. B. `.node-version` im Vhost-Verzeichnis.
+
 ## 0.8.2 — 2026-09-30
 
 ### Geändert

@@ -84,8 +84,12 @@ Konfiguration, Website-Layout) und laufen als ein Node-Prozess in einem Containe
 - Commit-Nachrichten: Präsens, Deutsch, erste Zeile ≤ 72 Zeichen, danach das Warum.
   **Keine `Co-Authored-By`-Zeilen und keine Tool-Signaturen.**
 - Kein Commit ohne grünes `npm run check` und `npm run test`.
-- Releases: Version in `package.json` erhöhen, CHANGELOG ergänzen, Tag `vX.Y.Z`. Kundenprojekte
-  pinnen den Tag (`github:medienakzent/cms#vX.Y.Z`).
+- Releases: Version in `package.json` erhöhen, CHANGELOG ergänzen, committen, Quell-Tag `vX.Y.Z`, dann
+  bauen (`docker exec -w /app cms-dev npm run package`) und `npm run release` (bzw.
+  `node scripts/release.js --push`): legt den gebauten Stand als Commit auf den Branch `releases` und
+  taggt ihn `release/vX.Y.Z`. Kundenprojekte pinnen nur dieses Release
+  (`github:medienakzent/cms#release/vX.Y.Z`), damit npm beim Installieren nichts baut. Dasselbe Skript
+  baut Releases von `medienakzent/ui` (`node scripts/release.js <klon-von-ui> --push`).
 
 ## Sicherheitsregeln
 

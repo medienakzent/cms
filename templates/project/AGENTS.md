@@ -39,7 +39,9 @@ es gibt keine CLAUDE.md.
   Prüfen mit `docker exec -w /app __PROJECT_NAME__-dev npm run check`.
 - Produktion: `docker compose -f docker-compose.prod.yml up -d --build` — ein Container,
   ein Node-Prozess (Website, Admin, API, Mail). Volumes: `/data` (Index), `/storage` (Inhalte).
-- CMS aktualisieren: Tag in `package.json` erhöhen (`github:medienakzent/cms#vX.Y.Z`),
+- CMS aktualisieren: Release-Tag in `package.json` erhöhen (`github:medienakzent/cms#release/vX.Y.Z`,
+  immer `release/…`, das ist der vorgebaute Stand; der Quell-Tag `vX.Y.Z` würde bei jeder
+  Installation neu gebaut),
   Lock-Datei neu erzeugen (`rm package-lock.json && npm install --package-lock-only`),
   dann den Dev-Container neu starten — der Entrypoint installiert und synchronisiert die
   Stubs. Nicht im laufenden Container austauschen: Vite stürzt ab, wenn das Paket unter ihm

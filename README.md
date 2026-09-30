@@ -24,7 +24,7 @@ das Paket und ergänzen nur eigene Dateien; alles läuft in einem Node-Prozess.
 
 ```bash
 mkdir mein-projekt && cd mein-projekt
-npm init -y >/dev/null && npm install github:medienakzent/cms#v0.5.0
+npm init -y >/dev/null && npm install github:medienakzent/cms#release/v0.8.3
 npx cms init .                 # Gerüst, Stubs, Docker, .env.example, AGENTS.md
 cp .env.example .env           # AUTH_SECRET setzen
 docker compose -f docker-compose.dev.yml up -d --build
@@ -35,7 +35,10 @@ docker compose -f docker-compose.dev.yml up -d --build
   Weitere Konten legt der Admin unter „Nutzer" an (`ALLOW_SIGNUP` bleibt 0).
 
 Das Paket wird per Git-Tag installiert (privates `@compdata/ui` braucht SSH-Zugriff auf
-GitHub, siehe `docker/dev-entrypoint.sh` der Vorlage).
+GitHub, siehe `docker/dev-entrypoint.sh` der Vorlage). Projekte pinnen immer das **vorgebaute
+Release** `#release/vX.Y.Z` (Branch `releases`, enthält `dist/`), nie den Quell-Tag `#vX.Y.Z`:
+Sonst führt npm bei jeder Installation `prepare` mit allen devDependencies aus, was auf Servern
+ohne `node` im PATH (Plesk mit nodenv) scheitert. Gleiches gilt für `github:medienakzent/ui`.
 
 ## Updates ohne Bruch
 

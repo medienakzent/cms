@@ -1,6 +1,6 @@
 {
 	"name": "@medienakzent/cms",
-	"version": "0.8.2",
+	"version": "0.8.3",
 	"description": "Block-basiertes CMS für SvelteKit: Übersetzung pro Feld, Versionierung, Storage als Wahrheit, Formulare mit Mail-Versand — Kundenprojekte erweitern nur um eigene Dateien.",
 	"license": "MIT",
 	"repository": {
@@ -65,6 +65,7 @@
 		"prepare": "svelte-kit sync && svelte-package",
 		"postinstall": "node bin/cms.js postinstall",
 		"package": "svelte-kit sync && svelte-package && publint",
+		"release": "node scripts/release.js --push",
 		"sync": "node bin/cms.js sync",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"test": "vitest --run",
