@@ -1,0 +1,9 @@
+<script lang="ts">
+	import '../../admin.css';
+	import Layout from '@medienakzent/cms/pages/admin/Layout.svelte';
+	import registry from '../../cms';
+
+	let { data, children } = $props();
+</script>
+
+<Layout {data} {registry} {children} />

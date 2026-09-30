@@ -1,0 +1,89 @@
+import { api, readJsonBody, requireSessionAdmin } from '../../server/api';
+import { getAuth, resetTwoFactor } from '../../server/auth';
+import { CmsError } from '../../server/errors';
+import { isEmail } from '../../server/mail/transport';
+const ROLES = ['admin', 'editor'];
+/** POST /api/v1/users  { name, email, password, role } */
+export const POST = (event) => api(async () => {
+    requireSessionAdmin(event);
+    const body = await readJsonBody(event, ['name', 'email', 'password', 'role']);
+    if (typeof body.email !== 'string' || !isEmail(body.email))
+        throw new CmsError(400, 'Gültige E-Mail-Adresse erwartet');
+    if (typeof body.password !== 'string' || body.password.length < 8)
+        throw new CmsError(400, 'Passwort: mindestens 8 Zeichen');
+    const role = typeof body.role === 'string' && ROLES.includes(body.role) ? body.role : 'editor';
+    const auth = await getAuth();
+    const created = await auth.api.createUser({
+        body: {
+            email: body.email,
+            password: body.password,
+            name: typeof body.name === 'string' && body.name ? body.name : body.email,
+            role: role
+        },
+        headers: event.request.headers
+    });
+    return { id: created.user.id };
+});
+/** PATCH /api/v1/users/<id>  { role?, password?, name?, banned?, twoFactor: false } */
+export const PATCH_ITEM = (event) => api(async () => {
+    requireSessionAdmin(event);
+    const id = event.params.id ?? '';
+    const body = await readJsonBody(event, ['role', 'password', 'name', 'banned', 'twoFactor']);
+    const auth = await getAuth();
+    if (body.role !== undefined) {
+        if (typeof body.role !== 'string' || !ROLES.includes(body.role))
+            throw new CmsError(400, 'role: admin oder editor');
+        if (id === event.locals.user.id && body.role !== 'admin')
+            throw new CmsError(400, 'Die eigene Admin-Rolle kann nicht entfernt werden');
+        await auth.api.setRole({
+            body: { userId: id, role: body.role },
+            headers: event.request.headers
+        });
+    }
+    if (body.password !== undefined) {
+        if (typeof body.password !== 'string' || body.password.length < 8)
+            throw new CmsError(400, 'Passwort: mindestens 8 Zeichen');
+        await auth.api.setUserPassword({
+            body: { userId: id, newPassword: body.password },
+            headers: event.request.headers
+        });
+    }
+    if (body.banned !== undefined) {
+        if (typeof body.banned !== 'boolean')
+            throw new CmsError(400, 'banned: true oder false');
+        if (id === event.locals.user.id)
+            throw new CmsError(400, 'Das eigene Konto kann nicht gesperrt werden');
+        if (body.banned)
+            await auth.api.banUser({
+                body: { userId: id, banReason: 'Vom Administrator gesperrt' },
+                headers: event.request.headers
+            });
+        else
+            await auth.api.unbanUser({ body: { userId: id }, headers: event.request.headers });
+    }
+    if (body.name !== undefined) {
+        if (typeof body.name !== 'string' || !body.name.trim())
+            throw new CmsError(400, 'Name fehlt');
+        await auth.api.adminUpdateUser({
+            body: { userId: id, data: { name: body.name.trim() } },
+            headers: event.request.headers
+        });
+    }
+    if (body.twoFactor !== undefined) {
+        // Only switching off is possible here; setting up needs the user and the authenticator app.
+        if (body.twoFactor !== false)
+            throw new CmsError(400, 'twoFactor: nur false (zurücksetzen)');
+        await resetTwoFactor(id);
+    }
+    return { ok: true };
+});
+/** DELETE /api/v1/users/<id> */
+export const DELETE_ITEM = (event) => api(async () => {
+    requireSessionAdmin(event);
+    const id = event.params.id ?? '';
+    if (id === event.locals.user.id)
+        throw new CmsError(400, 'Das eigene Konto kann nicht gelöscht werden');
+    const auth = await getAuth();
+    await auth.api.removeUser({ body: { userId: id }, headers: event.request.headers });
+    return { ok: true };
+});

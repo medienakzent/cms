@@ -1,0 +1,98 @@
+<script lang="ts">
+	import { page } from '$app/state';
+	import type { BlockProps } from '@medienakzent/cms';
+	import { Richtext } from '@medienakzent/cms/render';
+	import { Captcha } from '@medienakzent/cms/forms';
+	import type definition from './block';
+
+	let { title, intro, template, successText, errorText }: BlockProps<typeof definition> = $props();
+
+	let status = $state<'idle' | 'sending' | 'sent' | 'error'>('idle');
+	let issues = $state<Record<string, string>>({});
+
+	async function submit(event: SubmitEvent) {
+		event.preventDefault();
+		const form = event.currentTarget as HTMLFormElement;
+		const data = Object.fromEntries(new FormData(form).entries());
+		status = 'sending';
+		issues = {};
+		try {
+			const response = await fetch(`/api/mail/${template || 'contact'}`, {
+				method: 'POST',
+				headers: { 'content-type': 'application/json' },
+				body: JSON.stringify({ ...data, _lang: page.data.lang ?? 'de' })
+			});
+			if (response.status === 422) {
+				const body = (await response.json()) as { issues: { path: string; message: string }[] };
+				issues = Object.fromEntries(body.issues.map((issue) => [issue.path, issue.message]));
+				status = 'idle';
+				return;
+			}
+			if (!response.ok) throw new Error(String(response.status));
+			status = 'sent';
+			form.reset();
+		} catch {
+			status = 'error';
+		}
+	}
+</script>
+
+<section class="mx-auto max-w-2xl px-6 py-12">
+	{#if title}<h2 class="mb-3 text-2xl font-semibold">{title}</h2>{/if}
+	{#if intro}<div class="mb-6"><Richtext source={intro} /></div>{/if}
+
+	{#if status === 'sent'}
+		<p class="rounded-md border border-green-300 bg-green-50 p-4 text-green-900">{successText}</p>
+	{:else}
+		<form onsubmit={submit} class="grid gap-4">
+			<!-- Honeypot: invisible to humans, must stay empty -->
+			<div class="absolute -left-[9999px]" aria-hidden="true">
+				<label>Website <input type="text" name="website" tabindex="-1" autocomplete="off" /></label>
+			</div>
+			<div class="grid gap-4 sm:grid-cols-2">
+				<label class="grid gap-1 text-sm">
+					Name *
+					<input name="name" required maxlength="120" class="rounded-md border px-3 py-2" />
+					{#if issues.name}<span class="text-red-600">{issues.name}</span>{/if}
+				</label>
+				<label class="grid gap-1 text-sm">
+					E-Mail *
+					<input
+						name="email"
+						type="email"
+						required
+						maxlength="200"
+						class="rounded-md border px-3 py-2"
+					/>
+					{#if issues.email}<span class="text-red-600">{issues.email}</span>{/if}
+				</label>
+			</div>
+			<label class="grid gap-1 text-sm">
+				Telefon
+				<input name="phone" maxlength="60" class="rounded-md border px-3 py-2" />
+			</label>
+			<label class="grid gap-1 text-sm">
+				Nachricht *
+				<textarea
+					name="message"
+					required
+					rows="6"
+					maxlength="5000"
+					class="rounded-md border px-3 py-2"
+				></textarea>
+				{#if issues.message}<span class="text-red-600">{issues.message}</span>{/if}
+			</label>
+			<!-- Captcha config comes from the layout load (cms.forms.captcha()) -->
+			<Captcha config={page.data.captcha} />
+			{#if issues._captcha}<p class="text-red-600">{issues._captcha}</p>{/if}
+			{#if status === 'error'}<p class="text-red-600">{errorText}</p>{/if}
+			<button
+				type="submit"
+				disabled={status === 'sending'}
+				class="bg-primary text-primary-foreground rounded-md px-5 py-2.5 font-medium disabled:opacity-60"
+			>
+				{status === 'sending' ? 'Wird gesendet …' : 'Absenden'}
+			</button>
+		</form>
+	{/if}
+</section>

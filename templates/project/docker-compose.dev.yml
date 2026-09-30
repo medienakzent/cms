@@ -1,0 +1,39 @@
+name: ${PROJECT:-cms}-dev
+
+services:
+  dev:
+    build:
+      context: .
+      target: dev
+    container_name: ${PROJECT:-cms}-dev
+    hostname: ${PROJECT:-cms}-dev
+    # Entrypoint: SSH-Identität für GitHub einrichten, npm ci ins anonyme
+    # node_modules-Volume, dann `command` (Vite-Dev-Server) starten.
+    entrypoint: ['sh', '/app/docker/dev-entrypoint.sh']
+    command: ['npm', 'run', 'dev']
+    env_file:
+      - .env
+    environment:
+      VIRTUAL_HOST: ${DEV_HOST:-cms.test}
+      VIRTUAL_PORT: '5173'
+      DATA_DIR: /app/data
+      STORAGE_DIR: /app/storage
+      GIT_SSH_HOST: github.com
+    volumes:
+      - .:/app
+      # Linux-node_modules getrennt vom Host halten (befüllt der Entrypoint).
+      - /app/node_modules
+      # SSH-Identität für das private @compdata/ui (siehe .env DEV_SSH_DIR).
+      - ${DEV_SSH_DIR:-./.dev-ssh}:/home/node/.ssh
+    ports:
+      # OAuth-Provider brauchen http://localhost:<Port> als Redirect-URI.
+      - '127.0.0.1:${CMS_PORT:-5173}:5173'
+    expose:
+      - '5173'
+    networks: ['app', 'nginx-proxy']
+
+networks:
+  app:
+    name: ${PROJECT:-cms}_net
+  nginx-proxy:
+    external: true

@@ -1,0 +1,38 @@
+name: ${PROJECT:-cms}
+
+services:
+  app:
+    build:
+      context: .
+      target: prod
+      ssh:
+        - default
+    container_name: ${PROJECT:-cms}-app
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      PORT: '3000'
+      DATA_DIR: /data
+      STORAGE_DIR: /storage
+      VIRTUAL_HOST: ${VIRTUAL_HOST:-cms.test}
+      VIRTUAL_PORT: '3000'
+      PROTOCOL_HEADER: x-forwarded-proto
+      HOST_HEADER: x-forwarded-host
+      ADDRESS_HEADER: x-forwarded-for
+      XFF_DEPTH: '1'
+      BODY_SIZE_LIMIT: ${BODY_SIZE_LIMIT:-64M}
+    volumes:
+      - cms-data:/data
+      - cms-storage:/storage
+    expose:
+      - '3000'
+    networks: ['nginx-proxy']
+
+volumes:
+  cms-data:
+  cms-storage:
+
+networks:
+  nginx-proxy:
+    external: true

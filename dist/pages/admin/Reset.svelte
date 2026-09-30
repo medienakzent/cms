@@ -1,0 +1,65 @@
+<script lang="ts">
+	import { authClient } from '../../admin/auth-client';
+	import { Button } from '@compdata/ui/button';
+	import { Input } from '@compdata/ui/input';
+	import { Label } from '@compdata/ui/label';
+	import * as Card from '@compdata/ui/card';
+	import type { AdminLayoutData } from '../../routes/admin/layout';
+	import type { load } from '../../routes/admin/reset';
+
+	let { data }: { data: AdminLayoutData & Awaited<ReturnType<typeof load>> } = $props();
+
+	let password = $state('');
+	let error = $state('');
+	let done = $state(false);
+	let busy = $state(false);
+
+	async function submit(event: SubmitEvent) {
+		event.preventDefault();
+		busy = true;
+		error = '';
+		const result = await authClient.resetPassword({ newPassword: password, token: data.token });
+		busy = false;
+		if (result.error) {
+			error = result.error.message ?? 'Der Link ist ungültig oder abgelaufen.';
+			return;
+		}
+		done = true;
+	}
+</script>
+
+<div class="bg-muted/40 flex min-h-screen items-center justify-center p-4">
+	<Card.Root class="w-full max-w-sm">
+		<Card.Header>
+			<Card.Title>{data.siteName} · CMS</Card.Title>
+			<Card.Description>Neues Passwort setzen</Card.Description>
+		</Card.Header>
+		<Card.Content class="space-y-4">
+			{#if done}
+				<p class="text-sm">Das Passwort wurde geändert.</p>
+				<Button href="/admin/login" class="w-full">Zur Anmeldung</Button>
+			{:else if !data.token || data.invalid}
+				<p class="text-destructive text-sm">
+					Der Link ist ungültig oder abgelaufen. Bitte fordern Sie über „Passwort vergessen" einen
+					neuen an.
+				</p>
+				<Button href="/admin/login" variant="outline" class="w-full">Zur Anmeldung</Button>
+			{:else}
+				<form onsubmit={submit} class="space-y-3">
+					<div class="space-y-1">
+						<Label for="password">Neues Passwort</Label><Input
+							id="password"
+							type="password"
+							bind:value={password}
+							required
+							minlength={8}
+							autocomplete="new-password"
+						/>
+					</div>
+					{#if error}<p class="text-destructive text-sm">{error}</p>{/if}
+					<Button type="submit" class="w-full" disabled={busy}>Passwort speichern</Button>
+				</form>
+			{/if}
+		</Card.Content>
+	</Card.Root>
+</div>

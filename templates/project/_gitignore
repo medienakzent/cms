@@ -1,0 +1,22 @@
+node_modules
+/build
+/.svelte-kit
+*.tsbuildinfo
+vite.config.ts.timestamp-*
+
+# Laufzeitdaten: Index-Datenbank
+/data
+# Storage: Medien, Historie, Mail-Ablage sind Laufzeitdaten; Inhalte (storage/content)
+# dürfen versioniert werden — je nach Projekt anpassen.
+/storage/media
+/storage/history
+/storage/mail
+
+.env
+.env.*
+!.env.example
+.dev-ssh
+
+.DS_Store
+*.log
+.playwright-mcp
