@@ -184,9 +184,35 @@ function copyProject(root, { name }) {
 	return { created, kept };
 }
 
+/**
+ * Native modules must be direct dependencies of the project: adapter-node bundles everything
+ * else into the server build, where they fail at runtime (__filename is not defined).
+ */
+const NATIVE_DEPENDENCIES = ['better-sqlite3', 'sharp'];
+
+function missingNativeDependencies(root) {
+	const projectFile = join(root, 'package.json');
+	if (!existsSync(projectFile)) return [];
+	const project = JSON.parse(readFileSync(projectFile, 'utf8'));
+	return NATIVE_DEPENDENCIES.filter((name) => !project.dependencies?.[name]).map(
+		(name) => `"${name}": "${PACKAGE.dependencies[name]}"`
+	);
+}
+
+function warnNativeDependencies(missing) {
+	console.warn(
+		`package.json: unter "dependencies" fehlt ${missing.join(', ')} — sonst stürzt der Produktions-Build (node build) ab. Eintragen, dann npm install.`
+	);
+}
+
 function check(root) {
 	const manifest = readManifest(root);
 	let problems = 0;
+	const missing = missingNativeDependencies(root);
+	if (missing.length) {
+		warnNativeDependencies(missing);
+		problems++;
+	}
 	if (manifest.version !== PACKAGE.version) {
 		console.warn(
 			`Stubs stammen von ${manifest.version ?? 'unbekannt'}, installiert ist ${PACKAGE.version} — npx cms sync ausführen.`
@@ -258,6 +284,8 @@ Eigene Inhaltstypen: src/blocks, src/collections, src/mail — siehe AGENTS.md.`
 		const result = sync(root);
 		if (result.written.length || result.removed.length || result.skipped.length)
 			report(result, previousVersion);
+		const missing = missingNativeDependencies(root);
+		if (missing.length) warnNativeDependencies(missing);
 		break;
 	}
 	default:

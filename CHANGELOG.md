@@ -2,6 +2,16 @@
 
 Alle relevanten Änderungen. Format: Datum, Version, Abschnitte Neu / Geändert / Breaking.
 
+## 0.8.1 — 2026-09-30
+
+### Behoben
+
+- **Produktions-Build stürzte ab** („ReferenceError: __filename is not defined"): adapter-node bündelt
+  alles, was nicht direkt in den `dependencies` des Projekts steht, auch die Native-Module
+  `better-sqlite3` und `sharp`. Kundenprojekte tragen beide jetzt selbst unter `dependencies` ein
+  (gleiche Bereiche wie im Paket); die Projektvorlage enthält sie, `cms check` meldet ein Fehlen als
+  Problem und `postinstall` warnt. Der Dev-Server war nicht betroffen.
+
 ## 0.8.0 — 2026-09-30
 
 ### Neu
