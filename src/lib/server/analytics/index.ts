@@ -113,6 +113,21 @@ export interface Totals {
 	averageSeconds: number;
 }
 
+export type Granularity = 'hour' | 'day' | 'week' | 'month';
+
+export interface TimelineBucket {
+	/** Hour (`0`–`23`), day, first day of the week (Monday) or month (`YYYY-MM`). */
+	key: string;
+	views: number;
+	sessions: number;
+}
+
+export interface LiveSnapshot {
+	activeNow: number;
+	/** Pages currently viewed, by the last page of each active visit. */
+	pages: Breakdown[];
+}
+
 export interface AnalyticsReport {
 	days: number;
 	from: string;
@@ -122,7 +137,9 @@ export interface AnalyticsReport {
 	activeNow: number;
 	totals: Totals & { entries: number; exits: number };
 	previous: Totals;
-	timeline: { day: string; views: number; sessions: number }[];
+	/** Bars of the history chart; the bucket size follows the period. */
+	granularity: Granularity;
+	timeline: TimelineBucket[];
 	hours: number[];
 	pages: PageRow[];
 	entryPages: Breakdown[];
@@ -177,8 +194,56 @@ async function purge() {
 
 /** Visits with a page view in the last five minutes. */
 function activeCount(): number {
+	return liveSnapshot().activeNow;
+}
+
+function liveSnapshot(): LiveSnapshot {
 	const threshold = Date.now() - ACTIVE_WINDOW_MS;
-	return [...activeSessions.values()].filter((session) => session.lastSeen > threshold).length;
+	const pages = new Map<string, number>();
+	let activeNow = 0;
+	for (const session of activeSessions.values()) {
+		if (session.lastSeen <= threshold) continue;
+		activeNow += 1;
+		pages.set(session.lastPath, (pages.get(session.lastPath) ?? 0) + 1);
+	}
+	return {
+		activeNow,
+		pages: [...pages]
+			.map(([label, count]) => ({ label, count }))
+			.sort((left, right) => right.count - left.count || left.label.localeCompare(right.label))
+			.slice(0, TOP_LIMIT)
+	};
+}
+
+type LiveListener = (snapshot: LiveSnapshot) => void;
+const liveListeners = new Set<LiveListener>();
+let lastPublished = '';
+let liveTimer: ReturnType<typeof setInterval> | null = null;
+
+/** Sends the snapshot to live listeners when it changed; also runs on a timer because visits expire silently. */
+function publish() {
+	if (!liveListeners.size) return;
+	const snapshot = liveSnapshot();
+	const serialized = JSON.stringify(snapshot);
+	if (serialized === lastPublished) return;
+	lastPublished = serialized;
+	for (const listener of liveListeners) listener(snapshot);
+}
+
+function granularityOf(days: number): Granularity {
+	if (days === 1) return 'hour';
+	if (days <= 31) return 'day';
+	if (days <= 92) return 'week';
+	return 'month';
+}
+
+function bucketKey(day: string, granularity: Granularity): string {
+	if (granularity === 'month') return day.slice(0, 7);
+	if (granularity === 'week') {
+		const weekday = new Date(`${day}T00:00:00Z`).getUTCDay();
+		return addDays(day, -((weekday + 6) % 7));
+	}
+	return day;
 }
 
 const toNumber = (value: unknown) => Number(value ?? 0) || 0;
@@ -221,6 +286,7 @@ export const analytics = {
 				viewIds: [viewId]
 			};
 			activeSessions.set(key, session);
+			publish();
 			await db.run(
 				`INSERT INTO cms_analytics_sessions (id, day, started_at, last_at, entry_path, exit_path, views,
 				channel, referrer, source, medium, campaign, device, browser, os, language)
@@ -254,6 +320,7 @@ export const analytics = {
 		session.lastSeen = now.getTime();
 		session.lastPath = path;
 		session.viewIds = [...session.viewIds.slice(-19), viewId];
+		publish();
 		await db.run(
 			'INSERT INTO cms_analytics_views (id, session_id, day, hour, at, path, previous_path) VALUES (?, ?, ?, ?, ?, ?, ?)',
 			[viewId, session.id, day, hour, at, path, previousPath]
@@ -358,17 +425,34 @@ export const analytics = {
 		const current = await totals(from, to);
 		const previous = await totals(addDays(from, -days), addDays(from, -1));
 
-		const timelineRows = await db.all<{ day: string; views: unknown; sessions: unknown }>(
-			`SELECT v.day AS day, COUNT(*) AS views, COUNT(DISTINCT v.session_id) AS sessions
-			FROM cms_analytics_views v WHERE ${views.where} GROUP BY v.day`,
+		// Visits are cut at midnight, so summing daily distinct visits into weeks or months is exact.
+		const granularity = granularityOf(days);
+		const timelineRows = await db.all<{ bucket: unknown; views: unknown; sessions: unknown }>(
+			`SELECT ${granularity === 'hour' ? 'v.hour' : 'v.day'} AS bucket, COUNT(*) AS views,
+			COUNT(DISTINCT v.session_id) AS sessions FROM cms_analytics_views v WHERE ${views.where}
+			GROUP BY ${granularity === 'hour' ? 'v.hour' : 'v.day'}`,
 			views.params
 		);
-		const byDay = new Map(timelineRows.map((row) => [row.day, row]));
-		const timeline = Array.from({ length: days }, (_, offset) => {
-			const day = addDays(from, offset);
-			const row = byDay.get(day);
-			return { day, views: toNumber(row?.views), sessions: toNumber(row?.sessions) };
-		});
+		const buckets = new Map<string, TimelineBucket>();
+		if (granularity === 'hour')
+			for (let hour = 0; hour < 24; hour++)
+				buckets.set(String(hour), { key: String(hour), views: 0, sessions: 0 });
+		else
+			for (let offset = 0; offset < days; offset++) {
+				const key = bucketKey(addDays(from, offset), granularity);
+				if (!buckets.has(key)) buckets.set(key, { key, views: 0, sessions: 0 });
+			}
+		for (const row of timelineRows) {
+			const key =
+				granularity === 'hour'
+					? String(toNumber(row.bucket))
+					: bucketKey(String(row.bucket), granularity);
+			const bucket = buckets.get(key);
+			if (!bucket) continue;
+			bucket.views += toNumber(row.views);
+			bucket.sessions += toNumber(row.sessions);
+		}
+		const timeline = [...buckets.values()];
 
 		const hourRows = await db.all<{ hour: unknown; count: unknown }>(
 			`SELECT v.hour AS hour, COUNT(*) AS count FROM cms_analytics_views v WHERE ${views.where} GROUP BY v.hour`,
@@ -425,6 +509,7 @@ export const analytics = {
 					: current.bounces
 			},
 			previous,
+			granularity,
 			timeline,
 			hours,
 			pages: pageRows.map((row) => ({
@@ -487,5 +572,20 @@ export const analytics = {
 		};
 	},
 
-	activeNow: activeCount
+	activeNow: activeCount,
+	live: liveSnapshot,
+
+	/** Live updates of the active visits; returns the unsubscribe function. */
+	subscribe(listener: LiveListener): () => void {
+		liveListeners.add(listener);
+		liveTimer ??= setInterval(publish, 15_000);
+		return () => {
+			liveListeners.delete(listener);
+			if (!liveListeners.size && liveTimer) {
+				clearInterval(liveTimer);
+				liveTimer = null;
+				lastPublished = '';
+			}
+		};
+	}
 };

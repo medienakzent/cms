@@ -34,7 +34,14 @@ export { captchaClientConfig, verifyCaptcha } from './captcha';
 export { sendSystemMail } from './mail';
 export { apiKeys } from './api-keys';
 export type { ApiKeyInfo } from './api-keys';
-export type { AnalyticsReport, Breakdown, PageRow } from './analytics';
+export type {
+	AnalyticsReport,
+	Breakdown,
+	Granularity,
+	LiveSnapshot,
+	PageRow,
+	TimelineBucket
+} from './analytics';
 export type { HandleOptions } from './hooks';
 
 export const cms = {
@@ -51,7 +58,12 @@ export const cms = {
 	media,
 	mail,
 	/** Cookieless visitor statistics: `cms.analytics.report({ days: 30, path: '/about' })`. */
-	analytics: { report: analytics.report, activeNow: analytics.activeNow },
+	analytics: {
+		report: analytics.report,
+		activeNow: analytics.activeNow,
+		live: analytics.live,
+		subscribe: analytics.subscribe
+	},
 	/** Client configuration for forms (captcha); pass it to the page in the layout load. */
 	forms: { captcha: captchaClientConfig },
 	systemActor: SYSTEM_ACTOR,

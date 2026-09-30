@@ -1,5 +1,5 @@
 import { json, type RequestEvent } from '@sveltejs/kit';
-import { analytics, type VisitorRequest } from '../../server/analytics';
+import { analytics, type LiveSnapshot, type VisitorRequest } from '../../server/analytics';
 import { api, limitRequestBody } from '../../server/api';
 
 const MAX_SIGNAL_BYTES = 2048;
@@ -52,3 +52,50 @@ export const REPORT = async ({ url }: RequestEvent) =>
 			path: url.searchParams.get('path')
 		})
 	);
+
+/**
+ * GET /api/v1/analytics/live: Server-Sent Events with the active visits. Sends the current
+ * state at once, then on every change, plus a comment line as keep-alive for proxies.
+ */
+export const LIVE = ({ request }: RequestEvent) => {
+	const encoder = new TextEncoder();
+	let cleanup = () => {};
+	const stream = new ReadableStream<Uint8Array>({
+		start(controller) {
+			const send = (chunk: string) => {
+				try {
+					controller.enqueue(encoder.encode(chunk));
+				} catch {
+					cleanup();
+				}
+			};
+			const sendSnapshot = (snapshot: LiveSnapshot) =>
+				send(`data: ${JSON.stringify(snapshot)}\n\n`);
+			sendSnapshot(analytics.live());
+			const unsubscribe = analytics.subscribe(sendSnapshot);
+			const keepAlive = setInterval(() => send(': ping\n\n'), 25_000);
+			cleanup = () => {
+				clearInterval(keepAlive);
+				unsubscribe();
+			};
+			request.signal.addEventListener('abort', () => {
+				cleanup();
+				try {
+					controller.close();
+				} catch {
+					// Already closed by the client.
+				}
+			});
+		},
+		cancel() {
+			cleanup();
+		}
+	});
+	return new Response(stream, {
+		headers: {
+			'content-type': 'text/event-stream',
+			'cache-control': 'no-store',
+			'x-accel-buffering': 'no'
+		}
+	});
+};

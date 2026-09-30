@@ -1,7 +1,8 @@
 <script lang="ts">
 	import * as Card from '@compdata/ui/card';
 	import ExternalLinkIcon from '@lucide/svelte/icons/external-link';
-	import type { AnalyticsReport } from '../../server/analytics';
+	import { onMount } from 'svelte';
+	import type { AnalyticsReport, LiveSnapshot } from '../../server/analytics';
 	import {
 		formatCount,
 		formatDate,
@@ -48,7 +49,19 @@
 		return `${report.path ? '/admin/analytics' : '/admin'}${query ? `?${query}` : ''}`;
 	};
 	const periodLabel = (days: number) =>
-		days === 365 ? '12 Monate' : formatCount(days, 'Tag', 'Tage');
+		days === 1 ? 'Heute' : days === 365 ? '12 Monate' : formatCount(days, 'Tag', 'Tage');
+
+	let live = $state<LiveSnapshot | null>(null);
+	const activeNow = $derived(live?.activeNow ?? report.activeNow);
+
+	onMount(() => {
+		if (report.path || !enabled) return;
+		const source = new EventSource('/api/v1/analytics/live');
+		source.onmessage = (message) => {
+			live = JSON.parse(message.data) as LiveSnapshot;
+		};
+		return () => source.close();
+	});
 
 	const bounceRate = (bounces: number, base: number) => (base ? bounces / base : 0);
 
@@ -60,6 +73,8 @@
 		/** A falling value is good (bounce rate). */
 		lowerIsBetter?: boolean;
 		hint?: string;
+		/** Updated live while the page is open. */
+		live?: boolean;
 	};
 	const change = (current: number, previous: number) =>
 		previous ? (current - previous) / previous : null;
@@ -143,7 +158,8 @@
 			},
 			{
 				label: 'Jetzt aktiv',
-				value: formatNumber(report.activeNow),
+				value: formatNumber(activeNow),
+				live: true,
 				change: null,
 				hint: 'Besuche mit einem Seitenaufruf in den letzten fünf Minuten'
 			}
@@ -153,23 +169,47 @@
 	const shortDate = (day: string) =>
 		new Date(`${day}T12:00:00Z`).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' });
 
+	const monthLabel = (key: string, month: 'short' | 'long') =>
+		new Date(`${key}-15T12:00:00Z`).toLocaleDateString('de-DE', {
+			month,
+			year: month === 'long' ? 'numeric' : '2-digit'
+		});
+	const GRANULARITY_TITLE: Record<AnalyticsReport['granularity'], string> = {
+		hour: 'je Stunde',
+		day: 'je Tag',
+		week: 'je Woche',
+		month: 'je Monat'
+	};
+	/** Short label under the bar and full label in the tooltip. */
+	const bucketLabels = (key: string): { short: string; full: string } => {
+		switch (report.granularity) {
+			case 'hour':
+				return { short: `${key} Uhr`, full: `${key}:00–${key}:59 Uhr` };
+			case 'day':
+				return { short: shortDate(key), full: formatDate(`${key}T12:00:00Z`) };
+			case 'week':
+				return { short: shortDate(key), full: `Woche ab ${formatDate(`${key}T12:00:00Z`)}` };
+			case 'month':
+				return { short: monthLabel(key, 'short'), full: monthLabel(key, 'long') };
+		}
+	};
 	const timelineBars = $derived(
-		report.timeline.map((entry) => ({
-			label: entry.day,
-			value: entry.views,
-			secondary: entry.sessions,
-			title: `${formatDate(`${entry.day}T12:00:00Z`)}: ${formatCount(entry.views, 'Aufruf', 'Aufrufe')}, ${formatCount(entry.sessions, 'Besuch', 'Besuche')}`
+		report.timeline.map((bucket) => ({
+			label: bucket.key,
+			value: bucket.views,
+			secondary: bucket.sessions,
+			title: `${bucketLabels(bucket.key).full}: ${formatCount(bucket.sessions, 'Besuch', 'Besuche')}, ${formatCount(bucket.views, 'Aufruf', 'Aufrufe')}`
 		}))
 	);
-	const timelineAxis = $derived(
-		report.timeline.length > 2
-			? [
-					shortDate(report.from),
-					shortDate(report.timeline[Math.floor(report.timeline.length / 2)].day),
-					shortDate(report.to)
-				]
-			: [shortDate(report.from), shortDate(report.to)]
-	);
+	/** About six evenly spaced labels, always including the first and the last bucket. */
+	const timelineAxis = $derived.by(() => {
+		const count = report.timeline.length;
+		const step = Math.max(1, Math.ceil((count - 1) / 5));
+		const positions = new Set<number>();
+		for (let position = 0; position < count; position += step) positions.add(position);
+		positions.add(count - 1);
+		return [...positions].map((position) => bucketLabels(report.timeline[position].key).short);
+	});
 	const hourBars = $derived(
 		report.hours.map((count, hour) => ({
 			label: String(hour),
@@ -222,7 +262,17 @@
 	<div class="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
 		{#each kpis as kpi (kpi.label)}
 			<Card.Root class="gap-1 px-4" title={kpi.hint}>
-				<span class="text-muted-foreground text-sm">{kpi.label}</span>
+				<span class="text-muted-foreground flex items-center gap-2 text-sm"
+					>{kpi.label}
+					{#if kpi.live && live}
+						<span class="relative flex size-2" title="Live">
+							<span
+								class="absolute inline-flex size-full animate-ping rounded-full bg-green-500 opacity-60"
+							></span>
+							<span class="relative inline-flex size-2 rounded-full bg-green-500"></span>
+						</span>
+					{/if}</span
+				>
 				<span class="text-2xl font-semibold tabular-nums">{kpi.value}</span>
 				{#if kpi.change !== null}
 					{@const better = kpi.lowerIsBetter ? kpi.change < 0 : kpi.change > 0}
@@ -241,125 +291,129 @@
 		{/each}
 	</div>
 
-	{#if report.totals.views === 0}
-		<p class="text-muted-foreground text-sm">
-			Noch keine Aufrufe in diesem Zeitraum. Angemeldete Nutzer werden nicht gezählt — zum Testen
-			die Website in einem privaten Fenster öffnen.
-		</p>
+	<Card.Root class="gap-3">
+		<Card.Header class="flex flex-wrap items-center justify-between gap-2">
+			<Card.Title class="text-base"
+				>Besuche und Aufrufe {GRANULARITY_TITLE[report.granularity]}</Card.Title
+			>
+			<span class="text-muted-foreground flex gap-4 text-xs">
+				<span class="flex items-center gap-1"
+					><span class="bg-primary/25 inline-block size-3 rounded-sm"></span> Aufrufe</span
+				>
+				<span class="flex items-center gap-1"
+					><span class="bg-primary inline-block size-3 rounded-sm"></span> Besuche</span
+				>
+			</span>
+		</Card.Header>
+		<Card.Content>
+			<BarChart bars={timelineBars} axis={timelineAxis} />
+		</Card.Content>
+	</Card.Root>
+
+	{#if report.path}
+		<div class="grid gap-4 lg:grid-cols-2">
+			<BreakdownList
+				title="Kommt von (Seite)"
+				rows={pathRows(report.cameFrom)}
+				empty="Nur Einstiege von außen"
+			/>
+			<BreakdownList
+				title="Geht weiter zu"
+				rows={pathRows(report.wentTo)}
+				empty="Kein weiterer Aufruf"
+			/>
+			<BreakdownList
+				title="Herkunft der Einstiege"
+				rows={report.channels}
+				format={(label) => CHANNELS[label] ?? label}
+			/>
+			<BreakdownList title="Verweisende Websites" rows={report.referrers} />
+		</div>
 	{:else}
 		<Card.Root class="gap-3">
-			<Card.Header class="flex flex-wrap items-center justify-between gap-2">
-				<Card.Title class="text-base">Verlauf</Card.Title>
-				<span class="text-muted-foreground flex gap-4 text-xs">
-					<span class="flex items-center gap-1"
-						><span class="bg-primary/25 inline-block size-3 rounded-sm"></span> Aufrufe</span
-					>
-					<span class="flex items-center gap-1"
-						><span class="bg-primary inline-block size-3 rounded-sm"></span> Besuche</span
-					>
-				</span>
+			<Card.Header>
+				<Card.Title class="text-base">Seiten</Card.Title>
 			</Card.Header>
-			<Card.Content>
-				<BarChart bars={timelineBars} axis={timelineAxis} />
+			<Card.Content class="overflow-x-auto">
+				<table class="w-full text-sm">
+					<thead class="text-muted-foreground text-left">
+						<tr>
+							<th class="py-1 pr-3 font-normal">Seite</th>
+							<th class="py-1 pr-3 text-right font-normal">Aufrufe</th>
+							<th class="py-1 pr-3 text-right font-normal">Besuche</th>
+							<th class="py-1 text-right font-normal">Ø Verweildauer</th>
+						</tr>
+					</thead>
+					<tbody>
+						{#each report.pages as page (page.path)}
+							<tr class="border-border border-t">
+								<td class="max-w-0 truncate py-1.5 pr-3">
+									<a href={pageHref(page.path)} class="hover:underline" title={page.path}
+										>{page.path}</a
+									>
+								</td>
+								<td class="py-1.5 pr-3 text-right tabular-nums">{formatNumber(page.views)}</td>
+								<td class="py-1.5 pr-3 text-right tabular-nums">{formatNumber(page.sessions)}</td>
+								<td class="py-1.5 text-right tabular-nums"
+									>{page.averageSeconds ? formatDuration(page.averageSeconds) : '–'}</td
+								>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
 			</Card.Content>
 		</Card.Root>
 
-		{#if report.path}
-			<div class="grid gap-4 lg:grid-cols-2">
+		<div class="grid gap-4 lg:grid-cols-2">
+			{#if live}
 				<BreakdownList
-					title="Kommt von (Seite)"
-					rows={pathRows(report.cameFrom)}
-					empty="Nur Einstiege von außen"
+					title="Gerade aktiv"
+					rows={pathRows(live.pages)}
+					empty="Gerade niemand auf der Website"
 				/>
-				<BreakdownList
-					title="Geht weiter zu"
-					rows={pathRows(report.wentTo)}
-					empty="Kein weiterer Aufruf"
-				/>
-				<BreakdownList
-					title="Herkunft der Einstiege"
-					rows={report.channels}
-					format={(label) => CHANNELS[label] ?? label}
-				/>
-				<BreakdownList title="Verweisende Websites" rows={report.referrers} />
-			</div>
-		{:else}
+			{/if}
+			<BreakdownList
+				title="Herkunft"
+				rows={report.channels}
+				format={(label) => CHANNELS[label] ?? label}
+			/>
+			<BreakdownList
+				title="Verweisende Websites"
+				rows={report.referrers}
+				empty="Keine Verweise von anderen Websites"
+			/>
+			<BreakdownList title="Einstiegsseiten" rows={pathRows(report.entryPages)} />
+			<BreakdownList title="Ausstiegsseiten" rows={pathRows(report.exitPages)} />
 			<Card.Root class="gap-3">
 				<Card.Header>
-					<Card.Title class="text-base">Seiten</Card.Title>
+					<Card.Title class="text-base">Häufige Wege</Card.Title>
 				</Card.Header>
-				<Card.Content class="overflow-x-auto">
-					<table class="w-full text-sm">
-						<thead class="text-muted-foreground text-left">
-							<tr>
-								<th class="py-1 pr-3 font-normal">Seite</th>
-								<th class="py-1 pr-3 text-right font-normal">Aufrufe</th>
-								<th class="py-1 pr-3 text-right font-normal">Besuche</th>
-								<th class="py-1 text-right font-normal">Ø Verweildauer</th>
-							</tr>
-						</thead>
-						<tbody>
-							{#each report.pages as page (page.path)}
-								<tr class="border-border border-t">
-									<td class="max-w-0 truncate py-1.5 pr-3">
-										<a href={pageHref(page.path)} class="hover:underline" title={page.path}
-											>{page.path}</a
-										>
-									</td>
-									<td class="py-1.5 pr-3 text-right tabular-nums">{formatNumber(page.views)}</td>
-									<td class="py-1.5 pr-3 text-right tabular-nums">{formatNumber(page.sessions)}</td>
-									<td class="py-1.5 text-right tabular-nums"
-										>{page.averageSeconds ? formatDuration(page.averageSeconds) : '–'}</td
-									>
-								</tr>
-							{/each}
-						</tbody>
-					</table>
+				<Card.Content class="space-y-1 text-sm">
+					{#each report.transitions as step (`${step.from}→${step.to}`)}
+						<div class="flex items-center justify-between gap-3 px-2 py-1">
+							<span class="min-w-0 truncate">
+								<a href={pageHref(step.from)} class="hover:underline">{step.from}</a>
+								<span class="text-muted-foreground">→</span>
+								<a href={pageHref(step.to)} class="hover:underline">{step.to}</a>
+							</span>
+							<span class="text-muted-foreground shrink-0 tabular-nums"
+								>{formatNumber(step.count)}</span
+							>
+						</div>
+					{:else}
+						<p class="text-muted-foreground px-2">Noch keine Wege über mehrere Seiten</p>
+					{/each}
 				</Card.Content>
 			</Card.Root>
+			<BreakdownList title="Besuchstiefe" rows={report.depth} format={depthLabel} />
+			{#if report.campaigns.length}
+				<BreakdownList title="Kampagnen (Quelle / Medium / Name)" rows={report.campaigns} />
+			{/if}
+		</div>
+	{/if}
 
-			<div class="grid gap-4 lg:grid-cols-2">
-				<BreakdownList
-					title="Herkunft"
-					rows={report.channels}
-					format={(label) => CHANNELS[label] ?? label}
-				/>
-				<BreakdownList
-					title="Verweisende Websites"
-					rows={report.referrers}
-					empty="Keine Verweise von anderen Websites"
-				/>
-				<BreakdownList title="Einstiegsseiten" rows={pathRows(report.entryPages)} />
-				<BreakdownList title="Ausstiegsseiten" rows={pathRows(report.exitPages)} />
-				<Card.Root class="gap-3">
-					<Card.Header>
-						<Card.Title class="text-base">Häufige Wege</Card.Title>
-					</Card.Header>
-					<Card.Content class="space-y-1 text-sm">
-						{#each report.transitions as step (`${step.from}→${step.to}`)}
-							<div class="flex items-center justify-between gap-3 px-2 py-1">
-								<span class="min-w-0 truncate">
-									<a href={pageHref(step.from)} class="hover:underline">{step.from}</a>
-									<span class="text-muted-foreground">→</span>
-									<a href={pageHref(step.to)} class="hover:underline">{step.to}</a>
-								</span>
-								<span class="text-muted-foreground shrink-0 tabular-nums"
-									>{formatNumber(step.count)}</span
-								>
-							</div>
-						{:else}
-							<p class="text-muted-foreground px-2">Noch keine Wege über mehrere Seiten</p>
-						{/each}
-					</Card.Content>
-				</Card.Root>
-				<BreakdownList title="Besuchstiefe" rows={report.depth} format={depthLabel} />
-				{#if report.campaigns.length}
-					<BreakdownList title="Kampagnen (Quelle / Medium / Name)" rows={report.campaigns} />
-				{/if}
-			</div>
-		{/if}
-
-		<div class="grid gap-4 lg:grid-cols-2">
+	<div class="grid gap-4 lg:grid-cols-2">
+		{#if report.granularity !== 'hour'}
 			<Card.Root class="gap-3">
 				<Card.Header>
 					<Card.Title class="text-base">Aufrufe nach Uhrzeit</Card.Title>
@@ -368,20 +422,14 @@
 					<BarChart bars={hourBars} axis={['0 Uhr', '6', '12', '18', '23 Uhr']} height="h-28" />
 				</Card.Content>
 			</Card.Root>
-			<BreakdownList
-				title="Geräte"
-				rows={report.devices}
-				format={(label) => DEVICES[label] ?? label}
-			/>
-			<BreakdownList title="Browser" rows={report.browsers} />
-			<BreakdownList title="Betriebssysteme" rows={report.systems} />
-			<BreakdownList title="Sprachen" rows={report.languages} format={languageLabel} />
-		</div>
-	{/if}
-
-	<p class="text-muted-foreground text-xs">
-		Datenschutzfreundlich erfasst: ohne Cookies und ohne Speicher im Browser, IP-Adressen werden
-		nicht gespeichert. Ein Besuch wird nur innerhalb eines Tages wiedererkannt. „Do Not Track“ wird
-		beachtet, angemeldete Nutzer werden nicht gezählt.
-	</p>
+		{/if}
+		<BreakdownList
+			title="Geräte"
+			rows={report.devices}
+			format={(label) => DEVICES[label] ?? label}
+		/>
+		<BreakdownList title="Browser" rows={report.browsers} />
+		<BreakdownList title="Betriebssysteme" rows={report.systems} />
+		<BreakdownList title="Sprachen" rows={report.languages} format={languageLabel} />
+	</div>
 </div>

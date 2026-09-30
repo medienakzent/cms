@@ -2,6 +2,20 @@
 
 Alle relevanten Änderungen. Format: Datum, Version, Abschnitte Neu / Geändert / Breaking.
 
+## 0.6.1 — 2026-09-30
+
+### Neu
+
+- **„Jetzt aktiv“ live**: Die Übersicht empfängt aktive Besuche und die gerade angesehenen Seiten per
+  Server-Sent Events (`GET /api/v1/analytics/live`, neuer Stub, nur angemeldet). SSE statt WebSocket,
+  weil es über eine normale Route läuft und keinen eigenen Server-Einstieg im Kundenprojekt braucht.
+- Zeitraum „Heute“; das Diagramm zeigt Besuche und Aufrufe je Stunde (Heute), Tag (bis 31 Tage),
+  Woche (bis 92 Tage) oder Monat (12 Monate).
+
+### Geändert
+
+- Hinweistexte unter der Statistik entfernt; leere Zeiträume zeigen die Auswertung mit Nullwerten.
+
 ## 0.6.0 — 2026-09-30
 
 ### Neu

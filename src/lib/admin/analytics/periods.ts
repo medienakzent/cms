@@ -1,4 +1,4 @@
-export const ANALYTICS_PERIODS = [7, 30, 90, 365] as const;
+export const ANALYTICS_PERIODS = [1, 7, 30, 90, 365] as const;
 
 /** Selected period in days from `?days=`, 30 by default. */
 export function periodOf(url: URL): number {

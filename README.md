@@ -287,6 +287,7 @@ sichtbare Verweildauer an `POST /api/analytics` (öffentlich, Rate-Limit je IP).
   Ausstiegsseiten, häufige Wege, Besuchstiefe, Uhrzeit, Geräte, Browser, Systeme, Sprachen) und pro
   Seite unter `/admin/analytics?path=/pfad` (Aufrufe, Verweildauer, Einstiege, Ausstiege, woher und
   wohin). Per API: `GET /api/v1/analytics?days=30&path=/pfad`, im Server-Code `cms.analytics.report()`.
+  „Jetzt aktiv“ kommt live per Server-Sent Events von `GET /api/v1/analytics/live`.
 - **Datenschutz:** Ein Besuch wird über einen Hash aus IP, User-Agent und einem Salt erkannt, der nur im
   Arbeitsspeicher liegt und um Mitternacht wechselt — Besuche lassen sich weder über Tage noch nach
   einem Neustart verknüpfen. Gespeichert werden zufällige Besuchs-IDs, Pfade ohne Query, der Host
