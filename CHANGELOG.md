@@ -2,6 +2,17 @@
 
 Alle relevanten Änderungen. Format: Datum, Version, Abschnitte Neu / Geändert / Breaking.
 
+## 0.8.6 — 2026-09-30
+
+### Behoben
+
+- **502 Bad Gateway hinter nginx** („upstream sent too big header") auf Admin-Seiten: SvelteKit kündigt
+  alle Stylesheets und Skripte einer Seite im `Link`-Header an, im Admin über 3,5 KB. Mit den Headern
+  von Passenger und Apache lag die Antwort über dem Standardpuffer von nginx (4 KB). Das CMS kürzt den
+  Header jetzt auf 2 KB; Stylesheets und Einstiegsskripte stehen vorne und bleiben erhalten.
+- Hinter nginx empfiehlt sich zusätzlich
+  `proxy_buffer_size 32k; proxy_buffers 8 32k; proxy_busy_buffers_size 64k;`.
+
 ## 0.8.5 — 2026-09-30
 
 ### Neu

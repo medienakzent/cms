@@ -19,6 +19,7 @@ export interface HandleOptions {
 export declare function createHandleError(options: {
     env: Env;
 }): HandleServerError;
+export declare function limitLinkHeader(response: Response): Response;
 /**
  * SvelteKit handle of the CMS: initialises the runtime, serves the auth endpoints,
  * loads the session, guards the admin and secures the API with token/session and rate limits.

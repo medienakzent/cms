@@ -38,6 +38,38 @@ function harden(response) {
     return response;
 }
 /**
+ * SvelteKit announces every stylesheet and script of a page in a `Link` header (on rendered pages
+ * only there, not in the HTML). Pages with many chunks (the admin) exceed nginx's default upstream
+ * header buffer of 4 KB, which answers 502 ("upstream sent too big header"). The header is cut
+ * after the entries that fit; SvelteKit lists stylesheets and entry scripts first, the browser
+ * finds the remaining chunks through the imports.
+ */
+const MAX_LINK_HEADER = 2048;
+export function limitLinkHeader(response) {
+    const link = response.headers.get('link');
+    if (!link || link.length <= MAX_LINK_HEADER)
+        return response;
+    const kept = [];
+    let length = 0;
+    for (const entry of link.split(/,\s*(?=<)/)) {
+        const added = entry.length + (kept.length ? 2 : 0);
+        if (length + added > MAX_LINK_HEADER)
+            break;
+        kept.push(entry);
+        length += added;
+    }
+    try {
+        if (kept.length)
+            response.headers.set('link', kept.join(', '));
+        else
+            response.headers.delete('link');
+    }
+    catch {
+        // Immutable headers (e.g. a proxied fetch response) carry no SvelteKit preloads.
+    }
+    return response;
+}
+/**
  * SvelteKit routes on the decoded path, so guards must decide on the decoded path
  * as well. Undecodable paths are rejected.
  */
@@ -178,7 +210,7 @@ export function createHandle(registry, options) {
                     }
                 });
             }
-            return harden(await resolve(event));
+            return harden(limitLinkHeader(await resolve(event)));
         }
         // Website pages of visitors carry the statistics script; editors and the preview are not counted.
         if (runtime.server.analytics.enabled &&
@@ -186,10 +218,10 @@ export function createHandle(registry, options) {
             event.request.method === 'GET' &&
             !pathname.startsWith('/api/') &&
             !pathname.endsWith('/cms-preview')) {
-            return resolve(event, {
+            return limitLinkHeader(await resolve(event, {
                 transformPageChunk: ({ html }) => html.replace('</body>', `${ANALYTICS_SCRIPT}</body>`)
-            });
+            }));
         }
-        return resolve(event);
+        return limitLinkHeader(await resolve(event));
     };
 }
