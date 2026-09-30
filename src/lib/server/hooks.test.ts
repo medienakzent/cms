@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createHandleError } from './hooks';
+import { createHandleError, limitLinkHeader } from './hooks';
 
 type ErrorInput = Parameters<ReturnType<typeof createHandleError>>[0];
 
@@ -30,5 +30,24 @@ describe('createHandleError', () => {
 		expect(handleError(input(new Error('Not found: /x'), 404))).toEqual({
 			message: 'Internal Error'
 		});
+	});
+});
+
+describe('limitLinkHeader', () => {
+	const entry = (index: number) =>
+		`</_app/immutable/chunks/chunk-${String(index).padStart(3, '0')}.js>; rel="modulepreload"; nopush`;
+
+	it('keeps short headers untouched', () => {
+		const response = new Response(null, { headers: { link: entry(1) } });
+		expect(limitLinkHeader(response).headers.get('link')).toBe(entry(1));
+	});
+
+	it('cuts long headers after the entries that fit, in order', () => {
+		const entries = Array.from({ length: 80 }, (_, index) => entry(index));
+		const response = limitLinkHeader(new Response(null, { headers: { link: entries.join(', ') } }));
+		const link = response.headers.get('link') ?? '';
+		expect(link.length).toBeLessThanOrEqual(2048);
+		expect(link.startsWith(entries[0])).toBe(true);
+		expect(entries.slice(0, link.split(', ').length).join(', ')).toBe(link);
 	});
 });

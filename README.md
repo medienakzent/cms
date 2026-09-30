@@ -345,6 +345,10 @@ sichtbare Verweildauer an `POST /api/analytics` (öffentlich, Rate-Limit je IP).
 - Fehlersuche auf Staging: `DEBUG_ERRORS=1` zeigt Fehlermeldung und Stacktrace auf der 500-Seite im
   Browser (nie live setzen). Sonst stehen Fehler nur auf stderr, unter Plesk/Passenger im globalen
   Apache-Log (`/var/log/apache2/error.log`), nicht im Domain-Log.
+- Hinter nginx (Plesk) als zusätzliche nginx-Direktiven
+  `proxy_buffer_size 32k; proxy_buffers 8 32k; proxy_busy_buffers_size 64k;` setzen, sonst drohen
+  502 bei großen Antwort-Headern. Plesk-Node-Version, `.node-version` und der Node für `npm ci`
+  müssen dieselbe Hauptversion haben (Native Module wie better-sqlite3).
 - Healthcheck: `GET /api/health` (200/503). Sitemap: `/sitemap.xml`, KI-Überblick: `/llms.txt`,
   `static/robots.txt` im Projekt anpassen.
 - Volumes sichern: `/storage` (Inhalte, Medien, Historie, Einsendungen) und `/data` (Index, Auth).
