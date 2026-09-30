@@ -16,7 +16,7 @@ if [ ! -f "$KEY" ]; then
 	ssh-keygen -t ed25519 -N '' -C "${GIT_SSH_KEY_COMMENT:-cms-dev}" -f "$KEY"
 	echo '────────────────────────────────────────────────────────────────'
 	echo '  Neuer SSH-Key für den Dev-Container erzeugt.'
-	echo '  Diesen Public Key in GitHub hinterlegen (Zugriff auf compdataitgmh/ui):'
+	echo '  Diesen Public Key in GitHub hinterlegen (Zugriff auf medienakzent/ui):'
 	echo '────────────────────────────────────────────────────────────────'
 	cat "${KEY}.pub"
 	echo '────────────────────────────────────────────────────────────────'
@@ -49,7 +49,7 @@ if [ -f package-lock.json ]; then
 		if npm ci; then
 			echo "$LOCK_SUM" >"$STAMP"
 		else
-			echo '!! npm ci fehlgeschlagen — prüfen: ssh -T git@github.com (Zugriff auf compdataitgmh/ui?)' >&2
+			echo '!! npm ci fehlgeschlagen — prüfen: ssh -T git@github.com (Zugriff auf medienakzent/ui?)' >&2
 		fi
 	fi
 else

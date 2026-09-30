@@ -18,7 +18,7 @@
 		"@medienakzent/cms": "github:medienakzent/cms#v__CMS_VERSION__",
 		"better-sqlite3": "~12.8.0",
 		"sharp": "^0.35.5",
-		"@compdata/ui": "github:compdataitgmh/ui#v0.1.5",
+		"@compdata/ui": "github:medienakzent/ui#v0.1.5",
 		"@lucide/svelte": "^0.561.0",
 		"bits-ui": "^2.14.4",
 		"clsx": "^2.1.1",

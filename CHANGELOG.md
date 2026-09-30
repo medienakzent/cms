@@ -2,6 +2,14 @@
 
 Alle relevanten Änderungen. Format: Datum, Version, Abschnitte Neu / Geändert / Breaking.
 
+## 0.8.2 — 2026-09-30
+
+### Geändert
+
+- `@compdata/ui` kommt jetzt aus `github:medienakzent/ui` (Spiegel von `compdataitgmh/ui`, gleiche Commits
+  und Tags). Kundenprojekte stellen die Zeile in ihrer `package.json` um; der Deploy-Key braucht
+  Lesezugriff auf `medienakzent/ui` statt `compdataitgmh/ui`.
+
 ## 0.8.1 — 2026-09-30
 
 ### Behoben
