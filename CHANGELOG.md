@@ -2,6 +2,18 @@
 
 Alle relevanten Änderungen. Format: Datum, Version, Abschnitte Neu / Geändert / Breaking.
 
+## 0.8.4 — 2026-09-30
+
+### Behoben
+
+- **`release/v0.8.3` nicht verwenden:** Das Release trug noch `postinstall`. npm bereitet eine
+  Git-Abhängigkeit bei jedem Installationsskript vor (komplette Installation samt Peers in einem
+  temporären Ordner) und scheiterte dabei an `@compdata/ui@*` aus der öffentlichen Registry.
+  Releases haben jetzt gar keine npm-Skripte mehr.
+- Den Stub-Sync übernimmt das Projekt selbst: `"prepare": "cms sync --quiet && (svelte-kit sync || true)"`
+  in der `package.json` (Vorlage angepasst). `cms check` meldet Projekte ohne `cms sync` im
+  `prepare`.
+
 ## 0.8.3 — 2026-09-30
 
 ### Geändert

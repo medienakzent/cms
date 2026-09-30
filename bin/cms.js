@@ -217,6 +217,14 @@ function sourceDependencies(root) {
 	}).map((name) => `${name} (${dependencies[name]})`);
 }
 
+/** Releases carry no install scripts, so the project itself must sync the stubs on install. */
+function syncsOnInstall(root) {
+	const projectFile = join(root, 'package.json');
+	if (!existsSync(projectFile)) return true;
+	const scripts = JSON.parse(readFileSync(projectFile, 'utf8')).scripts ?? {};
+	return [scripts.prepare, scripts.postinstall].some((script) => script?.includes('cms sync'));
+}
+
 function warnNativeDependencies(missing) {
 	console.warn(
 		`package.json: unter "dependencies" fehlt ${missing.join(', ')} — sonst stürzt der Produktions-Build (node build) ab. Eintragen, dann npm install.`
@@ -229,6 +237,12 @@ function check(root) {
 	const missing = missingNativeDependencies(root);
 	if (missing.length) {
 		warnNativeDependencies(missing);
+		problems++;
+	}
+	if (root !== PACKAGE_DIR && !syncsOnInstall(root)) {
+		console.warn(
+			'package.json: "prepare" ruft "cms sync --quiet" nicht auf — die vorgebauten Releases bringen kein postinstall mit, Stubs würden nach Updates nicht nachgezogen. Vorlage: "prepare": "cms sync --quiet && (svelte-kit sync || true)".'
+		);
 		problems++;
 	}
 	const unbuilt = sourceDependencies(root);
