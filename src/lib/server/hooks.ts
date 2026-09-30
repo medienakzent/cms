@@ -1,6 +1,6 @@
 import { timingSafeEqual } from 'node:crypto';
 import { jsonError } from './api';
-import type { Handle } from '@sveltejs/kit';
+import type { Handle, HandleServerError } from '@sveltejs/kit';
 import type { Registry } from '../registry';
 import { getAuth, getSessionUser, hasPasswordLogin, type SessionUser } from './auth';
 import type { Env } from './env';
@@ -17,6 +17,23 @@ export interface HandleOptions {
 	building?: boolean;
 	/** Admin path (default `/admin`). */
 	adminPath?: string;
+}
+
+/**
+ * SvelteKit error hook: logs unexpected errors and, only with DEBUG_ERRORS=1 (staging), shows
+ * message and stack trace on the error page. Production pages keep the generic message.
+ * In the customer project (hooks.server.ts):
+ *
+ *   export const handleError = createHandleError({ env });
+ */
+export function createHandleError(options: { env: Env }): HandleServerError {
+	const debug = options.env.DEBUG_ERRORS === '1';
+	return ({ error, status, message }) => {
+		if (status === 404) return { message };
+		console.error(error);
+		if (!debug) return { message };
+		return { message: error instanceof Error ? (error.stack ?? error.message) : String(error) };
+	};
 }
 
 /** Constant-time comparison for secrets. */

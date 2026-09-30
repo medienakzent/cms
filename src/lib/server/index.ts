@@ -29,7 +29,7 @@ export type { MailSubmission, MailMeta } from './mail';
 export type { MailTransport, MailEnvelope } from './mail/transport';
 export { api, actorOf, requireAdmin, readJsonBody, parseDocumentBody } from './api';
 export { adminCollections, adminBlocks, toAdminCollection, toAdminBlock } from './admin';
-export { createHandle } from './hooks';
+export { createHandle, createHandleError } from './hooks';
 export { captchaClientConfig, verifyCaptcha } from './captcha';
 export { sendSystemMail } from './mail';
 export { apiKeys } from './api-keys';

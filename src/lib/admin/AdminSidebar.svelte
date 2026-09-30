@@ -44,7 +44,14 @@
 	]);
 
 	const navSecondary = $derived<ShellNavItem[]>([
-		{ id: 'site', href: '/', label: 'Website', icon: LayersIcon, external: true },
+		{
+			id: 'site',
+			href: '/',
+			label: 'Website',
+			icon: LayersIcon,
+			external: true,
+			onClick: openWebsite
+		},
 		...(twoFactor
 			? [{ id: 'security', href: '/admin/security', label: 'Sicherheit', icon: ShieldCheckIcon }]
 			: []),
@@ -60,6 +67,15 @@
 				]
 			: [])
 	]);
+
+	/**
+	 * The secondary navigation renders plain links; a client-side navigation from the admin into
+	 * the website would keep the admin stylesheet and dark mode. A new tab loads the site cleanly.
+	 */
+	function openWebsite(event?: MouseEvent) {
+		event?.preventDefault();
+		window.open('/', '_blank', 'noopener');
+	}
 
 	async function reindex() {
 		try {
