@@ -23,9 +23,6 @@ import { join, resolve } from 'node:path';
 
 const BRANCH = 'releases';
 const EXTRA_FILES = ['README.md', 'LICENSE', 'CHANGELOG.md'];
-/** Scripts that must still run when a project installs the release. */
-const INSTALL_SCRIPTS = ['preinstall', 'install', 'postinstall'];
-
 const argumentsList = process.argv.slice(2);
 const push = argumentsList.includes('--push');
 const repository = resolve(argumentsList.find((argument) => !argument.startsWith('--')) ?? '.');
@@ -74,10 +71,9 @@ try {
 
 	const releaseManifest = { ...manifest };
 	delete releaseManifest.devDependencies;
-	releaseManifest.scripts = Object.fromEntries(
-		Object.entries(manifest.scripts ?? {}).filter(([name]) => INSTALL_SCRIPTS.includes(name))
-	);
-	if (!Object.keys(releaseManifest.scripts).length) delete releaseManifest.scripts;
+	// No scripts at all: npm prepares a git dependency (full install including peers in a temp
+	// directory) as soon as it has prepare, build or any install script, postinstall included.
+	delete releaseManifest.scripts;
 	writeFileSync(join(staging, 'package.json'), `${JSON.stringify(releaseManifest, null, '\t')}\n`);
 
 	// Separate index and work tree: the checkout of the repository stays untouched.
