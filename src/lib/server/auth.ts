@@ -5,12 +5,12 @@
  */
 import { betterAuth } from 'better-auth';
 import { APIError } from 'better-auth/api';
-import { admin } from 'better-auth/plugins';
+import { admin, twoFactor } from 'better-auth/plugins';
 import { createAccessControl } from 'better-auth/plugins/access';
 import { adminAc, defaultStatements } from 'better-auth/plugins/admin/access';
 import { sendSystemMail } from './mail';
 import { getDb } from './db';
-import { serverConfig } from './runtime';
+import { getRuntime, serverConfig } from './runtime';
 
 export type Role = 'admin' | 'editor';
 
@@ -30,6 +30,8 @@ export interface SessionUser {
 	role: Role;
 	/** true for API keys (no browser account) */
 	api?: boolean;
+	/** Second factor set up (authenticator app). */
+	twoFactorEnabled?: boolean;
 }
 
 type AuthDatabase = NonNullable<Parameters<typeof betterAuth>[0]['database']>;
@@ -81,7 +83,11 @@ function createAuth(database: AuthDatabase, countUsers: () => Promise<number>) {
 			},
 			resetPasswordTokenExpiresIn: 3600
 		},
-		plugins: [admin({ ac: accessControl, roles, defaultRole: 'editor', adminRoles: ['admin'] })],
+		plugins: [
+			admin({ ac: accessControl, roles, defaultRole: 'editor', adminRoles: ['admin'] }),
+			// Only password logins ask for the second factor; OAuth providers bring their own.
+			...(config.twoFactor === 'off' ? [] : [twoFactor({ issuer: getRuntime().config.site.name })])
+		],
 		socialProviders,
 		databaseHooks: {
 			user: {
@@ -126,13 +132,15 @@ export function toSessionUser(user: {
 	email: string;
 	image?: string | null;
 	role?: string | null;
+	twoFactorEnabled?: boolean | null;
 }): SessionUser {
 	return {
 		id: user.id,
 		name: user.name || user.email,
 		email: user.email,
 		image: user.image ?? '',
-		role: user.role === 'admin' ? 'admin' : 'editor'
+		role: user.role === 'admin' ? 'admin' : 'editor',
+		twoFactorEnabled: !!user.twoFactorEnabled
 	};
 }
 
@@ -142,12 +150,31 @@ export async function getSessionUser(headers: Headers): Promise<SessionUser | nu
 	return session ? toSessionUser(session.user) : null;
 }
 
+/** Whether the user can sign in with a password (only those logins ask for a second factor). */
+export async function hasPasswordLogin(userId: string): Promise<boolean> {
+	const context = await (await getAuth()).$context;
+	const accounts = await context.internalAdapter.findAccounts(userId);
+	return accounts.some((account) => account.providerId === 'credential');
+}
+
+/** Removes the second factor of a user, e.g. after a lost phone; only for administrators. */
+export async function resetTwoFactor(userId: string): Promise<void> {
+	if (serverConfig().twoFactor === 'off') return;
+	const context = await (await getAuth()).$context;
+	await context.adapter.deleteMany({
+		model: 'twoFactor',
+		where: [{ field: 'userId', value: userId }]
+	});
+	await context.internalAdapter.updateUser(userId, { twoFactorEnabled: false });
+}
+
 /** Available login methods, for the login page. */
 export function authOptions() {
 	const config = serverConfig();
 	const { oauth } = config;
 	return {
 		signup: config.allowSignup,
+		twoFactor: config.twoFactor,
 		providers: [
 			oauth.github.clientId ? 'github' : null,
 			oauth.google.clientId ? 'google' : null,

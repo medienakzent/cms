@@ -1,6 +1,6 @@
 import type { RequestEvent } from '@sveltejs/kit';
 import { api, readJsonBody, requireSessionAdmin } from '../../server/api';
-import { getAuth } from '../../server/auth';
+import { getAuth, resetTwoFactor } from '../../server/auth';
 import { CmsError } from '../../server/errors';
 import { isEmail } from '../../server/mail/transport';
 
@@ -29,12 +29,12 @@ export const POST = (event: RequestEvent) =>
 		return { id: created.user.id };
 	});
 
-/** PATCH /api/v1/users/<id>  { role?, password?, name? } */
+/** PATCH /api/v1/users/<id>  { role?, password?, name?, banned?, twoFactor: false } */
 export const PATCH_ITEM = (event: RequestEvent) =>
 	api(async () => {
 		requireSessionAdmin(event);
 		const id = event.params.id ?? '';
-		const body = await readJsonBody(event, ['role', 'password', 'name', 'banned']);
+		const body = await readJsonBody(event, ['role', 'password', 'name', 'banned', 'twoFactor']);
 		const auth = await getAuth();
 		if (body.role !== undefined) {
 			if (typeof body.role !== 'string' || !ROLES.includes(body.role))
@@ -71,6 +71,11 @@ export const PATCH_ITEM = (event: RequestEvent) =>
 				body: { userId: id, data: { name: body.name.trim() } },
 				headers: event.request.headers
 			});
+		}
+		if (body.twoFactor !== undefined) {
+			// Only switching off is possible here; setting up needs the user and the authenticator app.
+			if (body.twoFactor !== false) throw new CmsError(400, 'twoFactor: nur false (zurücksetzen)');
+			await resetTwoFactor(id);
 		}
 		return { ok: true };
 	});

@@ -334,6 +334,11 @@ sichtbare Verweildauer an `POST /api/analytics` (öffentlich, Rate-Limit je IP).
   editor, `Authorization: Bearer <schlüssel>` auf `/api/v1`. Der Schlüssel ist nur beim Anlegen sichtbar
   und jederzeit widerrufbar. `API_TOKEN` in der Umgebung ist nur ein Bootstrap-Token (z. B. für den Seed).
 - „Passwort vergessen" braucht einen funktionierenden Mail-Transport (`MAIL_TRANSPORT=smtp`).
+- Zwei-Faktor-Anmeldung für Passwort-Konten über `TWO_FACTOR` (`off` Default, `optional`, `required`):
+  Einrichtung unter „Sicherheit" (`/admin/security`) per QR-Code und Authenticator-App, dazu zehn
+  Backup-Codes; beim Login folgt nach dem Passwort der Code, das Gerät kann 30 Tage vertraut werden.
+  Bei `required` sind Admin und `/api/v1` erst nach der Einrichtung erreichbar. Admins setzen die
+  2FA eines Nutzers unter „Nutzer" zurück (verlorenes Handy). OAuth-Konten verwaltet der Anbieter.
 - Healthcheck: `GET /api/health` (200/503). Sitemap: `/sitemap.xml`, KI-Überblick: `/llms.txt`,
   `static/robots.txt` im Projekt anpassen.
 - Volumes sichern: `/storage` (Inhalte, Medien, Historie, Einsendungen) und `/data` (Index, Auth).

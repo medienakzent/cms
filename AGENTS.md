@@ -95,6 +95,8 @@ Konfiguration, Website-Layout) und laufen als ein Node-Prozess in einem Containe
   `/sitemap.xml`, `/llms.txt` und `/media/…`; `/cms-preview` (Vorschau-Frame im Seitenlayout) nur
   angemeldet, sonst 404. Neue öffentliche Routen sind eine bewusste Entscheidung
   mit Rate-Limit und ohne Personendaten.
+- Zwei-Faktor-Anmeldung (`TWO_FACTOR`) läuft über das Better-Auth-Plugin `twoFactor`; die Pflicht bei
+  `required` prüft der Hook (`secondFactorMissing`), nie nur die Oberfläche.
 - Nutzer- und Schlüsselverwaltung nur mit Admin-Sitzung, nie per API-Zugang (`locals.user.api`).
   API-Zugänge tragen dieselben Rollen wie Nutzer; Rechteprüfungen gelten für beide gleich.
 - Besucher-Eingaben (Formulare) werden escaped; Pfade aus URLs laufen durch `isValidSlug`, Tokens

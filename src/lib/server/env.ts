@@ -20,6 +20,15 @@ function mailTransport(value: string | undefined): MailTransportName {
 	);
 }
 
+const TWO_FACTOR_MODES = ['off', 'optional', 'required'] as const;
+export type TwoFactorMode = (typeof TWO_FACTOR_MODES)[number];
+
+function twoFactorMode(value: string | undefined): TwoFactorMode {
+	if (!value) return 'off';
+	if ((TWO_FACTOR_MODES as readonly string[]).includes(value)) return value as TwoFactorMode;
+	throw new Error(`TWO_FACTOR „${value}" ist unbekannt. Erlaubt: ${TWO_FACTOR_MODES.join(', ')}`);
+}
+
 function timeZone(value: string | undefined): string {
 	const zone = value || 'Europe/Berlin';
 	try {
@@ -47,6 +56,8 @@ export function buildServerConfig(env: Env) {
 		databaseUrl: env.DATABASE_URL || 'sqlite:cms.db',
 		authSecret: env.AUTH_SECRET || '',
 		allowSignup: env.ALLOW_SIGNUP === '1',
+		/** Second factor for password logins: off | optional (each user decides) | required. */
+		twoFactor: twoFactorMode(env.TWO_FACTOR),
 		trustedOrigins: list(env.TRUSTED_ORIGINS).map((origin) => origin.replace(/\/+$/, '')),
 		apiToken: env.API_TOKEN || '',
 		maxUploadBytes: positiveNumber(env.MAX_UPLOAD_MB, 200) * 1024 * 1024,

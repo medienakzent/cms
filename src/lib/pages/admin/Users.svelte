@@ -12,6 +12,7 @@
 	import BanIcon from '@lucide/svelte/icons/ban';
 	import KeyIcon from '@lucide/svelte/icons/key-round';
 	import TrashIcon from '@lucide/svelte/icons/trash-2';
+	import ShieldOffIcon from '@lucide/svelte/icons/shield-off';
 	import { toast } from 'svelte-sonner';
 	import { apiFetch } from '../../admin/api-client';
 	import { ADMIN_ROLES } from '../../admin/roles';
@@ -26,6 +27,7 @@
 	let passwordUser = $state<AdminUser | null>(null);
 	let newPassword = $state('');
 	let keyToRevoke = $state<{ id: string; name: string } | null>(null);
+	let twoFactorUser = $state<AdminUser | null>(null);
 
 	async function run(action: () => Promise<unknown>, successMessage: string) {
 		busy = true;
@@ -65,6 +67,15 @@
 			toDelete = null;
 		}, 'Konto entfernt');
 
+	const resetSecondFactor = () =>
+		run(async () => {
+			await apiFetch(`/api/v1/users/${twoFactorUser!.id}`, {
+				method: 'PATCH',
+				json: { twoFactor: false }
+			});
+			twoFactorUser = null;
+		}, 'Zwei-Faktor-Anmeldung zurückgesetzt');
+
 	const revokeKey = () =>
 		run(async () => {
 			await apiFetch(`/api/v1/api-keys/${keyToRevoke!.id}`, { method: 'DELETE' });
@@ -96,6 +107,11 @@
 					{user.name}
 					{#if user.id === data.user?.id}<Badge variant="id" class="ms-2">Sie</Badge>{/if}
 					{#if user.banned}<Badge variant="signal" class="ms-2">gesperrt</Badge>{/if}
+					{#if data.twoFactor !== 'off' && user.twoFactorEnabled}<Badge
+							variant="positive"
+							class="ms-2"
+							title="Zwei-Faktor-Anmeldung aktiv">2FA</Badge
+						>{/if}
 				</Table.TableCell>
 				<Table.TableCell>{user.email}</Table.TableCell>
 				<Table.TableCell>
@@ -114,6 +130,18 @@
 					<Button size="sm" variant="ghost" onclick={() => (passwordUser = user)} disabled={busy}
 						><KeyIcon aria-hidden="true" /> Passwort</Button
 					>
+					{#if data.twoFactor !== 'off' && user.twoFactorEnabled}
+						<Button
+							size="sm"
+							variant="ghost"
+							onclick={() => (twoFactorUser = user)}
+							disabled={busy}
+							title="Zwei-Faktor-Anmeldung zurücksetzen"
+							aria-label="Zwei-Faktor-Anmeldung zurücksetzen"
+						>
+							<ShieldOffIcon aria-hidden="true" />
+						</Button>
+					{/if}
 					<Button
 						size="sm"
 						variant="ghost"
@@ -250,3 +278,15 @@
 		/>
 	</div>
 </ConfirmDialog>
+
+<ConfirmDialog
+	open={twoFactorUser !== null}
+	title="Zwei-Faktor-Anmeldung zurücksetzen?"
+	body={`${twoFactorUser?.email ?? ''} meldet sich danach nur mit Passwort an und kann die Authenticator-App neu einrichten.`}
+	confirmLabel="Zurücksetzen"
+	cancelLabel="Abbrechen"
+	destructive
+	loading={busy}
+	onConfirm={resetSecondFactor}
+	onCancel={() => (twoFactorUser = null)}
+/>

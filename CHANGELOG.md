@@ -2,6 +2,19 @@
 
 Alle relevanten Änderungen. Format: Datum, Version, Abschnitte Neu / Geändert / Breaking.
 
+## 0.8.0 — 2026-09-30
+
+### Neu
+
+- **Zwei-Faktor-Anmeldung** für Passwort-Konten, über `TWO_FACTOR` in `.env` schaltbar: `off` (Default,
+  keine Änderung), `optional` (jeder Nutzer richtet sie unter „Sicherheit" ein) oder `required`
+  (Admin und `/api/v1` erst nach der Einrichtung). Authenticator-App per QR-Code, zehn Backup-Codes,
+  „Diesem Gerät 30 Tage vertrauen". Admins sehen den Status in der Nutzerliste und können die 2FA
+  eines Nutzers zurücksetzen (`PATCH /api/v1/users/<id>` mit `{ "twoFactor": false }`).
+- Neuer Stub `src/routes/admin/security`. Better Auth legt die Tabelle `twoFactor` und die Spalte
+  `twoFactorEnabled` beim Start selbst an, sobald `TWO_FACTOR` nicht `off` ist.
+- Neue Abhängigkeit `uqr` (QR-Code im Browser, ohne weitere Abhängigkeiten).
+
 ## 0.7.0 — 2026-09-30
 
 ### Neu

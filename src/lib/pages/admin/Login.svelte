@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { authClient } from '../../admin/auth-client';
+	import { authClient, authErrorMessage } from '../../admin/auth-client';
 	import type { AdminLayoutData } from '../../routes/admin/layout';
 	import type { load } from '../../routes/admin/login';
 	import { Button } from '@compdata/ui/button';
@@ -10,7 +10,9 @@
 
 	let { data }: { data: AdminLayoutData & Awaited<ReturnType<typeof load>> } = $props();
 
-	let mode = $state<'login' | 'signup' | 'forgot'>('login');
+	let mode = $state<'login' | 'signup' | 'forgot' | 'totp' | 'backup'>('login');
+	let code = $state('');
+	let trustDevice = $state(false);
 	let info = $state('');
 	let email = $state('');
 	let password = $state('');
@@ -38,13 +40,33 @@
 			else info = 'Falls ein Konto existiert, ist eine E-Mail mit dem Link unterwegs.';
 			return;
 		}
+		if (mode === 'totp' || mode === 'backup') {
+			const verification =
+				mode === 'totp'
+					? await authClient.twoFactor.verifyTotp({ code: code.replace(/\s/g, ''), trustDevice })
+					: await authClient.twoFactor.verifyBackupCode({ code: code.trim(), trustDevice });
+			busy = false;
+			if (verification.error) {
+				error = authErrorMessage(verification.error, 'Code konnte nicht geprüft werden');
+				if (verification.error.code === 'INVALID_TWO_FACTOR_COOKIE') mode = 'login';
+				return;
+			}
+			window.location.href = data.returnTo;
+			return;
+		}
 		const result =
 			mode === 'signup'
 				? await authClient.signUp.email({ email, password, name: name || email })
 				: await authClient.signIn.email({ email, password });
 		busy = false;
 		if (result.error) {
-			error = result.error.message ?? 'Anmeldung fehlgeschlagen';
+			error = authErrorMessage(result.error, 'Anmeldung fehlgeschlagen');
+			return;
+		}
+		// Accounts with a second factor get no session yet, only the request for the code.
+		if ((result.data as { twoFactorRedirect?: boolean } | null)?.twoFactorRedirect) {
+			mode = 'totp';
+			code = '';
 			return;
 		}
 		window.location.href = data.returnTo;
@@ -64,11 +86,15 @@
 					? 'Konto anlegen'
 					: mode === 'forgot'
 						? 'Passwort vergessen'
-						: 'Anmelden'}</Card.Description
+						: mode === 'totp'
+							? 'Code aus der Authenticator-App eingeben'
+							: mode === 'backup'
+								? 'Einen der Backup-Codes eingeben'
+								: 'Anmelden'}</Card.Description
 			>
 		</Card.Header>
 		<Card.Content class="space-y-4">
-			{#if data.auth.providers.length}
+			{#if data.auth.providers.length && mode !== 'totp' && mode !== 'backup'}
 				<div class="grid gap-2">
 					{#each data.auth.providers as provider (provider)}
 						<Button variant="outline" onclick={() => social(provider)}
@@ -82,21 +108,39 @@
 				</div>
 			{/if}
 			<form onsubmit={submit} class="space-y-3">
+				{#if mode === 'totp' || mode === 'backup'}
+					<div class="space-y-1">
+						<Label for="code">{mode === 'totp' ? 'Code' : 'Backup-Code'}</Label><Input
+							id="code"
+							bind:value={code}
+							required
+							autocomplete="one-time-code"
+							inputmode={mode === 'totp' ? 'numeric' : 'text'}
+							placeholder={mode === 'totp' ? '123456' : ''}
+						/>
+					</div>
+					<label class="flex items-center gap-2 text-sm">
+						<input type="checkbox" bind:checked={trustDevice} class="accent-primary size-4" />
+						Diesem Gerät 30 Tage vertrauen
+					</label>
+				{/if}
 				{#if mode === 'signup'}
 					<div class="space-y-1">
 						<Label for="name">Name</Label><Input id="name" bind:value={name} autocomplete="name" />
 					</div>
 				{/if}
-				<div class="space-y-1">
-					<Label for="email">E-Mail</Label><Input
-						id="email"
-						type="email"
-						bind:value={email}
-						required
-						autocomplete="email"
-					/>
-				</div>
-				{#if mode !== 'forgot'}
+				{#if mode !== 'totp' && mode !== 'backup'}
+					<div class="space-y-1">
+						<Label for="email">E-Mail</Label><Input
+							id="email"
+							type="email"
+							bind:value={email}
+							required
+							autocomplete="email"
+						/>
+					</div>
+				{/if}
+				{#if mode === 'login' || mode === 'signup'}
 					<div class="space-y-1">
 						<Label for="password">Passwort</Label><Input
 							id="password"
@@ -115,11 +159,32 @@
 						? 'Konto anlegen'
 						: mode === 'forgot'
 							? 'Link anfordern'
-							: 'Anmelden'}</Button
+							: mode === 'totp' || mode === 'backup'
+								? 'Bestätigen'
+								: 'Anmelden'}</Button
 				>
 			</form>
 			<div class="flex justify-between text-xs">
-				{#if mode === 'forgot'}
+				{#if mode === 'totp' || mode === 'backup'}
+					<button
+						type="button"
+						class="text-muted-foreground underline"
+						onclick={() => {
+							mode = mode === 'totp' ? 'backup' : 'totp';
+							code = '';
+							error = '';
+						}}>{mode === 'totp' ? 'Backup-Code verwenden' : 'Code aus der App verwenden'}</button
+					>
+					<button
+						type="button"
+						class="text-muted-foreground underline"
+						onclick={() => {
+							mode = 'login';
+							code = '';
+							error = '';
+						}}>Zurück</button
+					>
+				{:else if mode === 'forgot'}
 					<button
 						type="button"
 						class="text-muted-foreground underline"
@@ -140,7 +205,7 @@
 					>
 				{/if}
 			</div>
-			{#if data.signup && mode !== 'forgot'}
+			{#if data.signup && (mode === 'login' || mode === 'signup')}
 				<button
 					type="button"
 					class="text-muted-foreground w-full text-center text-xs underline"

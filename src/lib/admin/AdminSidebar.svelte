@@ -9,6 +9,7 @@
 	import UsersIcon from '@lucide/svelte/icons/users';
 	import RefreshCwIcon from '@lucide/svelte/icons/refresh-cw';
 	import LayersIcon from '@lucide/svelte/icons/layers';
+	import ShieldCheckIcon from '@lucide/svelte/icons/shield-check';
 	import { authClient } from './auth-client';
 	import { apiFetch } from './api-client';
 	import { formatCount } from '../format';
@@ -20,9 +21,11 @@
 		user: { name: string; email: string; image: string; role: string };
 		siteName: string;
 		favicon: string;
+		/** Show the page for the second factor (TWO_FACTOR not off). */
+		twoFactor: boolean;
 	};
 
-	let { collections, pathname, user, siteName, favicon }: Props = $props();
+	let { collections, pathname, user, siteName, favicon, twoFactor }: Props = $props();
 	let faviconFailed = $state(false);
 
 	const navMain = $derived<ShellNavItem[]>([
@@ -42,6 +45,9 @@
 
 	const navSecondary = $derived<ShellNavItem[]>([
 		{ id: 'site', href: '/', label: 'Website', icon: LayersIcon, external: true },
+		...(twoFactor
+			? [{ id: 'security', href: '/admin/security', label: 'Sicherheit', icon: ShieldCheckIcon }]
+			: []),
 		...(user.role === 'admin'
 			? [
 					{

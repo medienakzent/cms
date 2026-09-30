@@ -2,7 +2,7 @@ import { timingSafeEqual } from 'node:crypto';
 import { jsonError } from './api';
 import type { Handle } from '@sveltejs/kit';
 import type { Registry } from '../registry';
-import { getAuth, getSessionUser } from './auth';
+import { getAuth, getSessionUser, hasPasswordLogin, type SessionUser } from './auth';
 import type { Env } from './env';
 import { ensureReady } from './init';
 import { createRateLimiter } from './rate-limit';
@@ -65,6 +65,13 @@ export function createHandle(registry: Registry, options: HandleOptions): Handle
 		max: rateLimit.analyticsPerMinute
 	});
 	const adminPath = options.adminPath ?? '/admin';
+
+	/** TWO_FACTOR=required: password accounts without a second factor may only set it up. */
+	async function secondFactorMissing(user: SessionUser | null): Promise<boolean> {
+		if (runtime.server.twoFactor !== 'required' || !user || user.api || user.twoFactorEnabled)
+			return false;
+		return hasPasswordLogin(user.id);
+	}
 
 	return async ({ event, resolve }) => {
 		if (options.building) return resolve(event);
@@ -145,6 +152,12 @@ export function createHandle(registry: Registry, options: HandleOptions): Handle
 					'retry-after': String(result.retryAfter)
 				});
 			if (!user) return jsonError(401, 'Nicht angemeldet', rateLimitHeaders);
+			if (await secondFactorMissing(user))
+				return jsonError(
+					403,
+					'Bitte zuerst die Zwei-Faktor-Anmeldung einrichten',
+					rateLimitHeaders
+				);
 			const response = harden(await resolve(event));
 			for (const [name, value] of Object.entries(rateLimitHeaders))
 				response.headers.set(name, value);
@@ -153,6 +166,15 @@ export function createHandle(registry: Registry, options: HandleOptions): Handle
 
 		if (pathname === adminPath || pathname.startsWith(`${adminPath}/`)) {
 			const open = pathname === `${adminPath}/login` || pathname === `${adminPath}/reset`;
+			if (
+				!open &&
+				pathname !== `${adminPath}/security` &&
+				(await secondFactorMissing(event.locals.user))
+			)
+				return new Response(null, {
+					status: 303,
+					headers: { location: `${adminPath}/security` }
+				});
 			if (!open && !event.locals.user) {
 				return new Response(null, {
 					status: 303,

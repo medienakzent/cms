@@ -47,6 +47,7 @@
 					user={data.user}
 					siteName={data.siteName}
 					favicon={data.siteFavicon}
+					twoFactor={data.auth.twoFactor !== 'off' && !data.user.api}
 				/>
 			{/if}
 		{/snippet}

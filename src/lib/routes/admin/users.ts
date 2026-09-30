@@ -1,6 +1,7 @@
 import { error, type ServerLoadEvent } from '@sveltejs/kit';
 import { apiKeys } from '../../server/api-keys';
 import { getAuth } from '../../server/auth';
+import { serverConfig } from '../../server/runtime';
 
 export interface AdminUser {
 	id: string;
@@ -9,6 +10,7 @@ export interface AdminUser {
 	role: string;
 	createdAt: string;
 	banned: boolean;
+	twoFactorEnabled: boolean;
 }
 
 /** User list, admins only (the auth plugin checks this as well). */
@@ -26,10 +28,12 @@ export async function load({ locals, request }: ServerLoadEvent) {
 		role: (user as { role?: string | null }).role ?? 'editor',
 		createdAt:
 			user.createdAt instanceof Date ? user.createdAt.toISOString() : String(user.createdAt),
-		banned: !!(user as { banned?: boolean | null }).banned
+		banned: !!(user as { banned?: boolean | null }).banned,
+		twoFactorEnabled: !!(user as { twoFactorEnabled?: boolean | null }).twoFactorEnabled
 	}));
 	return {
 		users,
+		twoFactor: serverConfig().twoFactor,
 		apiKeys: await apiKeys.list(),
 		breadcrumbs: [{ label: 'Übersicht', href: '/admin' }, { label: 'Nutzer' }]
 	};
