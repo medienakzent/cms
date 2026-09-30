@@ -2,6 +2,21 @@
 
 Alle relevanten Änderungen. Format: Datum, Version, Abschnitte Neu / Geändert / Breaking.
 
+## 0.8.5 — 2026-09-30
+
+### Neu
+
+- **`DEBUG_ERRORS=1`** (nur für Staging): Die 500-Seite zeigt Fehlermeldung und Stacktrace direkt im
+  Browser. Ohne die Variable bleibt es bei „Internal Error“. Unerwartete Fehler werden immer per
+  `console.error` geloggt. Der Stub `src/hooks.server.ts` exportiert dafür
+  `handleError = createHandleError({ env })`.
+
+### Behoben
+
+- Das Symbol „Website“ unten in der Admin-Seitenleiste öffnet die Website in einem neuen Tab. Vorher
+  wechselte SvelteKit per Client-Navigation vom Admin in die Website, Admin-Styles und Dark Mode
+  blieben hängen und die Seite wirkte kaputt.
+
 ## 0.8.4 — 2026-09-30
 
 ### Behoben

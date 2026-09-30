@@ -6,6 +6,24 @@ import { createRateLimiter } from './rate-limit';
 import { initRuntime } from './runtime';
 import { apiKeys } from './api-keys';
 import { ANALYTICS_ENDPOINT, ANALYTICS_SCRIPT } from './analytics/script';
+/**
+ * SvelteKit error hook: logs unexpected errors and, only with DEBUG_ERRORS=1 (staging), shows
+ * message and stack trace on the error page. Production pages keep the generic message.
+ * In the customer project (hooks.server.ts):
+ *
+ *   export const handleError = createHandleError({ env });
+ */
+export function createHandleError(options) {
+    const debug = options.env.DEBUG_ERRORS === '1';
+    return ({ error, status, message }) => {
+        if (status === 404)
+            return { message };
+        console.error(error);
+        if (!debug)
+            return { message };
+        return { message: error instanceof Error ? (error.stack ?? error.message) : String(error) };
+    };
+}
 /** Constant-time comparison for secrets. */
 function safeEqual(left, right) {
     const leftBytes = Buffer.from(left);

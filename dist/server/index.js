@@ -21,7 +21,7 @@ export { initRuntime, getRuntime, serverConfig, siteConfig } from './runtime';
 export { createRateLimiter } from './rate-limit';
 export { api, actorOf, requireAdmin, readJsonBody, parseDocumentBody } from './api';
 export { adminCollections, adminBlocks, toAdminCollection, toAdminBlock } from './admin';
-export { createHandle } from './hooks';
+export { createHandle, createHandleError } from './hooks';
 export { captchaClientConfig, verifyCaptcha } from './captcha';
 export { sendSystemMail } from './mail';
 export { apiKeys } from './api-keys';

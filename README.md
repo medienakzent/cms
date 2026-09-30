@@ -342,6 +342,9 @@ sichtbare Verweildauer an `POST /api/analytics` (öffentlich, Rate-Limit je IP).
   Backup-Codes; beim Login folgt nach dem Passwort der Code, das Gerät kann 30 Tage vertraut werden.
   Bei `required` sind Admin und `/api/v1` erst nach der Einrichtung erreichbar. Admins setzen die
   2FA eines Nutzers unter „Nutzer" zurück (verlorenes Handy). OAuth-Konten verwaltet der Anbieter.
+- Fehlersuche auf Staging: `DEBUG_ERRORS=1` zeigt Fehlermeldung und Stacktrace auf der 500-Seite im
+  Browser (nie live setzen). Sonst stehen Fehler nur auf stderr, unter Plesk/Passenger im globalen
+  Apache-Log (`/var/log/apache2/error.log`), nicht im Domain-Log.
 - Healthcheck: `GET /api/health` (200/503). Sitemap: `/sitemap.xml`, KI-Überblick: `/llms.txt`,
   `static/robots.txt` im Projekt anpassen.
 - Volumes sichern: `/storage` (Inhalte, Medien, Historie, Einsendungen) und `/data` (Index, Auth).
