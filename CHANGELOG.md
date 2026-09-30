@@ -2,6 +2,13 @@
 
 Alle relevanten Änderungen. Format: Datum, Version, Abschnitte Neu / Geändert / Breaking.
 
+## 0.6.2 — 2026-09-30
+
+### Geändert
+
+- Die Admin-Seitenleiste zeigt das Favicon der Website als Logo (`site.favicon` in `cms.config.ts`,
+  Default `/favicon.svg`); fehlt die Datei, bleibt das bisherige Symbol.
+
 ## 0.6.1 — 2026-09-30
 
 ### Neu

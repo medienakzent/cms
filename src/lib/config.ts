@@ -6,7 +6,11 @@ export interface LanguageConfig {
 import type { ConsentConfig } from './consent';
 
 export interface CmsConfig {
-	site: { name: string };
+	site: {
+		name: string;
+		/** Icon of the site, also shown as logo in the admin sidebar. */
+		favicon: string;
+	};
 	/** Privacy banner and services (see consent.ts, defineConsent); `null` = no banner. */
 	consent: ConsentConfig | null;
 	languages: LanguageConfig[];
@@ -25,7 +29,8 @@ export interface CmsConfig {
 }
 
 export interface CmsConfigInput {
-	site: { name: string };
+	/** `favicon` defaults to `/favicon.svg` from `static/`. */
+	site: { name: string; favicon?: string };
 	consent?: ConsentConfig;
 	languages: LanguageConfig[];
 	defaultLanguage?: string;
@@ -39,7 +44,7 @@ export function defineConfig(input: CmsConfigInput): CmsConfig {
 		throw new Error('cms.config: defaultLanguage muss in languages enthalten sein.');
 	}
 	return {
-		site: input.site,
+		site: { favicon: '/favicon.svg', ...input.site },
 		consent: input.consent ?? null,
 		languages: input.languages,
 		defaultLanguage,

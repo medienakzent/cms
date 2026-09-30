@@ -46,6 +46,7 @@
 					pathname={page.url.pathname}
 					user={data.user}
 					siteName={data.siteName}
+					favicon={data.siteFavicon}
 				/>
 			{/if}
 		{/snippet}

@@ -11,6 +11,7 @@ export async function load({ locals }: ServerLoadEvent) {
 		languages: config.languages,
 		defaultLanguage: config.defaultLanguage,
 		siteName: config.site.name,
+		siteFavicon: config.site.favicon,
 		auth: authOptions()
 	};
 }

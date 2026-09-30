@@ -19,9 +19,11 @@
 		pathname: string;
 		user: { name: string; email: string; image: string; role: string };
 		siteName: string;
+		favicon: string;
 	};
 
-	let { collections, pathname, user, siteName }: Props = $props();
+	let { collections, pathname, user, siteName, favicon }: Props = $props();
+	let faviconFailed = $state(false);
 
 	const navMain = $derived<ShellNavItem[]>([
 		{ id: 'dashboard', href: '/admin', label: 'Übersicht', icon: LayoutDashboardIcon },
@@ -86,10 +88,19 @@
 	homeHref="/admin"
 >
 	{#snippet logo()}
-		<div
-			class="bg-primary text-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg"
-		>
-			<LayersIcon class="size-4" />
-		</div>
+		{#if favicon && !faviconFailed}
+			<img
+				src={favicon}
+				alt=""
+				class="bg-sidebar size-8 rounded-lg object-contain"
+				onerror={() => (faviconFailed = true)}
+			/>
+		{:else}
+			<div
+				class="bg-primary text-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg"
+			>
+				<LayersIcon class="size-4" />
+			</div>
+		{/if}
 	{/snippet}
 </AppShellSidebar>
