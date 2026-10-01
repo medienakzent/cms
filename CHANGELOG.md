@@ -2,6 +2,17 @@
 
 Alle relevanten Änderungen. Format: Datum, Version, Abschnitte Neu / Geändert / Breaking.
 
+## 0.8.12 — 2026-10-01
+
+### Neu
+
+- **`<html lang="%lang%">`:** `createHandle` ersetzt den Platzhalter in `app.html` beim Rendern durch
+  die Sprache der Seite: das erste Pfadsegment, wenn es eine konfigurierte Sprache ist (`/en/…`),
+  sonst `defaultLanguage`; der Admin ist immer `de`. Mehrsprachige Seiten liefern damit schon im
+  Server-HTML die richtige Sprache (Screenreader, Suchmaschinen). Die Projektvorlage nutzt den
+  Platzhalter; bestehende Projekte ändern `src/app.html` bei Bedarf selbst, ohne Platzhalter bleibt
+  alles wie bisher.
+
 ## 0.8.11 — 2026-10-01
 
 ### Neu

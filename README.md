@@ -166,6 +166,12 @@ Am besten nutzen Route und Vorschau dieselbe Komponente. `fields` kann unvollst�
 Dokument, leere Pflichtfelder) — die Komponente muss damit umgehen. Projekte vor 0.7.0 ergänzen in
 `src/cms.ts`: `previews: import.meta.glob('./previews/*.svelte', { eager: true, import: 'default' })`.
 
+## Sprache im HTML
+
+`src/app.html` beginnt mit `<html lang="%lang%">`. Das CMS setzt beim Rendern die Sprache der Seite
+ein (`/en/…` → `en`, sonst die Standardsprache, Admin `de`), also schon im Server-HTML und nicht erst
+im Browser.
+
 ## Abfragen (Filter, Sortierung)
 
 Eine Definition für Bibliothek und REST (`src/lib/query.ts`). Alles wird gegen
