@@ -100,6 +100,27 @@ export function createHandle(registry, options) {
         max: rateLimit.analyticsPerMinute
     });
     const adminPath = options.adminPath ?? '/admin';
+    const languageCodes = new Set(runtime.languages);
+    /**
+     * Language of a page for `<html lang="%lang%">` in app.html: the first path segment when it is a
+     * configured language (`/en/…`), otherwise the default language. The admin is German.
+     */
+    function pageLanguage(pathname) {
+        if (pathname === adminPath || pathname.startsWith(`${adminPath}/`))
+            return 'de';
+        const segment = pathname.split('/')[1] ?? '';
+        return languageCodes.has(segment) ? segment : runtime.config.defaultLanguage;
+    }
+    /** Server-rendered HTML: language placeholder and, for counted visitors, the statistics script. */
+    function renderOptions(pathname, countVisit) {
+        const language = pageLanguage(pathname);
+        return {
+            transformPageChunk: ({ html }) => {
+                const localized = html.replaceAll('%lang%', language);
+                return countVisit ? localized.replace('</body>', `${ANALYTICS_SCRIPT}</body>`) : localized;
+            }
+        };
+    }
     /** TWO_FACTOR=required: password accounts without a second factor may only set it up. */
     async function secondFactorMissing(user) {
         if (runtime.server.twoFactor !== 'required' || !user || user.api || user.twoFactorEnabled)
@@ -210,7 +231,7 @@ export function createHandle(registry, options) {
                     }
                 });
             }
-            return harden(limitLinkHeader(await resolve(event)));
+            return harden(limitLinkHeader(await resolve(event, renderOptions(pathname, false))));
         }
         // Website pages of visitors carry the statistics script; editors and the preview are not counted.
         if (runtime.server.analytics.enabled &&
@@ -218,10 +239,8 @@ export function createHandle(registry, options) {
             event.request.method === 'GET' &&
             !pathname.startsWith('/api/') &&
             !pathname.endsWith('/cms-preview')) {
-            return limitLinkHeader(await resolve(event, {
-                transformPageChunk: ({ html }) => html.replace('</body>', `${ANALYTICS_SCRIPT}</body>`)
-            }));
+            return limitLinkHeader(await resolve(event, renderOptions(pathname, true)));
         }
-        return limitLinkHeader(await resolve(event));
+        return limitLinkHeader(await resolve(event, renderOptions(pathname, false)));
     };
 }
