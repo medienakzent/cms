@@ -2,6 +2,7 @@
 	import type { Snippet } from 'svelte';
 	import * as Card from '@compdata/ui/card';
 	import LayersIcon from '@lucide/svelte/icons/layers';
+	import CmsCredit from './CmsCredit.svelte';
 
 	/** Frame of the sign-in pages (login, password reset): site icon, name and the current step. */
 	type Props = {
@@ -54,6 +55,6 @@
 			</Card.Content>
 		</Card.Root>
 
-		<p class="text-muted-foreground mt-6 text-center text-xs">Redaktionszugang · CMS</p>
+		<CmsCredit prefix="Redaktionszugang" class="mt-6" />
 	</main>
 </div>

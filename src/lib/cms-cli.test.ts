@@ -110,3 +110,36 @@ describe('cms init (plesk)', () => {
 		expect(statSync(script).mode & 0o111).not.toBe(0);
 	});
 });
+
+describe('cms sync (operational files)', () => {
+	it('creates missing operational files but never overwrites them', () => {
+		writeFileSync(join(root, 'package.json'), JSON.stringify({ name: 'cms.kunde' }));
+		writeFileSync(join(root, 'app.cjs'), '// eigene Fassung\n');
+		run('sync', '--quiet');
+		expect(readFileSync(join(root, 'app.cjs'), 'utf8')).toBe('// eigene Fassung\n');
+		expect(statSync(join(root, 'plesk-deploy.sh')).mode & 0o111).not.toBe(0);
+		expect(existsSync(join(root, '.github', 'workflows', 'cms-update.yml'))).toBe(true);
+	});
+});
+
+describe('cms check (lockfile platforms)', () => {
+	it('reports a lockfile without the Linux x64 packages', () => {
+		run('sync', '--quiet');
+		writeFileSync(
+			join(root, 'package-lock.json'),
+			JSON.stringify({
+				packages: {
+					'node_modules/rollup': {},
+					'node_modules/@rollup/rollup-linux-arm64-gnu': {}
+				}
+			})
+		);
+		let output = '';
+		try {
+			run('check');
+		} catch (error) {
+			output = String((error as { stderr?: string }).stderr);
+		}
+		expect(output).toContain('@rollup/rollup-linux-x64-gnu');
+	});
+});

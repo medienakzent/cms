@@ -6,6 +6,7 @@
  *   cms sync [--force] [--quiet]                   bring stubs (routes, hooks) up to the package version
  *   cms check                                      verify stubs, report customer-modified files
  *   cms update [--major] [--dry-run]               pin the newest releases of cms and ui
+ *   cms lock                                       rewrite package-lock.json for all platforms
  *   cms postinstall                                internal: sync after npm install/update
  *
  * Stubs are generated files without own logic (header "@generated"). The manifest
@@ -19,13 +20,16 @@ import { execFileSync } from 'node:child_process';
 import {
 	appendFileSync,
 	chmodSync,
+	copyFileSync,
 	existsSync,
+	mkdtempSync,
 	mkdirSync,
 	readdirSync,
 	readFileSync,
 	rmSync,
 	writeFileSync
 } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -151,6 +155,12 @@ function sync(root, { force = false } = {}) {
 		}
 	}
 
+	if (root !== PACKAGE_DIR) {
+		const name = projectName(root);
+		for (const file of missingOperationalFiles(root))
+			result.written.push(writeProjectFile(root, file, name));
+	}
+
 	writeManifest(root, next);
 	return result;
 }
@@ -171,30 +181,58 @@ function report(result, previousVersion) {
 	}
 }
 
+/** Path of a project template file inside the project (npm strips dotfiles from packages). */
+function projectTarget(file) {
+	return file
+		.replace(/^_gitignore$/, '.gitignore')
+		.replace(/^_npmrc$/, '.npmrc')
+		.replace(/^_github\//, '.github/');
+}
+
+function renderProjectFile(file, name) {
+	return readFileSync(join(TEMPLATES_DIR, 'project', file), 'utf8')
+		.replaceAll('__PROJECT_NAME__', name)
+		.replaceAll('__DEV_HOST__', `${name.replace(/^cms[.-]/, '')}.test`)
+		.replaceAll('__CMS_VERSION__', PACKAGE.version);
+}
+
+function writeProjectFile(root, file, name) {
+	const target = join(root, projectTarget(file));
+	mkdirSync(dirname(target), { recursive: true });
+	writeFileSync(target, renderProjectFile(file, name));
+	if (target.endsWith('.sh')) chmodSync(target, 0o755);
+	return relative(root, target);
+}
+
+/**
+ * Operational files from the project template that later releases added: `cms sync` creates them
+ * in existing projects when missing and never overwrites them (projects may adapt them).
+ */
+const OPERATIONAL_FILES = ['app.cjs', 'plesk-deploy.sh', '_github/workflows/cms-update.yml'];
+
+function projectName(root) {
+	try {
+		return JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')).name ?? 'cms';
+	} catch {
+		return 'cms';
+	}
+}
+
+function missingOperationalFiles(root) {
+	return OPERATIONAL_FILES.filter((file) => !existsSync(join(root, projectTarget(file))));
+}
+
 function copyProject(root, { name }) {
 	const projectDir = join(TEMPLATES_DIR, 'project');
 	const created = [];
 	const kept = [];
 	for (const file of walk(projectDir)) {
-		const target = join(
-			root,
-			file
-				.replace(/^_gitignore$/, '.gitignore')
-				.replace(/^_npmrc$/, '.npmrc')
-				.replace(/^_github\//, '.github/')
-		);
+		const target = join(root, projectTarget(file));
 		if (existsSync(target)) {
 			kept.push(relative(root, target));
 			continue;
 		}
-		const content = readFileSync(join(projectDir, file), 'utf8')
-			.replaceAll('__PROJECT_NAME__', name)
-			.replaceAll('__DEV_HOST__', `${name.replace(/^cms[.-]/, '')}.test`)
-			.replaceAll('__CMS_VERSION__', PACKAGE.version);
-		mkdirSync(dirname(target), { recursive: true });
-		writeFileSync(target, content);
-		if (target.endsWith('.sh')) chmodSync(target, 0o755);
-		created.push(relative(root, target));
+		created.push(writeProjectFile(root, file, name));
 	}
 	return { created, kept };
 }
@@ -311,24 +349,69 @@ function update(root, { major, dryRun }) {
 	if (!changes.length || dryRun) return changes;
 
 	writeFileSync(projectFile, raw);
-	const lockFile = join(root, 'package-lock.json');
-	if (existsSync(lockFile)) {
-		// npm keeps locked git commits even when the tag in package.json changes.
-		const lockRaw = readFileSync(lockFile, 'utf8');
-		const lockfile = JSON.parse(lockRaw);
-		for (const change of changes) delete lockfile.packages?.[`node_modules/${change.name}`];
-		const indent = lockRaw.match(/^[ \t]+/m)?.[0] ?? '  ';
-		writeFileSync(lockFile, JSON.stringify(lockfile, null, indent) + '\n');
-	}
-	execFileSync(
-		'npm',
-		['install', '--package-lock-only', '--ignore-scripts', '--no-audit', '--no-fund'],
-		{
-			cwd: root,
-			stdio: quiet ? 'ignore' : 'inherit'
-		}
+	regenerateLockfile(
+		root,
+		changes.map((change) => change.name)
 	);
 	return changes;
+}
+
+/**
+ * Native packages that the Linux x64 servers (Plesk, Docker) need. npm records only the packages of
+ * its own platform when it writes the lockfile next to an existing node_modules (npm/cli#4828), e.g.
+ * in an arm64 dev container; the build then fails on the server with "Cannot find module
+ * @rollup/rollup-linux-x64-gnu".
+ */
+const LINUX_PACKAGES = ['@rollup/rollup-linux-x64-gnu', '@esbuild/linux-x64'];
+
+function missingLinuxPackages(lockFile) {
+	if (!existsSync(lockFile)) return [];
+	const packages = JSON.parse(readFileSync(lockFile, 'utf8')).packages ?? {};
+	const paths = Object.keys(packages);
+	return LINUX_PACKAGES.filter((name) => {
+		const parent = name.startsWith('@rollup/') ? 'rollup' : 'esbuild';
+		const usesParent = paths.some((path) => path.endsWith(`node_modules/${parent}`));
+		return usesParent && !paths.some((path) => path.endsWith(`node_modules/${name}`));
+	});
+}
+
+/**
+ * Writes the lockfile in an empty directory, so npm records the native packages of all platforms.
+ * Locked git dependencies in `refresh` are dropped first (npm keeps locked commits otherwise); if
+ * platform packages are still missing, the lockfile is resolved again from scratch.
+ */
+function regenerateLockfile(root, refresh = []) {
+	const workspace = mkdtempSync(join(tmpdir(), 'cms-lock-'));
+	const lockFile = join(root, 'package-lock.json');
+	const run = () =>
+		execFileSync(
+			'npm',
+			['install', '--package-lock-only', '--ignore-scripts', '--no-audit', '--no-fund'],
+			{ cwd: workspace, stdio: quiet ? 'ignore' : 'inherit' }
+		);
+	try {
+		for (const name of ['package.json', '.npmrc']) {
+			if (existsSync(join(root, name))) copyFileSync(join(root, name), join(workspace, name));
+		}
+		if (existsSync(lockFile)) {
+			const lockRaw = readFileSync(lockFile, 'utf8');
+			const lockfile = JSON.parse(lockRaw);
+			for (const name of refresh) delete lockfile.packages?.[`node_modules/${name}`];
+			const indent = lockRaw.match(/^[ \t]+/m)?.[0] ?? '  ';
+			writeFileSync(
+				join(workspace, 'package-lock.json'),
+				JSON.stringify(lockfile, null, indent) + '\n'
+			);
+		}
+		run();
+		if (missingLinuxPackages(join(workspace, 'package-lock.json')).length) {
+			rmSync(join(workspace, 'package-lock.json'));
+			run();
+		}
+		copyFileSync(join(workspace, 'package-lock.json'), lockFile);
+	} finally {
+		rmSync(workspace, { recursive: true, force: true });
+	}
 }
 
 function check(root) {
@@ -351,6 +434,22 @@ function check(root) {
 			`package.json: ${unbuilt.join(', ')} ${unbuilt.length === 1 ? 'zeigt' : 'zeigen'} auf einen Quell-Tag — bitte das vorgebaute Release pinnen (#release/vX.Y.Z), sonst baut npm das Paket bei jeder Installation.`
 		);
 		problems++;
+	}
+	const linuxPackages = missingLinuxPackages(join(root, 'package-lock.json'));
+	if (linuxPackages.length) {
+		console.warn(
+			`package-lock.json: ${linuxPackages.join(', ')} ${linuxPackages.length === 1 ? 'fehlt' : 'fehlen'} — das Lockfile wurde neben node_modules auf einer anderen Plattform erzeugt, der Build auf Linux-Servern scheitert. Reparieren: npx cms lock`
+		);
+		problems++;
+	}
+	if (root !== PACKAGE_DIR) {
+		const missingFiles = missingOperationalFiles(root).map(projectTarget);
+		if (missingFiles.length) {
+			console.warn(
+				`fehlt: ${missingFiles.join(', ')} — npx cms sync legt fehlende Dateien aus der Vorlage an.`
+			);
+			problems++;
+		}
 	}
 	if (manifest.version !== PACKAGE.version) {
 		console.warn(
@@ -413,6 +512,21 @@ Eigene Inhaltstypen: src/blocks, src/collections, src/mail — siehe AGENTS.md.`
 		report(sync(root, { force: flags.has('--force') }), previousVersion);
 		break;
 	}
+	case 'lock': {
+		const root = process.cwd();
+		if (!existsSync(join(root, 'package.json'))) {
+			console.error('Keine package.json im aktuellen Verzeichnis.');
+			process.exit(1);
+		}
+		regenerateLockfile(root);
+		const missing = missingLinuxPackages(join(root, 'package-lock.json'));
+		console.log(
+			missing.length
+				? `Lockfile neu, es fehlt weiterhin: ${missing.join(', ')}`
+				: 'Lockfile neu erzeugt, alle Plattformen enthalten.'
+		);
+		process.exit(missing.length ? 1 : 0);
+	}
 	case 'update': {
 		const root = process.cwd();
 		if (!isProject(root)) {
@@ -454,7 +568,7 @@ Eigene Inhaltstypen: src/blocks, src/collections, src/mail — siehe AGENTS.md.`
 	}
 	default:
 		console.log(
-			`@medienakzent/cms ${PACKAGE.version}\n\n  cms init [verzeichnis] [--name paketname]\n  cms sync [--force] [--quiet]\n  cms check\n  cms update [--major] [--dry-run]`
+			`@medienakzent/cms ${PACKAGE.version}\n\n  cms init [verzeichnis] [--name paketname]\n  cms sync [--force] [--quiet]\n  cms check\n  cms update [--major] [--dry-run]\n  cms lock`
 		);
 		process.exit(command ? 1 : 0);
 }

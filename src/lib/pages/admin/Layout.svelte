@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { CMS_NAME } from '../../admin/brand';
 	import { page } from '$app/state';
 	import { ModeWatcher, toggleMode, mode } from 'mode-watcher';
 	import { AppShell } from '@compdata/ui/app-shell';
@@ -32,7 +33,7 @@
 <ModeWatcher />
 
 <svelte:head>
-	<title>{breadcrumbs.at(-1)?.label ?? 'Admin'} · {data.siteName} CMS</title>
+	<title>{breadcrumbs.at(-1)?.label ?? 'Admin'} · {data.siteName} · {CMS_NAME}</title>
 </svelte:head>
 
 {#if !data.user}

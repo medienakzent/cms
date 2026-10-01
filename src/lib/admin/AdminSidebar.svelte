@@ -13,6 +13,7 @@
 	import { authClient } from './auth-client';
 	import { apiFetch } from './api-client';
 	import { formatCount } from '../format';
+	import { CMS_NAME } from './brand';
 	import { toast } from 'svelte-sonner';
 
 	type Props = {
@@ -108,7 +109,7 @@
 	logoutLabel="Abmelden"
 	onLogout={logout}
 	brandTitle={siteName}
-	brandSubtitle="CMS"
+	brandSubtitle={CMS_NAME}
 	homeHref="/admin"
 >
 	{#snippet logo()}
