@@ -2,6 +2,16 @@
 
 Alle relevanten Änderungen. Format: Datum, Version, Abschnitte Neu / Geändert / Breaking.
 
+## 0.8.8 — 2026-10-01
+
+### Neu
+
+- **Passwortfeld mit Generator:** Beim Anlegen eines Kontos, im Dialog „Neues Passwort setzen" der
+  Nutzerverwaltung und auf der Seite „Passwort zurücksetzen" lässt sich das Passwort ein- und
+  ausblenden und kopieren. „Sicheres Passwort generieren" erzeugt ein Passwort im Stil von Apple
+  (`kamvub-Dowcix-zebru7`: drei aussprechbare Sechsergruppen, ein Großbuchstabe, eine Ziffer, rund
+  71 Bit, ohne verwechselbare Zeichen) aus dem kryptographischen Zufall des Browsers und zeigt es an.
+
 ## 0.8.7 — 2026-10-01
 
 ### Geändert
