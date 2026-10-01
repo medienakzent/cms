@@ -17,6 +17,10 @@ vite.config.ts.timestamp-*
 !.env.example
 .dev-ssh
 
+# Plesk: Deploy-Log und Neustart-Marker von plesk-deploy.sh / Passenger
+deployment.log
+/tmp
+
 .DS_Store
 *.log
 .playwright-mcp

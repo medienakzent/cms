@@ -1,5 +1,13 @@
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync, existsSync } from 'node:fs';
+import {
+	mkdtempSync,
+	mkdirSync,
+	readFileSync,
+	rmSync,
+	statSync,
+	writeFileSync,
+	existsSync
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -89,5 +97,15 @@ describe('cms update', () => {
 	it('leaves projects without release pins alone', () => {
 		writeFileSync(join(root, 'package.json'), JSON.stringify({ dependencies: {} }));
 		expect(run('update', '--dry-run')).toContain('Alle Releases sind aktuell.');
+	});
+});
+
+describe('cms init (plesk)', () => {
+	it('creates an executable deploy script for Plesk', () => {
+		const project = join(root, 'kunde');
+		run('init', project, '--name', 'cms.kunde', '--quiet');
+		const script = join(project, 'plesk-deploy.sh');
+		expect(readFileSync(script, 'utf8')).toContain('touch tmp/restart.txt');
+		expect(statSync(script).mode & 0o111).not.toBe(0);
 	});
 });
