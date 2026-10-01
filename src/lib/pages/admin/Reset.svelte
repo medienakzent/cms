@@ -3,7 +3,7 @@
 	import PasswordInput from '../../admin/PasswordInput.svelte';
 	import { Button } from '@compdata/ui/button';
 	import { Label } from '@compdata/ui/label';
-	import * as Card from '@compdata/ui/card';
+	import AuthShell from '../../admin/AuthShell.svelte';
 	import type { AdminLayoutData } from '../../routes/admin/layout';
 	import type { load } from '../../routes/admin/reset';
 
@@ -28,36 +28,28 @@
 	}
 </script>
 
-<div class="bg-muted/40 flex min-h-screen items-center justify-center p-4">
-	<Card.Root class="w-full max-w-sm">
-		<Card.Header>
-			<Card.Title>{data.siteName} · CMS</Card.Title>
-			<Card.Description>Neues Passwort setzen</Card.Description>
-		</Card.Header>
-		<Card.Content class="space-y-4">
-			{#if done}
-				<p class="text-sm">Das Passwort wurde geändert.</p>
-				<Button href="/admin/login" class="w-full">Zur Anmeldung</Button>
-			{:else if !data.token || data.invalid}
-				<p class="text-destructive text-sm">
-					Der Link ist ungültig oder abgelaufen. Bitte fordern Sie über „Passwort vergessen" einen
-					neuen an.
-				</p>
-				<Button href="/admin/login" variant="outline" class="w-full">Zur Anmeldung</Button>
-			{:else}
-				<form onsubmit={submit} class="space-y-3">
-					<div class="space-y-1">
-						<Label for="password">Neues Passwort</Label><PasswordInput
-							id="password"
-							bind:value={password}
-							required
-							generate
-						/>
-					</div>
-					{#if error}<p class="text-destructive text-sm">{error}</p>{/if}
-					<Button type="submit" class="w-full" disabled={busy}>Passwort speichern</Button>
-				</form>
-			{/if}
-		</Card.Content>
-	</Card.Root>
-</div>
+<AuthShell siteName={data.siteName} favicon={data.siteFavicon} subtitle="Neues Passwort setzen">
+	{#if done}
+		<p class="text-sm">Das Passwort wurde geändert.</p>
+		<Button href="/admin/login" class="w-full">Zur Anmeldung</Button>
+	{:else if !data.token || data.invalid}
+		<p class="text-destructive text-sm">
+			Der Link ist ungültig oder abgelaufen. Bitte fordern Sie über „Passwort vergessen" einen neuen
+			an.
+		</p>
+		<Button href="/admin/login" variant="outline" class="w-full">Zur Anmeldung</Button>
+	{:else}
+		<form onsubmit={submit} class="space-y-3">
+			<div class="space-y-1">
+				<Label for="password">Neues Passwort</Label><PasswordInput
+					id="password"
+					bind:value={password}
+					required
+					generate
+				/>
+			</div>
+			{#if error}<p class="text-destructive text-sm">{error}</p>{/if}
+			<Button type="submit" class="w-full" disabled={busy}>Passwort speichern</Button>
+		</form>
+	{/if}
+</AuthShell>

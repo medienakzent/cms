@@ -1,240 +1,240 @@
 {
-	"version": "0.8.12",
+	"version": "0.8.13",
 	"files": {
 		"src/hooks.server.ts": {
-			"hash": "fb53fcb38816eed2addf694a4bcf74af61db88a3",
+			"hash": "098aad9e0a6b224c29c56335733242d2a950c123",
 			"modified": false
 		},
 		"src/params/lang.ts": {
-			"hash": "f320377cdf9993d0fa75c7184a479ca4cace6330",
+			"hash": "dd63bf4c28305e6c40ab5a97c7d65bbc7260c2ff",
 			"modified": false
 		},
 		"src/routes/(site)/[[lang=lang]]/cms-preview/+page.server.ts": {
-			"hash": "50128b49f3f4fe1c66e5def9cd3c95e171a7cb3e",
+			"hash": "013c22d405a6df52559955943d6f7e1d73779152",
 			"modified": false
 		},
 		"src/routes/(site)/[[lang=lang]]/cms-preview/+page.svelte": {
-			"hash": "c978336f4958897ee647fcc69d948bf1a0d64513",
+			"hash": "524a69a81ae135f7ed5b1b2dba342ce76aad1692",
 			"modified": false
 		},
 		"src/routes/admin/+layout.server.ts": {
-			"hash": "b49e77fe7a223562c7c24f0e10a3e5c60228013e",
+			"hash": "66e20cd6a3414fc2bb25e83156328f4a6870dc32",
 			"modified": false
 		},
 		"src/routes/admin/+layout.svelte": {
-			"hash": "42b6c939b3f1978f76d54bb7e5e0026a46d58f8c",
+			"hash": "6ca932daf6bf278e4a6e2e682be6694fc1df7e18",
 			"modified": false
 		},
 		"src/routes/admin/+page.server.ts": {
-			"hash": "8912a784a160964e39ba4bf1aaa4358d666e9016",
+			"hash": "89918c13b96d08fcdd0ca63298e466a35d189fda",
 			"modified": false
 		},
 		"src/routes/admin/+page.svelte": {
-			"hash": "1ff951216006e1d4aef3ece50ca3f677d0665250",
+			"hash": "564218075059ad5520d1b89d2ecd137c92e0e6a7",
 			"modified": false
 		},
 		"src/routes/admin/[collection]/+page.server.ts": {
-			"hash": "e6e6e1bbf05e72c15a802ac8533731390b0c3939",
+			"hash": "03282b70cfd944ccbf7d6763e837b9366a6115bc",
 			"modified": false
 		},
 		"src/routes/admin/[collection]/+page.svelte": {
-			"hash": "26bb53bb2e5f83e658ead95e7146802ada44fc21",
+			"hash": "30fe7c1d90164141ff159b64066a5c541697c5f6",
 			"modified": false
 		},
 		"src/routes/admin/[collection]/[slug]/+page.server.ts": {
-			"hash": "2072f95db62c966c2967a34a6c1ab61bb9a651a8",
+			"hash": "7b861cd38884f6faade90e305bd92248753b242b",
 			"modified": false
 		},
 		"src/routes/admin/[collection]/[slug]/+page.svelte": {
-			"hash": "41108755fbaf03e0a5eb6c3fb11ab7a0a3cac2f6",
+			"hash": "5d21535663f47a720a53163b1400e1bb9b5dcac2",
 			"modified": false
 		},
 		"src/routes/admin/[collection]/new/+page.server.ts": {
-			"hash": "b07b7fb05f57b4b2e2feacd09214b35fff0d7ea9",
+			"hash": "97790844fd38d8e951ef3cc0cfff3a28aeef5a3f",
 			"modified": false
 		},
 		"src/routes/admin/[collection]/new/+page.svelte": {
-			"hash": "d7872e07565ea9e5e5ecd3af9b6495634a697a84",
+			"hash": "8f15e10eabf9b1ec32646578f4779cc50613b6d7",
 			"modified": false
 		},
 		"src/routes/admin/analytics/+page.server.ts": {
-			"hash": "c40b2dacc050943df89296c916f7295971776034",
+			"hash": "637e4f0d4e16bb2c32bff9f4f17e4f04c666c100",
 			"modified": false
 		},
 		"src/routes/admin/analytics/+page.svelte": {
-			"hash": "d4fe3d1913c568578651f5ee24f659e2276105ce",
+			"hash": "e9a631e50a0675171a17be382e2dc8fa655245b8",
 			"modified": false
 		},
 		"src/routes/admin/login/+page.server.ts": {
-			"hash": "93a54691bdcb837c4ee8f1d797599ef918bebc05",
+			"hash": "375795c768687eb55d17264b8f94734f4a6d6f74",
 			"modified": false
 		},
 		"src/routes/admin/login/+page.svelte": {
-			"hash": "3a6f3b6b36127fb7273f9bc48c582ce613535f22",
+			"hash": "66d8695d364b03ede5bc2708e8db4333214c8147",
 			"modified": false
 		},
 		"src/routes/admin/media/+page.server.ts": {
-			"hash": "d54426fb88fb8cd61bbb3206c5d3daa40517d117",
+			"hash": "eb19bd8da870bf400f8bd9e10ccfc37add1e5952",
 			"modified": false
 		},
 		"src/routes/admin/media/+page.svelte": {
-			"hash": "83b878ecc93c6d92a4acce79a5fb2fb3f6eadece",
+			"hash": "a04a33a97b11f4bce3336d39c4191098545d6599",
 			"modified": false
 		},
 		"src/routes/admin/reset/+page.server.ts": {
-			"hash": "444b21543a2dfea90d881c128bdc530117f45bf0",
+			"hash": "185adbbec1cb2b2cc9e6b81d21fd62812adf27be",
 			"modified": false
 		},
 		"src/routes/admin/reset/+page.svelte": {
-			"hash": "8ff83b6ebc477fead7b49411250d8294ff7e621b",
+			"hash": "a7cb5b4855c0585d6077cb0d76a166d280c8d002",
 			"modified": false
 		},
 		"src/routes/admin/security/+page.server.ts": {
-			"hash": "52d80c8bedf656752134cc821c2544fb2398dd82",
+			"hash": "24361659f42327eaadaadb82a9fcf1d18abd62e0",
 			"modified": false
 		},
 		"src/routes/admin/security/+page.svelte": {
-			"hash": "94551a06a46658066d897ddee9d937ca3a3d83f9",
+			"hash": "c9cc0968d8705a60aeebe902e9c7982ce61f2f44",
 			"modified": false
 		},
 		"src/routes/admin/submissions/+page.server.ts": {
-			"hash": "a947b6fe7e2dace1872b79476b83c8d91a0a493c",
+			"hash": "1b36090e8a96867db97309371da6dbc88e6c1e7d",
 			"modified": false
 		},
 		"src/routes/admin/submissions/+page.svelte": {
-			"hash": "f61e359cd32b07ca1bc01a915ddc83a025b8eb91",
+			"hash": "383e1e061baccd67a62be59f09672d6c1da93025",
 			"modified": false
 		},
 		"src/routes/admin/submissions/[id]/+page.server.ts": {
-			"hash": "c8dbef95f0674c3013511a26feb2fb87836d2031",
+			"hash": "0fbd90305c19909cc9668f64b748d016e23d2326",
 			"modified": false
 		},
 		"src/routes/admin/submissions/[id]/+page.svelte": {
-			"hash": "0eb91cd8a1c544705fb457d7cfab981c3b334623",
+			"hash": "223aa0d67fde9dfa6c35c154057caf4a527f0249",
 			"modified": false
 		},
 		"src/routes/admin/users/+page.server.ts": {
-			"hash": "31d8337b1c5a1fdf7b134bb450e50ca923205484",
+			"hash": "fb3c8149eaa6948421232e03aea5ad3a62575c41",
 			"modified": false
 		},
 		"src/routes/admin/users/+page.svelte": {
-			"hash": "27c044f87ec6896819aefa367ea839271a05315f",
+			"hash": "7659576444ca452bb3291d9048121c1ae8234561",
 			"modified": false
 		},
 		"src/routes/admin/users/api-keys/new/+page.server.ts": {
-			"hash": "7047e56048f4d660de91e1ac0e1e923669c09b6d",
+			"hash": "3150f3f073dcd2b20ad75d469bfeb6effbfb2681",
 			"modified": false
 		},
 		"src/routes/admin/users/api-keys/new/+page.svelte": {
-			"hash": "589d98f43951f37c44ebec5d89ac854aa7e0bc8d",
+			"hash": "9f9bf7c8ddcaa5e348aed0d41ff9046ef01b5b08",
 			"modified": false
 		},
 		"src/routes/admin/users/new/+page.server.ts": {
-			"hash": "59f1190975669dd5221c8ee0585ddd4399329ac3",
+			"hash": "dccf7db84a6e8ee848fbcc1777c56369a5621ca4",
 			"modified": false
 		},
 		"src/routes/admin/users/new/+page.svelte": {
-			"hash": "45eaee206876654840f4e09c79dc4d89297595f8",
+			"hash": "ee6644b5d1cffa51d94891947cddab0220e363d2",
 			"modified": false
 		},
 		"src/routes/api/analytics/+server.ts": {
-			"hash": "71d5a1dda69694ac9c377012c38481bd51a055ad",
+			"hash": "1bf42194a98fa36ce6df0fe6b47a126ff4221b7b",
 			"modified": false
 		},
 		"src/routes/api/captcha/challenge/+server.ts": {
-			"hash": "04b6af50d843248dc19cc625eb61ba109aeaaa57",
+			"hash": "7ec5dcc5dbc05eb63a3a4a0dbc0db7ba4cd9fb7b",
 			"modified": false
 		},
 		"src/routes/api/health/+server.ts": {
-			"hash": "f2a5e289791969141f04a6a8a2a35a4c5132610d",
+			"hash": "a2f6ef03b0693564ed8854795d6f58863803d2af",
 			"modified": false
 		},
 		"src/routes/api/mail/[template]/+server.ts": {
-			"hash": "ecf7ce4e9b72336946cb2b312592717d49495ec1",
+			"hash": "3ff2a30354e8f2881ad5672d00133f59c8bc7b59",
 			"modified": false
 		},
 		"src/routes/api/mail/download/[token]/[name]/+server.ts": {
-			"hash": "f21eb28732168120216e0ec51cf4a9c67f8c668a",
+			"hash": "5bc3d8d969de8a249f7b24b965ec5033f394529f",
 			"modified": false
 		},
 		"src/routes/api/v1/[collection]/+server.ts": {
-			"hash": "19e1251e6acb7cb4b8b39703901690f0bf97ec4f",
+			"hash": "4eeefbb25e9ea1cf5cd6cdc09544e3037e6ef6b2",
 			"modified": false
 		},
 		"src/routes/api/v1/[collection]/[slug]/+server.ts": {
-			"hash": "4a59071b0587dd1981d7fa7b1d548dd186c83a7f",
+			"hash": "69fcdaad51e8e6cffe765ddf00063a725d3368c4",
 			"modified": false
 		},
 		"src/routes/api/v1/[collection]/[slug]/status/+server.ts": {
-			"hash": "96ccf3f66eb193531cb851b3d00b7c9587a819c8",
+			"hash": "6a2262d9478e5ffc1d63e720c1282683bf879526",
 			"modified": false
 		},
 		"src/routes/api/v1/[collection]/[slug]/versions/+server.ts": {
-			"hash": "759472e0305365f73ebc5f12c478fc591d4412c1",
+			"hash": "4f2db680e7ef07f577a24d33e13816cea25a407c",
 			"modified": false
 		},
 		"src/routes/api/v1/[collection]/[slug]/versions/[version]/restore/+server.ts": {
-			"hash": "3ac12b2669b3d5d0a3d6fa422b156577efe7e435",
+			"hash": "2155bf4c7d387ab5379baccc54d1a1f975b67a45",
 			"modified": false
 		},
 		"src/routes/api/v1/analytics/+server.ts": {
-			"hash": "4523af40df4362eddd326b682ae616b98140394f",
+			"hash": "4d76977829160ee3ce9a0980088478408301cd34",
 			"modified": false
 		},
 		"src/routes/api/v1/analytics/live/+server.ts": {
-			"hash": "e40182a727f702f54faa2cb131e080007ee02640",
+			"hash": "d2a1988040c497725878c5114816ecf0107574ad",
 			"modified": false
 		},
 		"src/routes/api/v1/api-keys/+server.ts": {
-			"hash": "eb667fe522e4a06aa8cc05c9046001f62b399831",
+			"hash": "84326bffec504fdc8df38aad1473306068ecc825",
 			"modified": false
 		},
 		"src/routes/api/v1/api-keys/[id]/+server.ts": {
-			"hash": "d82c755beeb0cf0c8784011eca876c65405d665f",
+			"hash": "8c9829e52dc174a0469a898bf956412372d5994e",
 			"modified": false
 		},
 		"src/routes/api/v1/collections/+server.ts": {
-			"hash": "7effb2f8eb1c2ff424da0c4efb79cbf344b6b4e9",
+			"hash": "9cefffa7220ca67c48a63903974737ff0140b8c4",
 			"modified": false
 		},
 		"src/routes/api/v1/media/+server.ts": {
-			"hash": "b01565e94adc6cec87c318c4215c39f2f59efae7",
+			"hash": "09455fdb6ad84120f4c87bf6d2eeff0c1a047cc1",
 			"modified": false
 		},
 		"src/routes/api/v1/media/[id]/+server.ts": {
-			"hash": "f626d6499ba86ed1316af08b7b4c152406b5acd5",
+			"hash": "2b61fedde91eb8c94cc86bef6511530e381f650f",
 			"modified": false
 		},
 		"src/routes/api/v1/reindex/+server.ts": {
-			"hash": "1298016b4daa4c9f05595b393332a794bea9fa8f",
+			"hash": "89ce8ccd84ee19b53a9b2aa681d5169fc1b3f46a",
 			"modified": false
 		},
 		"src/routes/api/v1/submissions/+server.ts": {
-			"hash": "8902ed65eb28469ad3d395bdfe12cfa492f979c1",
+			"hash": "65fc919040d024dd18abf74c4fab174c17e85bee",
 			"modified": false
 		},
 		"src/routes/api/v1/submissions/[id]/+server.ts": {
-			"hash": "1c8e83d1840373bd88d6bf3424ac523f49902539",
+			"hash": "af48762ceb31256cc737691a7889f3778fc27d40",
 			"modified": false
 		},
 		"src/routes/api/v1/users/+server.ts": {
-			"hash": "8294b2ca01437ae50dbe205bb0d8b4a340da24d9",
+			"hash": "47f4ed36de01a417d7d5dace12b42e08e03de379",
 			"modified": false
 		},
 		"src/routes/api/v1/users/[id]/+server.ts": {
-			"hash": "1f3af37790b94980631309e90ff3620869856dda",
+			"hash": "1f5e3411a0a405b083009e5312f9a09fbe567219",
 			"modified": false
 		},
 		"src/routes/llms.txt/+server.ts": {
-			"hash": "e7e27fccefe0c1c10011bab93cf30456350120f0",
+			"hash": "c81750dc40458c72403ed6412f2773a4c7817f6e",
 			"modified": false
 		},
 		"src/routes/media/[...path]/+server.ts": {
-			"hash": "9eada9834a595d40f35c6da4a211e9ce9a5060d5",
+			"hash": "8b09e3efb8bdfacc150e20fde002c411c71c26da",
 			"modified": false
 		},
 		"src/routes/sitemap.xml/+server.ts": {
-			"hash": "7ff440b9c16e1744f1fdfca7971598ebdcf2d88d",
+			"hash": "96661d0bd34632a9187b5e097037ce67b1b26720",
 			"modified": false
 		}
 	}

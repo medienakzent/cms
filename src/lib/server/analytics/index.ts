@@ -119,6 +119,10 @@ export interface TimelineBucket {
 	/** Hour (`0`–`23`), day, first day of the week (Monday) or month (`YYYY-MM`). */
 	key: string;
 	views: number;
+	/** Visible reading time of all views in the bucket. */
+	seconds: number;
+	/** Visits in the bucket with a single page view. */
+	bounces: number;
 	sessions: number;
 }
 
@@ -427,20 +431,36 @@ export const analytics = {
 
 		// Visits are cut at midnight, so summing daily distinct visits into weeks or months is exact.
 		const granularity = granularityOf(days);
-		const timelineRows = await db.all<{ bucket: unknown; views: unknown; sessions: unknown }>(
+		const timelineRows = await db.all<{
+			bucket: unknown;
+			views: unknown;
+			sessions: unknown;
+			seconds: unknown;
+			bounces: unknown;
+		}>(
 			`SELECT ${granularity === 'hour' ? 'v.hour' : 'v.day'} AS bucket, COUNT(*) AS views,
-			COUNT(DISTINCT v.session_id) AS sessions FROM cms_analytics_views v WHERE ${views.where}
+			COUNT(DISTINCT v.session_id) AS sessions, SUM(v.seconds) AS seconds,
+			COUNT(DISTINCT CASE WHEN s.views = 1 THEN v.session_id END) AS bounces
+			FROM cms_analytics_views v LEFT JOIN cms_analytics_sessions s ON s.id = v.session_id
+			WHERE ${views.where}
 			GROUP BY ${granularity === 'hour' ? 'v.hour' : 'v.day'}`,
 			views.params
 		);
 		const buckets = new Map<string, TimelineBucket>();
 		if (granularity === 'hour')
 			for (let hour = 0; hour < 24; hour++)
-				buckets.set(String(hour), { key: String(hour), views: 0, sessions: 0 });
+				buckets.set(String(hour), {
+					key: String(hour),
+					views: 0,
+					sessions: 0,
+					seconds: 0,
+					bounces: 0
+				});
 		else
 			for (let offset = 0; offset < days; offset++) {
 				const key = bucketKey(addDays(from, offset), granularity);
-				if (!buckets.has(key)) buckets.set(key, { key, views: 0, sessions: 0 });
+				if (!buckets.has(key))
+					buckets.set(key, { key, views: 0, sessions: 0, seconds: 0, bounces: 0 });
 			}
 		for (const row of timelineRows) {
 			const key =
@@ -451,6 +471,8 @@ export const analytics = {
 			if (!bucket) continue;
 			bucket.views += toNumber(row.views);
 			bucket.sessions += toNumber(row.sessions);
+			bucket.seconds += toNumber(row.seconds);
+			bucket.bounces += toNumber(row.bounces);
 		}
 		const timeline = [...buckets.values()];
 

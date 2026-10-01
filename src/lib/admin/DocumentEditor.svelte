@@ -14,6 +14,7 @@
 	import type { FieldMap } from '../fields';
 	import { Button } from '@compdata/ui/button';
 	import { Badge } from '@compdata/ui/badge';
+	import { CountBadge } from '@compdata/ui/count-badge';
 	import { ConfirmDialog } from '@compdata/ui/confirm-dialog';
 	import * as Sheet from '@compdata/ui/sheet';
 	import SaveIcon from '@lucide/svelte/icons/save';
@@ -246,7 +247,7 @@
 				{#if preview}<EyeOffIcon aria-hidden="true" />{:else}<EyeIcon aria-hidden="true" />{/if} Vorschau
 			</Button>
 			<Button variant="ghost" size="sm" onclick={() => (historyOpen = true)}
-				><HistoryIcon aria-hidden="true" /> Versionen ({versions.length})</Button
+				><HistoryIcon aria-hidden="true" /> Versionen <CountBadge count={versions.length} /></Button
 			>
 			<Button variant="outline" size="sm" onclick={() => save()} disabled={busy}
 				><SaveIcon aria-hidden="true" /> Speichern</Button
@@ -302,8 +303,7 @@
 				<section class="space-y-3">
 					<div class="flex items-center justify-between">
 						<h2 class="text-lg font-semibold">
-							Inhalt <span class="text-muted-foreground text-sm font-normal">({blocks.length})</span
-							>
+							Inhalt <Badge variant="neutral" class="ms-2 align-middle">{blocks.length}</Badge>
 						</h2>
 						{#if blocks.length}
 							{#if allExpanded}

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { formatDate } from '../../format';
+	import { formatDate, formatDateTime } from '../../format';
 	import { invalidateAll } from '$app/navigation';
 	import { Badge } from '@compdata/ui/badge';
 	import { Button } from '@compdata/ui/button';
@@ -85,25 +85,39 @@
 
 <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
 	<h1 class="text-2xl font-semibold">
-		Nutzer <span class="text-muted-foreground text-base font-normal">({data.users.length})</span>
+		Nutzer <Badge variant="neutral" class="ms-2 align-middle">{data.users.length}</Badge>
 	</h1>
 	<Button href="/admin/users/new"><PlusIcon aria-hidden="true" /> Konto anlegen</Button>
 </div>
 
-<Table.Table>
+{#snippet columns()}
+	<!-- Shared widths keep the user and API key tables aligned. -->
+	<colgroup>
+		<col />
+		<col class="w-[21%]" />
+		<col class="w-[11rem]" />
+		<col class="w-[7.25rem]" />
+		<col class="w-[9.5rem]" />
+		<col class="w-[10.5rem]" />
+	</colgroup>
+{/snippet}
+
+<Table.Table class="table-fixed">
+	{@render columns()}
 	<Table.TableHeader>
 		<Table.TableRow>
 			<Table.TableHead>Name</Table.TableHead>
 			<Table.TableHead>E-Mail</Table.TableHead>
 			<Table.TableHead>Rolle</Table.TableHead>
 			<Table.TableHead>Seit</Table.TableHead>
+			<Table.TableHead>Zuletzt angemeldet</Table.TableHead>
 			<Table.TableHead></Table.TableHead>
 		</Table.TableRow>
 	</Table.TableHeader>
 	<Table.TableBody>
 		{#each data.users as user (user.id)}
 			<Table.TableRow class={user.banned ? 'opacity-60' : ''}>
-				<Table.TableCell class="font-medium">
+				<Table.TableCell class="font-medium break-words whitespace-normal">
 					{user.name}
 					{#if user.id === data.user?.id}<Badge variant="id" class="ms-2">Sie</Badge>{/if}
 					{#if user.banned}<Badge variant="signal" class="ms-2">gesperrt</Badge>{/if}
@@ -113,22 +127,30 @@
 							title="Zwei-Faktor-Anmeldung aktiv">2FA</Badge
 						>{/if}
 				</Table.TableCell>
-				<Table.TableCell>{user.email}</Table.TableCell>
+				<Table.TableCell class="truncate" title={user.email}>{user.email}</Table.TableCell>
 				<Table.TableCell>
 					<SearchableSelect
 						options={ADMIN_ROLES}
 						value={user.role}
 						onSelect={(selectedRole) => setRole(user, selectedRole)}
 						disabled={busy || user.id === data.user?.id}
-						class="w-44"
+						class="w-full max-w-48"
 					/>
 				</Table.TableCell>
 				<Table.TableCell class="text-muted-foreground text-sm"
 					>{formatDate(user.createdAt)}</Table.TableCell
 				>
+				<Table.TableCell class="text-muted-foreground text-sm whitespace-nowrap"
+					>{user.lastSignInAt ? formatDateTime(user.lastSignInAt) : '—'}</Table.TableCell
+				>
 				<Table.TableCell class="text-right whitespace-nowrap">
-					<Button size="sm" variant="ghost" onclick={() => (passwordUser = user)} disabled={busy}
-						><KeyIcon aria-hidden="true" /> Passwort</Button
+					<Button
+						size="sm"
+						variant="ghost"
+						onclick={() => (passwordUser = user)}
+						disabled={busy}
+						title="Neues Passwort setzen"
+						aria-label="Neues Passwort setzen"><KeyIcon aria-hidden="true" /></Button
 					>
 					{#if data.twoFactor !== 'off' && user.twoFactorEnabled}
 						<Button
@@ -170,13 +192,9 @@
 
 <section class="mt-10">
 	<div class="mb-4 flex flex-wrap items-center justify-between gap-3">
-		<div>
-			<h2 class="text-lg font-semibold">API-Zugänge</h2>
-			<p class="text-muted-foreground text-sm">
-				Schlüssel für Skripte und Integrationen mit denselben Rollen wie Nutzer, Header
-				<code>Authorization: Bearer &lt;schlüssel&gt;</code> auf <code>/api/v1</code>.
-			</p>
-		</div>
+		<h2 class="text-lg font-semibold">
+			API-Zugänge <Badge variant="neutral" class="ms-2 align-middle">{data.apiKeys.length}</Badge>
+		</h2>
 		<Button variant="outline" href="/admin/users/api-keys/new"
 			><PlusIcon aria-hidden="true" /> API-Zugang anlegen</Button
 		>
@@ -185,7 +203,8 @@
 	{#if !data.apiKeys.length}
 		<p class="text-muted-foreground text-sm">Noch keine API-Zugänge.</p>
 	{:else}
-		<Table.Table>
+		<Table.Table class="table-fixed">
+			{@render columns()}
 			<Table.TableHeader>
 				<Table.TableRow>
 					<Table.TableHead>Name</Table.TableHead>
@@ -199,7 +218,7 @@
 			<Table.TableBody>
 				{#each data.apiKeys as apiKey (apiKey.id)}
 					<Table.TableRow class={apiKey.revokedAt ? 'opacity-50' : ''}>
-						<Table.TableCell class="font-medium">
+						<Table.TableCell class="font-medium break-words whitespace-normal">
 							{apiKey.name}
 							{#if apiKey.revokedAt}<Badge variant="neutral" class="ms-2">widerrufen</Badge>{/if}
 						</Table.TableCell>
@@ -207,11 +226,12 @@
 						<Table.TableCell
 							>{apiKey.role === 'admin' ? 'Administrator' : 'Redakteur'}</Table.TableCell
 						>
-						<Table.TableCell class="text-muted-foreground text-sm"
-							>{formatDate(apiKey.createdAt)} · {apiKey.createdBy}</Table.TableCell
+						<Table.TableCell
+							class="text-muted-foreground truncate text-sm"
+							title={`von ${apiKey.createdBy}`}>{formatDate(apiKey.createdAt)}</Table.TableCell
 						>
-						<Table.TableCell class="text-muted-foreground text-sm"
-							>{apiKey.lastUsedAt ? formatDate(apiKey.lastUsedAt) : '—'}</Table.TableCell
+						<Table.TableCell class="text-muted-foreground text-sm whitespace-nowrap"
+							>{apiKey.lastUsedAt ? formatDateTime(apiKey.lastUsedAt) : '—'}</Table.TableCell
 						>
 						<Table.TableCell class="text-right">
 							{#if !apiKey.revokedAt}

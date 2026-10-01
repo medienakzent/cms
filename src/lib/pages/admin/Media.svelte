@@ -6,6 +6,7 @@
 	import type { MediaItem } from '../../types';
 	import { apiFetch } from '../../admin/api-client';
 	import type { load } from '../../routes/admin/media';
+	import { Badge } from '@compdata/ui/badge';
 	import { Button } from '@compdata/ui/button';
 	import { Input } from '@compdata/ui/input';
 	import { ConfirmDialog } from '@compdata/ui/confirm-dialog';
@@ -80,7 +81,7 @@
 
 <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
 	<h1 class="text-2xl font-semibold">
-		Medien <span class="text-muted-foreground text-base font-normal">({data.media.total})</span>
+		Medien <Badge variant="neutral" class="ms-2 align-middle">{data.media.total}</Badge>
 	</h1>
 	<div class="flex items-center gap-2">
 		<form method="get">

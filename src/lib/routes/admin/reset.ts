@@ -4,6 +4,7 @@ import type { ServerLoadEvent } from '@sveltejs/kit';
 export async function load({ url }: ServerLoadEvent) {
 	return {
 		token: url.searchParams.get('token') ?? '',
-		invalid: url.searchParams.get('error') === 'INVALID_TOKEN'
+		invalid: url.searchParams.get('error') === 'INVALID_TOKEN',
+		breadcrumbs: [{ label: 'Passwort zurücksetzen' }]
 	};
 }
