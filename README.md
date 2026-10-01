@@ -339,6 +339,14 @@ sichtbare Verweildauer an `POST /api/analytics` (öffentlich, Rate-Limit je IP).
 
 ## Produktivbetrieb
 
+**Plesk (Node.js über Passenger):** Neue Projekte bringen `plesk-deploy.sh` mit. In Plesk unter
+Git → Repository-Einstellungen als „Additional deployment actions“ `bash plesk-deploy.sh` eintragen
+(der Systemnutzer braucht Shell-Zugriff). Das Skript nutzt `/opt/plesk/node/<Version>` aus
+`.node-version` (Default 22, muss zur Panel-Einstellung passen), führt `npm ci --include=dev` und
+`npm run build` aus und legt nur bei Erfolg `tmp/restart.txt` an; jeder Fehler bricht ab, ohne die
+App neu zu starten. Protokoll: `deployment.log`. `passenger-config restart-app` scheitert unter Plesk
+an zu langen Socket-Pfaden; `tmp/restart.txt` ist der verlässliche Weg.
+
 - `ORIGIN` auf die öffentliche https-URL setzen, `AUTH_SECRET` mit mindestens 32 Zeichen
   (`openssl rand -base64 32`), `API_TOKEN` nur, wenn Skripte die API brauchen.
 - Erster Nutzer registriert sich selbst und wird Admin; danach ist die Registrierung geschlossen,

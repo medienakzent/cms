@@ -2,6 +2,18 @@
 
 Alle relevanten Änderungen. Format: Datum, Version, Abschnitte Neu / Geändert / Breaking.
 
+## 0.8.10 — 2026-10-01
+
+### Neu
+
+- **`plesk-deploy.sh`** in der Projektvorlage: Deployment für Plesk/Passenger als „Additional
+  deployment action“. Node-Version aus `.node-version` (Abbruch, wenn sie auf dem Server fehlt),
+  `npm ci --include=dev`, `npm run build`, Neustart über `tmp/restart.txt` nur bei Erfolg, Ausgaben
+  in `deployment.log` und in der Plesk-Anzeige. Bestehende Projekte kopieren die Datei aus
+  `templates/project/plesk-deploy.sh`.
+- `cms init` legt `.sh`-Dateien ausführbar an; die `.gitignore`-Vorlage ignoriert `deployment.log`
+  und `/tmp`.
+
 ## 0.8.9 — 2026-10-01
 
 ### Neu

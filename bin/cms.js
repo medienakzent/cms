@@ -18,6 +18,7 @@ import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import {
 	appendFileSync,
+	chmodSync,
 	existsSync,
 	mkdirSync,
 	readdirSync,
@@ -192,6 +193,7 @@ function copyProject(root, { name }) {
 			.replaceAll('__CMS_VERSION__', PACKAGE.version);
 		mkdirSync(dirname(target), { recursive: true });
 		writeFileSync(target, content);
+		if (target.endsWith('.sh')) chmodSync(target, 0o755);
 		created.push(relative(root, target));
 	}
 	return { created, kept };
