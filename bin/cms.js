@@ -5,6 +5,7 @@
  *   cms init [directory] [--name <package-name>]   scaffold a customer project (project files + stubs)
  *   cms sync [--force] [--quiet]                   bring stubs (routes, hooks) up to the package version
  *   cms check                                      verify stubs, report customer-modified files
+ *   cms update [--major] [--dry-run]               pin the newest releases of cms and ui
  *   cms postinstall                                internal: sync after npm install/update
  *
  * Stubs are generated files without own logic (header "@generated"). The manifest
@@ -14,7 +15,16 @@
  * by `init` once and never touched again.
  */
 import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import {
+	appendFileSync,
+	existsSync,
+	mkdirSync,
+	readdirSync,
+	readFileSync,
+	rmSync,
+	writeFileSync
+} from 'node:fs';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -167,7 +177,10 @@ function copyProject(root, { name }) {
 	for (const file of walk(projectDir)) {
 		const target = join(
 			root,
-			file.replace(/^_gitignore$/, '.gitignore').replace(/^_npmrc$/, '.npmrc')
+			file
+				.replace(/^_gitignore$/, '.gitignore')
+				.replace(/^_npmrc$/, '.npmrc')
+				.replace(/^_github\//, '.github/')
 		);
 		if (existsSync(target)) {
 			kept.push(relative(root, target));
@@ -229,6 +242,91 @@ function warnNativeDependencies(missing) {
 	console.warn(
 		`package.json: unter "dependencies" fehlt ${missing.join(', ')} — sonst stürzt der Produktions-Build (node build) ab. Eintragen, dann npm install.`
 	);
+}
+
+const GIT_RELEASE = /^github:([\w.-]+\/[\w.-]+)#release\/v(\d+\.\d+\.\d+)$/;
+const RELEASE_TAG = /^refs\/tags\/release\/v(\d+\.\d+\.\d+)$/;
+
+const parseVersion = (version) => version.split('.').map(Number);
+
+function compareVersions(left, right) {
+	for (let index = 0; index < 3; index++) {
+		if (left[index] !== right[index]) return left[index] - right[index];
+	}
+	return 0;
+}
+
+/** Release versions of a GitHub repository, read from its tags (no clone). */
+function releaseVersions(repository) {
+	const output = execFileSync(
+		'git',
+		['ls-remote', '--tags', `git@github.com:${repository}.git`, 'refs/tags/release/v*'],
+		{ encoding: 'utf8', stdio: ['ignore', 'pipe', 'inherit'] }
+	);
+	return output
+		.split('\n')
+		.map((line) => line.split('\t')[1]?.match(RELEASE_TAG)?.[1])
+		.filter(Boolean)
+		.map(parseVersion);
+}
+
+/**
+ * Pins the newest prebuilt releases of cms and ui in package.json and the lockfile. Stays within
+ * the current major version unless `major` is set, so breaking releases never arrive unasked.
+ */
+function update(root, { major, dryRun }) {
+	const projectFile = join(root, 'package.json');
+	let raw = readFileSync(projectFile, 'utf8');
+	const project = JSON.parse(raw);
+	const changes = [];
+	for (const name of RELEASE_DEPENDENCIES) {
+		const specification = project.dependencies?.[name] ?? project.devDependencies?.[name];
+		if (!specification) continue;
+		const match = specification.match(GIT_RELEASE);
+		if (!match) {
+			console.warn(
+				`${name}: ${specification} ist kein Release-Tag (#release/vX.Y.Z), übersprungen.`
+			);
+			continue;
+		}
+		const [, repository, currentVersion] = match;
+		const current = parseVersion(currentVersion);
+		const newest = releaseVersions(repository)
+			.filter((version) => major || version[0] === current[0])
+			.sort(compareVersions)
+			.at(-1);
+		if (!newest || compareVersions(newest, current) <= 0) {
+			log(`${name} ${currentVersion} ist aktuell.`);
+			continue;
+		}
+		const version = newest.join('.');
+		raw = raw.replace(
+			JSON.stringify(specification),
+			JSON.stringify(`github:${repository}#release/v${version}`)
+		);
+		changes.push({ name, from: currentVersion, to: version });
+	}
+	if (!changes.length || dryRun) return changes;
+
+	writeFileSync(projectFile, raw);
+	const lockFile = join(root, 'package-lock.json');
+	if (existsSync(lockFile)) {
+		// npm keeps locked git commits even when the tag in package.json changes.
+		const lockRaw = readFileSync(lockFile, 'utf8');
+		const lockfile = JSON.parse(lockRaw);
+		for (const change of changes) delete lockfile.packages?.[`node_modules/${change.name}`];
+		const indent = lockRaw.match(/^[ \t]+/m)?.[0] ?? '  ';
+		writeFileSync(lockFile, JSON.stringify(lockfile, null, indent) + '\n');
+	}
+	execFileSync(
+		'npm',
+		['install', '--package-lock-only', '--ignore-scripts', '--no-audit', '--no-fund'],
+		{
+			cwd: root,
+			stdio: quiet ? 'ignore' : 'inherit'
+		}
+	);
+	return changes;
 }
 
 function check(root) {
@@ -313,6 +411,31 @@ Eigene Inhaltstypen: src/blocks, src/collections, src/mail — siehe AGENTS.md.`
 		report(sync(root, { force: flags.has('--force') }), previousVersion);
 		break;
 	}
+	case 'update': {
+		const root = process.cwd();
+		if (!isProject(root)) {
+			console.error('Kein CMS-Projekt (src/cms.config.ts fehlt).');
+			process.exit(1);
+		}
+		const dryRun = flags.has('--dry-run');
+		const changes = update(root, { major: flags.has('--major'), dryRun });
+		for (const change of changes) console.log(`${change.name}: ${change.from} → ${change.to}`);
+		if (!changes.length) console.log('Alle Releases sind aktuell.');
+		else if (dryRun) console.log('Nur angezeigt (--dry-run), nichts geändert.');
+		else
+			console.log(
+				'package.json und Lockfile angepasst. Danach installieren (Dev-Container neu starten bzw. npm ci), npm run check.'
+			);
+		// GitHub Actions: lets the workflow decide whether to build and commit.
+		if (process.env.GITHUB_OUTPUT && !dryRun) {
+			const summary = changes.map((change) => `${change.name} ${change.to}`).join(', ');
+			appendFileSync(
+				process.env.GITHUB_OUTPUT,
+				`changed=${changes.length ? 'true' : 'false'}\nsummary=Update auf ${summary || 'aktuellen Stand'}\n`
+			);
+		}
+		break;
+	}
 	case 'check':
 		process.exit(check(process.cwd()) ? 1 : 0);
 		break;
@@ -329,7 +452,7 @@ Eigene Inhaltstypen: src/blocks, src/collections, src/mail — siehe AGENTS.md.`
 	}
 	default:
 		console.log(
-			`@medienakzent/cms ${PACKAGE.version}\n\n  cms init [verzeichnis] [--name paketname]\n  cms sync [--force] [--quiet]\n  cms check`
+			`@medienakzent/cms ${PACKAGE.version}\n\n  cms init [verzeichnis] [--name paketname]\n  cms sync [--force] [--quiet]\n  cms check\n  cms update [--major] [--dry-run]`
 		);
 		process.exit(command ? 1 : 0);
 }

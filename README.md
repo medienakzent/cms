@@ -50,6 +50,16 @@ werden gemeldet. `npx cms check` prüft den Stand (ist Teil von `npm run check`)
 Projektdateien (Layout, Design, Blocks, Konfiguration) werden nur einmal von `cms init`
 angelegt und nie überschrieben. Details und Versionsregeln: AGENTS.md.
 
+**Neueste Version beziehen:** `npx cms update` sucht per `git ls-remote` die neuesten Tags
+`release/v*` von `medienakzent/cms` und `medienakzent/ui`, bleibt in der aktuellen Hauptversion
+(`--major` für Breaking Releases) und passt `package.json` und Lockfile an. Neue Projekte bringen
+`.github/workflows/cms-update.yml` mit: jede Nacht `cms update`, dann `npm ci`, `npm run check` und
+`npm run build`; nur wenn alles grün ist, landet ein Commit direkt auf `main`. Voraussetzung ist das
+Repository-Secret `CMS_GITHUB_TOKEN` (Fine-grained Token, „Contents: Read-only“ auf
+`medienakzent/cms` und `medienakzent/ui`). Mit automatischem Git-Deploy in Plesk (Webhook, Aktion
+`npm ci && npm run build && mkdir -p tmp && touch tmp/restart.txt`) geht ein Update ohne Handgriff
+live.
+
 ## Struktur eines Kundenprojekts
 
 ```

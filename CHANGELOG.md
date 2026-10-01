@@ -2,6 +2,18 @@
 
 Alle relevanten Änderungen. Format: Datum, Version, Abschnitte Neu / Geändert / Breaking.
 
+## 0.8.9 — 2026-10-01
+
+### Neu
+
+- **`cms update`** hebt `@medienakzent/cms` und `@compdata/ui` auf die neuesten vorgebauten Releases
+  der aktuellen Hauptversion und erneuert das Lockfile (`--dry-run`, `--major`). In GitHub Actions
+  meldet es `changed` und `summary` als Step-Outputs.
+- **Workflow-Vorlage `.github/workflows/cms-update.yml`** für neue Projekte (`cms init`): nachts
+  `cms update`, dann `npm ci`, `npm run check`, `npm run build`, bei Erfolg Commit direkt auf `main`.
+  Bestehende Projekte übernehmen die Datei aus `templates/project/_github/workflows/` und legen das
+  Secret `CMS_GITHUB_TOKEN` an.
+
 ## 0.8.8 — 2026-10-01
 
 ### Neu
