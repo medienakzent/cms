@@ -106,6 +106,7 @@ describe('cms init (plesk)', () => {
 		run('init', project, '--name', 'cms.kunde', '--quiet');
 		const script = join(project, 'plesk-deploy.sh');
 		expect(readFileSync(script, 'utf8')).toContain('touch tmp/restart.txt');
+		expect(readFileSync(join(project, 'app.cjs'), 'utf8')).toContain("import('./build/index.js')");
 		expect(statSync(script).mode & 0o111).not.toBe(0);
 	});
 });

@@ -37,7 +37,9 @@ es gibt keine CLAUDE.md.
 
 - Entwicklung: `docker compose -f docker-compose.dev.yml up -d --build`,
   Prüfen mit `docker exec -w /app __PROJECT_NAME__-dev npm run check`.
-- Produktion mit Plesk (ohne Docker): `plesk-deploy.sh` als „Additional deployment action“ im
+- Produktion mit Plesk (ohne Docker): Startdatei `app.cjs` (Passenger lädt CommonJS; sie liest die
+  `.env` daneben und startet `build/index.js`), Dokumentstamm `build/client`. Deployment über
+  `plesk-deploy.sh` als „Additional deployment action“ im
   Git-Bereich der Domain (`bash plesk-deploy.sh`). Es nimmt die Node-Hauptversion aus `.node-version`
   (muss zur Version im Plesk-Panel passen), führt `npm ci` und `npm run build` aus und startet die App
   nur bei Erfolg über `tmp/restart.txt` neu; Ausgaben in `deployment.log`.

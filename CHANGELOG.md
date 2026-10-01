@@ -2,6 +2,15 @@
 
 Alle relevanten Änderungen. Format: Datum, Version, Abschnitte Neu / Geändert / Breaking.
 
+## 0.8.11 — 2026-10-01
+
+### Neu
+
+- **`app.cjs`** in der Projektvorlage: Startdatei für Plesk/Passenger. Passenger lädt CommonJS, der
+  SvelteKit-Server ist ein ES-Modul; die Datei lädt die `.env` neben sich (Variablen aus dem Panel
+  haben Vorrang) und startet `build/index.js`. Bestehende Projekte kopieren sie aus
+  `templates/project/app.cjs`.
+
 ## 0.8.10 — 2026-10-01
 
 ### Neu

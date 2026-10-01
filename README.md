@@ -339,7 +339,10 @@ sichtbare Verweildauer an `POST /api/analytics` (öffentlich, Rate-Limit je IP).
 
 ## Produktivbetrieb
 
-**Plesk (Node.js über Passenger):** Neue Projekte bringen `plesk-deploy.sh` mit. In Plesk unter
+**Plesk (Node.js über Passenger):** Neue Projekte bringen `app.cjs` und `plesk-deploy.sh` mit. Im
+Node.js-Panel: Application Startup File `app.cjs` (lädt die `.env` neben sich, Panel-Variablen haben
+Vorrang, und startet `build/index.js`), Document Root `build/client`, dieselbe Node-Version wie in
+`.node-version`. In Plesk unter
 Git → Repository-Einstellungen als „Additional deployment actions“ `bash plesk-deploy.sh` eintragen
 (der Systemnutzer braucht Shell-Zugriff). Das Skript nutzt `/opt/plesk/node/<Version>` aus
 `.node-version` (Default 22, muss zur Panel-Einstellung passen), führt `npm ci --include=dev` und
