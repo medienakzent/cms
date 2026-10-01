@@ -2,6 +2,14 @@
 
 Alle relevanten Änderungen. Format: Datum, Version, Abschnitte Neu / Geändert / Breaking.
 
+## 0.8.7 — 2026-10-01
+
+### Geändert
+
+- **Hilfetexte als Info-Popover:** `help` eines Feldes erscheint im Admin nicht mehr als graue Zeile
+  unter dem Feld, sondern als „i“ neben der Beschriftung (auch bei Checkboxen). Ein Klick öffnet den
+  Text im Popover; das hält lange Formulare kompakt. Keine Änderung in Kundenprojekten nötig.
+
 ## 0.8.6 — 2026-09-30
 
 ### Behoben
