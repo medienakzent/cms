@@ -3,7 +3,8 @@
 #
 # Plesk → Websites & Domains → <domain> → Git → Repository-Einstellungen →
 # "Additional deployment actions":  bash plesk-deploy.sh
-# Voraussetzung: Der Systemnutzer des Abonnements hat Shell-Zugriff (SSH).
+# Voraussetzung: Der Systemnutzer des Abonnements hat Shell-Zugriff (SSH); Startdatei der App
+# (Node.js → Application Startup File) ist app.cjs.
 #
 # Die Node-Hauptversion steht in .node-version (Default 22). Sie muss zur Version im Plesk-Panel
 # (Node.js → Node.js Version) passen, sonst laden Native Module wie better-sqlite3 nicht.
