@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { authClient } from '../../admin/auth-client';
+	import PasswordInput from '../../admin/PasswordInput.svelte';
 	import { Button } from '@compdata/ui/button';
-	import { Input } from '@compdata/ui/input';
 	import { Label } from '@compdata/ui/label';
 	import * as Card from '@compdata/ui/card';
 	import type { AdminLayoutData } from '../../routes/admin/layout';
@@ -47,13 +47,11 @@
 			{:else}
 				<form onsubmit={submit} class="space-y-3">
 					<div class="space-y-1">
-						<Label for="password">Neues Passwort</Label><Input
+						<Label for="password">Neues Passwort</Label><PasswordInput
 							id="password"
-							type="password"
 							bind:value={password}
 							required
-							minlength={8}
-							autocomplete="new-password"
+							generate
 						/>
 					</div>
 					{#if error}<p class="text-destructive text-sm">{error}</p>{/if}

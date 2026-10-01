@@ -4,7 +4,6 @@
 	import { Badge } from '@compdata/ui/badge';
 	import { Button } from '@compdata/ui/button';
 	import { ConfirmDialog } from '@compdata/ui/confirm-dialog';
-	import { Input } from '@compdata/ui/input';
 	import { Label } from '@compdata/ui/label';
 	import PlusIcon from '@lucide/svelte/icons/plus';
 	import { SearchableSelect } from '@compdata/ui/select';
@@ -16,6 +15,7 @@
 	import { toast } from 'svelte-sonner';
 	import { apiFetch } from '../../admin/api-client';
 	import { ADMIN_ROLES } from '../../admin/roles';
+	import PasswordInput from '../../admin/PasswordInput.svelte';
 	import type { AdminLayoutData } from '../../routes/admin/layout';
 	import type { AdminUser, load } from '../../routes/admin/users';
 
@@ -269,13 +269,7 @@
 >
 	<div class="grid gap-2">
 		<Label for="pw-new">Passwort für {passwordUser?.email}</Label>
-		<Input
-			id="pw-new"
-			type="password"
-			bind:value={newPassword}
-			minlength={8}
-			autocomplete="new-password"
-		/>
+		<PasswordInput id="pw-new" bind:value={newPassword} generate />
 	</div>
 </ConfirmDialog>
 

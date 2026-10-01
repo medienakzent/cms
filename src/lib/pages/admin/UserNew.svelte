@@ -7,6 +7,7 @@
 	import { toast } from 'svelte-sonner';
 	import { apiFetch, ApiError, issuesToMap } from '../../admin/api-client';
 	import { ADMIN_ROLES } from '../../admin/roles';
+	import PasswordInput from '../../admin/PasswordInput.svelte';
 
 	let name = $state('');
 	let email = $state('');
@@ -51,13 +52,12 @@
 	</div>
 	<div class="space-y-1">
 		<Label for="user-password">Passwort (mind. 8 Zeichen)</Label>
-		<Input
+		<PasswordInput
 			id="user-password"
-			type="password"
 			bind:value={password}
 			required
-			minlength={8}
-			autocomplete="new-password"
+			generate
+			invalid={!!errors.password}
 		/>
 		{#if errors.password}<p class="text-destructive text-xs">{errors.password}</p>{/if}
 	</div>
