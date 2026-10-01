@@ -71,3 +71,23 @@ describe('cms sync', () => {
 		expect(manifest().files['src/routes/old-stub.ts'].modified).toBe(true);
 	});
 });
+
+describe('cms init', () => {
+	it('creates the project with dotfiles and the update workflow', () => {
+		const project = join(root, 'kunde');
+		run('init', project, '--name', 'cms.kunde', '--quiet');
+		expect(existsSync(join(project, '.gitignore'))).toBe(true);
+		const workflow = readFileSync(join(project, '.github', 'workflows', 'cms-update.yml'), 'utf8');
+		expect(workflow).toContain('npx cms update');
+		expect(existsSync(join(project, '_github'))).toBe(false);
+		const manifestFile = JSON.parse(readFileSync(join(project, 'package.json'), 'utf8'));
+		expect(manifestFile.dependencies['@medienakzent/cms']).toMatch(/#release\/v\d+\.\d+\.\d+$/);
+	});
+});
+
+describe('cms update', () => {
+	it('leaves projects without release pins alone', () => {
+		writeFileSync(join(root, 'package.json'), JSON.stringify({ dependencies: {} }));
+		expect(run('update', '--dry-run')).toContain('Alle Releases sind aktuell.');
+	});
+});

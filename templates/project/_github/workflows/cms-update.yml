@@ -1,0 +1,62 @@
+# Holt nachts die neuesten Releases von @medienakzent/cms und @compdata/ui (innerhalb der
+# Hauptversion), prüft und baut das Projekt und pusht nur dann direkt auf main.
+#
+# Einmalig einrichten: Repository → Settings → Secrets and variables → Actions → Secret
+# CMS_GITHUB_TOKEN = Fine-grained Personal Access Token mit "Contents: Read-only" auf
+# medienakzent/cms und medienakzent/ui (private Git-Pakete).
+# Manuell starten: Actions → CMS-Update → Run workflow.
+name: CMS-Update
+
+on:
+  schedule:
+    - cron: '23 3 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: cms-update
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Zugriff auf private Pakete
+        env:
+          TOKEN: ${{ secrets.CMS_GITHUB_TOKEN }}
+        run: |
+          git config --global url."https://x-access-token:${TOKEN}@github.com/".insteadOf "ssh://git@github.com/"
+          git config --global --add url."https://x-access-token:${TOKEN}@github.com/".insteadOf "git@github.com:"
+
+      - name: Installieren
+        run: npm ci
+
+      - name: Neueste Releases suchen
+        id: update
+        run: npx cms update
+
+      - name: Installieren, prüfen, bauen
+        if: steps.update.outputs.changed == 'true'
+        run: |
+          npm ci
+          npm run check
+          npm run build
+
+      - name: Auf main pushen
+        if: steps.update.outputs.changed == 'true'
+        env:
+          MESSAGE: ${{ steps.update.outputs.summary }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "$MESSAGE" -m "Automatisch per cms update: Releases angehoben, check und build grün."
+          git push
