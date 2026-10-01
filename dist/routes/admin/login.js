@@ -20,5 +20,5 @@ export async function load({ locals, url }) {
             signup = false;
         }
     }
-    return { returnTo, signup };
+    return { returnTo, signup, breadcrumbs: [{ label: 'Anmelden' }] };
 }

@@ -2,6 +2,30 @@
 
 Alle relevanten Änderungen. Format: Datum, Version, Abschnitte Neu / Geändert / Breaking.
 
+## 0.8.13 — 2026-10-01
+
+### Neu
+
+- **Anmeldeseite neu gestaltet:** Favicon der Website groß in einer Kachel, darunter Seitenname und
+  der aktuelle Schritt, dezente Farbflächen in der Primärfarbe; gilt auch für „Passwort zurücksetzen“
+  (gemeinsame Komponente `AuthShell`). Der Browser-Tab heißt dort „Anmelden“ bzw.
+  „Passwort zurücksetzen“ statt „Übersicht“.
+- **Statistik-Kacheln mit Verlauf:** Seitenaufrufe, Besuche, Seiten pro Besuch, Besuchsdauer und
+  Absprungrate zeigen den Verlauf über den gewählten Zeitraum als Sparkline im Hintergrund (Report:
+  `timeline` liefert zusätzlich `seconds` und `bounces` je Zeitabschnitt).
+- **Nutzerverwaltung:** Nutzer- und API-Liste haben dieselben Spalten und stehen bündig untereinander;
+  neue Spalte „Zuletzt angemeldet“ (jüngste Sitzung). „Passwort“ ist ein Symbol-Button, der
+  Untertitel bei „API-Zugänge“ entfällt.
+- Zähler hinter Überschriften (Nutzer, API-Zugänge, Einsendungen, Medien, Collection-Listen, „Inhalt“)
+  als Badge, „Versionen“ im Editor mit Zähler-Badge.
+
+### Behoben
+
+- Das Symbol „Website“ in der Admin-Seitenleiste navigierte trotz des Fixes aus 0.8.5 im selben Tab in
+  die Website: Svelte 5 bündelt `onclick` an der App-Wurzel, wo auch der SvelteKit-Router lauscht, und
+  der Router war zuerst dran. Der Link zeigt jetzt auf `#` und öffnet die Website in einem neuen Tab
+  (im Browser geprüft).
+
 ## 0.8.12 — 2026-10-01
 
 ### Neu

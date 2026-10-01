@@ -35,6 +35,10 @@ export interface TimelineBucket {
     /** Hour (`0`–`23`), day, first day of the week (Monday) or month (`YYYY-MM`). */
     key: string;
     views: number;
+    /** Visible reading time of all views in the bucket. */
+    seconds: number;
+    /** Visits in the bucket with a single page view. */
+    bounces: number;
     sessions: number;
 }
 export interface LiveSnapshot {

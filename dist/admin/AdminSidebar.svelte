@@ -46,7 +46,7 @@
 	const navSecondary = $derived<ShellNavItem[]>([
 		{
 			id: 'site',
-			href: '/',
+			href: '#',
 			label: 'Website',
 			icon: LayersIcon,
 			external: true,
@@ -69,8 +69,10 @@
 	]);
 
 	/**
-	 * The secondary navigation renders plain links; a client-side navigation from the admin into
-	 * the website would keep the admin stylesheet and dark mode. A new tab loads the site cleanly.
+	 * The secondary navigation renders plain links and ignores `external`. With href="/" SvelteKit's
+	 * router navigated client-side into the website before this handler ran (Svelte 5 delegates
+	 * onclick to the app root, where the router listens too), keeping the admin stylesheet and dark
+	 * mode. The link points to "#" instead, so only this handler acts and opens a clean tab.
 	 */
 	function openWebsite(event?: MouseEvent) {
 		event?.preventDefault();

@@ -33,7 +33,7 @@
 
 <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
 	<h1 class="text-2xl font-semibold">
-		Einsendungen <span class="text-muted-foreground text-base font-normal">({data.total})</span>
+		Einsendungen <Badge variant="neutral" class="ms-2 align-middle">{data.total}</Badge>
 	</h1>
 	<span class="text-muted-foreground text-sm">Versand: <code>{data.transport}</code></span>
 </div>

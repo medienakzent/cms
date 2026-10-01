@@ -270,17 +270,26 @@ export const analytics = {
         // Visits are cut at midnight, so summing daily distinct visits into weeks or months is exact.
         const granularity = granularityOf(days);
         const timelineRows = await db.all(`SELECT ${granularity === 'hour' ? 'v.hour' : 'v.day'} AS bucket, COUNT(*) AS views,
-			COUNT(DISTINCT v.session_id) AS sessions FROM cms_analytics_views v WHERE ${views.where}
+			COUNT(DISTINCT v.session_id) AS sessions, SUM(v.seconds) AS seconds,
+			COUNT(DISTINCT CASE WHEN s.views = 1 THEN v.session_id END) AS bounces
+			FROM cms_analytics_views v LEFT JOIN cms_analytics_sessions s ON s.id = v.session_id
+			WHERE ${views.where}
 			GROUP BY ${granularity === 'hour' ? 'v.hour' : 'v.day'}`, views.params);
         const buckets = new Map();
         if (granularity === 'hour')
             for (let hour = 0; hour < 24; hour++)
-                buckets.set(String(hour), { key: String(hour), views: 0, sessions: 0 });
+                buckets.set(String(hour), {
+                    key: String(hour),
+                    views: 0,
+                    sessions: 0,
+                    seconds: 0,
+                    bounces: 0
+                });
         else
             for (let offset = 0; offset < days; offset++) {
                 const key = bucketKey(addDays(from, offset), granularity);
                 if (!buckets.has(key))
-                    buckets.set(key, { key, views: 0, sessions: 0 });
+                    buckets.set(key, { key, views: 0, sessions: 0, seconds: 0, bounces: 0 });
             }
         for (const row of timelineRows) {
             const key = granularity === 'hour'
@@ -291,6 +300,8 @@ export const analytics = {
                 continue;
             bucket.views += toNumber(row.views);
             bucket.sessions += toNumber(row.sessions);
+            bucket.seconds += toNumber(row.seconds);
+            bucket.bounces += toNumber(row.bounces);
         }
         const timeline = [...buckets.values()];
         const hourRows = await db.all(`SELECT v.hour AS hour, COUNT(*) AS count FROM cms_analytics_views v WHERE ${views.where} GROUP BY v.hour`, views.params);

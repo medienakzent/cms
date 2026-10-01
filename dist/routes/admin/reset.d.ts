@@ -3,4 +3,7 @@ import type { ServerLoadEvent } from '@sveltejs/kit';
 export declare function load({ url }: ServerLoadEvent): Promise<{
     token: string;
     invalid: boolean;
+    breadcrumbs: {
+        label: string;
+    }[];
 }>;

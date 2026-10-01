@@ -7,6 +7,8 @@ export interface AdminUser {
     createdAt: string;
     banned: boolean;
     twoFactorEnabled: boolean;
+    /** Start of the newest session; expired sessions are removed, so older sign-ins show as unknown. */
+    lastSignInAt: string | null;
 }
 /** User list, admins only (the auth plugin checks this as well). */
 export declare function load({ locals, request }: ServerLoadEvent): Promise<{

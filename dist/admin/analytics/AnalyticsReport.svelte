@@ -12,6 +12,7 @@
 	} from '../../format';
 	import BarChart from './BarChart.svelte';
 	import BreakdownList from './BreakdownList.svelte';
+	import Sparkline from './Sparkline.svelte';
 
 	type Props = { report: AnalyticsReport; enabled: boolean; periods: readonly number[] };
 
@@ -78,6 +79,24 @@
 	};
 	const change = (current: number, previous: number) =>
 		previous ? (current - previous) / previous : null;
+
+	const ratio = (part: number, whole: number) => (whole ? part / whole : 0);
+	/** Background trend per tile, in the same buckets as the history chart. */
+	const trends = $derived.by<Record<string, number[]>>(() => {
+		const timeline = report.timeline;
+		const views = timeline.map((bucket) => bucket.views);
+		return {
+			Seitenaufrufe: views,
+			Aufrufe: views,
+			Besuche: timeline.map((bucket) => bucket.sessions),
+			'Seiten pro Besuch': timeline.map((bucket) => ratio(bucket.views, bucket.sessions)),
+			'Ø Besuchsdauer': timeline.map((bucket) => ratio(bucket.seconds, bucket.sessions)),
+			'Ø Verweildauer': timeline.map((bucket) => ratio(bucket.seconds, bucket.views)),
+			...(report.path
+				? {}
+				: { Absprungrate: timeline.map((bucket) => ratio(bucket.bounces, bucket.sessions)) })
+		};
+	});
 
 	const kpis = $derived.by<Kpi[]>(() => {
 		const totals = report.totals;
@@ -261,8 +280,9 @@
 
 	<div class="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
 		{#each kpis as kpi (kpi.label)}
-			<Card.Root class="gap-1 px-4" title={kpi.hint}>
-				<span class="text-muted-foreground flex items-center gap-2 text-sm"
+			<Card.Root class="relative gap-1 overflow-hidden px-4" title={kpi.hint}>
+				{#if trends[kpi.label]}<Sparkline values={trends[kpi.label]} />{/if}
+				<span class="text-muted-foreground relative flex items-center gap-2 text-sm"
 					>{kpi.label}
 					{#if kpi.live && live}
 						<span class="relative flex size-2" title="Live">
@@ -273,11 +293,11 @@
 						</span>
 					{/if}</span
 				>
-				<span class="text-2xl font-semibold tabular-nums">{kpi.value}</span>
+				<span class="relative text-2xl font-semibold tabular-nums">{kpi.value}</span>
 				{#if kpi.change !== null}
 					{@const better = kpi.lowerIsBetter ? kpi.change < 0 : kpi.change > 0}
 					<span
-						class="text-xs {kpi.change === 0
+						class="relative text-xs {kpi.change === 0
 							? 'text-muted-foreground'
 							: better
 								? 'text-green-600 dark:text-green-400'

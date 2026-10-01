@@ -27,7 +27,7 @@
 <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
 	<h1 class="text-2xl font-semibold">
 		{data.def.labelPlural}
-		<span class="text-muted-foreground text-base font-normal">({data.rows.length})</span>
+		<Badge variant="neutral" class="ms-2 align-middle">{data.rows.length}</Badge>
 	</h1>
 	<div class="flex items-center gap-2">
 		<form method="get">
