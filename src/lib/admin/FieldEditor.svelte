@@ -16,6 +16,7 @@
 	import MarkdownEditor from './MarkdownEditor.svelte';
 	import FieldsForm from './FieldsForm.svelte';
 	import FieldEditor from './FieldEditor.svelte';
+	import FieldHelp from './FieldHelp.svelte';
 	import BlocksEditor from './BlocksEditor.svelte';
 	import MediaPicker from './MediaPicker.svelte';
 	import ReferencePicker from './ReferencePicker.svelte';
@@ -123,6 +124,7 @@
 			<Label for={id}
 				>{label}{#if field.required}<span class="text-destructive"> *</span>{/if}</Label
 			>
+			{#if field.help}<FieldHelp text={field.help} {label} />{/if}
 			{#if showScope}
 				{#if field.localized}
 					<Badge variant="info" title="Wird pro Sprache gespeichert">{lang.toUpperCase()}</Badge>
@@ -170,6 +172,7 @@
 				onCheckedChange={(checked) => onchange(checked === true)}
 			/>
 			<Label for={id}>{label}</Label>
+			{#if field.help}<FieldHelp text={field.help} {label} />{/if}
 			{#if showScope && !field.localized}<Badge variant="id">alle Sprachen</Badge>{/if}
 		</div>
 	{:else if field.kind === 'date'}
@@ -383,6 +386,5 @@
 		/>
 	{/if}
 
-	{#if field.help}<p class="text-muted-foreground text-xs">{field.help}</p>{/if}
 	{#if error}<p class="text-destructive text-xs">{error}</p>{/if}
 </div>
