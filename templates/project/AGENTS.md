@@ -53,6 +53,12 @@ es gibt keine CLAUDE.md.
   den Dev-Container neu starten — der Entrypoint installiert und synchronisiert die
   Stubs. Nicht im laufenden Container austauschen: Vite stürzt ab, wenn das Paket unter ihm
   wechselt. Danach `npx cms check` und CHANGELOG des Pakets lesen.
+- Lockfile nie neben `node_modules` im (arm64-)Dev-Container erzeugen: npm nimmt dann nur die
+  Native-Pakete der eigenen Plattform auf, und der Build auf dem Linux-Server scheitert
+  („Cannot find module @rollup/rollup-linux-x64-gnu“). `npx cms lock` schreibt es in einem leeren
+  Ordner neu; `cms update` macht das automatisch, `cms check` meldet ein unvollständiges Lockfile.
+- Betriebsdateien (`app.cjs`, `plesk-deploy.sh`, `.github/workflows/cms-update.yml`) legt
+  `cms sync` an, wenn sie fehlen, und überschreibt sie nie; Anpassungen bleiben also erhalten.
 - Alle Umgebungsvariablen sind in `.env.example` dokumentiert.
 
 ## Code-Stil

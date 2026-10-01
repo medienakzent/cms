@@ -1,4 +1,5 @@
 <script lang="ts">
+	import CmsCredit from '../../admin/CmsCredit.svelte';
 	import * as Card from '@compdata/ui/card';
 	import { iconFor } from '../../admin/icons';
 	import { formatCount } from '../../format';
@@ -62,3 +63,5 @@
 		periods={ANALYTICS_PERIODS}
 	/>
 </div>
+
+<CmsCredit class="mt-10" />

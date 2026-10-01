@@ -2,6 +2,24 @@
 
 Alle relevanten Änderungen. Format: Datum, Version, Abschnitte Neu / Geändert / Breaking.
 
+## 0.8.14 — 2026-10-01
+
+### Behoben
+
+- **Lockfile ohne Linux-Pakete:** Wird `package-lock.json` neben `node_modules` im arm64-Dev-Container
+  erzeugt, nimmt npm nur die Native-Pakete der eigenen Plattform auf (npm/cli#4828); der Build auf
+  dem Linux-Server scheitert dann mit „Cannot find module @rollup/rollup-linux-x64-gnu“. `cms update`
+  schreibt das Lockfile jetzt in einem leeren Ordner (und löst neu auf, falls Plattform-Pakete
+  fehlen), neues Kommando `cms lock` repariert bestehende Lockfiles, `cms check` meldet fehlende
+  Linux-x64-Pakete.
+
+### Neu
+
+- Der Admin weist sich als **medienakzent CMS** aus: Untertitel in der Seitenleiste, Fußzeile auf
+  Anmeldeseite und Übersicht (Link auf medienakzent.de), Browser-Tab „… · <Website> · medienakzent CMS“.
+- `cms sync` legt fehlende Betriebsdateien aus der Projektvorlage an (`app.cjs`, `plesk-deploy.sh`,
+  `.github/workflows/cms-update.yml`), überschreibt vorhandene nie; `cms check` meldet fehlende.
+
 ## 0.8.13 — 2026-10-01
 
 ### Neu
