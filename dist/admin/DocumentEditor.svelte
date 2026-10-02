@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { tick } from 'svelte';
 	import { formatCount, formatDateTime } from '../format';
 	import { beforeNavigate, goto, invalidateAll } from '$app/navigation';
 	import type { Document, DocumentStatus, RenderBlock, VersionInfo } from '../types';
@@ -64,6 +65,7 @@
 	);
 	let preview = $state(false);
 	let previewFrame = $state<HTMLIFrameElement | null>(null);
+	let previewPanel = $state<HTMLElement | null>(null);
 	const siteConfig = getCmsContext().config;
 	const previewFrameSrc = $derived(localizePath(siteConfig, lang, '/cms-preview'));
 
@@ -103,12 +105,17 @@
 			/* storage unavailable */
 		}
 	});
-	function togglePreview() {
+	async function togglePreview() {
 		preview = !preview;
 		try {
 			localStorage.setItem(PREVIEW_KEY, preview ? '1' : '0');
 		} catch {
 			/* storage unavailable */
+		}
+		// Below the two-column breakpoint the preview sits under the whole form; jump to it.
+		if (preview && !window.matchMedia('(min-width: 1536px)').matches) {
+			await tick();
+			previewPanel?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 		}
 	}
 
@@ -386,7 +393,10 @@
 
 		<!-- Live preview renders the current unsaved state with the block renderer. -->
 		{#if preview}
-			<aside class="min-w-0 2xl:sticky 2xl:top-4 2xl:max-h-[calc(100vh-2rem)]">
+			<aside
+				bind:this={previewPanel}
+				class="min-w-0 scroll-mt-4 2xl:sticky 2xl:top-4 2xl:max-h-[calc(100vh-2rem)]"
+			>
 				<div
 					class="border-border bg-background flex h-full flex-col overflow-hidden rounded-lg border"
 				>
@@ -434,7 +444,7 @@
 />
 
 <Sheet.Root bind:open={historyOpen}>
-	<Sheet.Content side="right">
+	<Sheet.Content side="right" class="w-full overflow-y-auto sm:max-w-md">
 		<Sheet.Header>
 			<Sheet.Title>Versionen</Sheet.Title>
 			<Sheet.Description
@@ -448,9 +458,9 @@
 			{/if}
 			{#each versions as version (version.id)}
 				<div
-					class="border-border flex items-center justify-between gap-2 rounded-md border p-2 text-sm"
+					class="border-border flex flex-wrap items-center justify-between gap-2 rounded-md border p-2 text-sm"
 				>
-					<div>
+					<div class="min-w-0">
 						<div>
 							{formatDateTime(version.savedAt)}
 							<Badge variant="id"
@@ -459,8 +469,12 @@
 						</div>
 						<div class="text-muted-foreground text-xs">{version.savedBy}</div>
 					</div>
-					<Button size="sm" variant="outline" onclick={() => restore(version)} disabled={busy}
-						>Wiederherstellen</Button
+					<Button
+						size="sm"
+						variant="outline"
+						class="shrink-0"
+						onclick={() => restore(version)}
+						disabled={busy}>Wiederherstellen</Button
 					>
 				</div>
 			{/each}

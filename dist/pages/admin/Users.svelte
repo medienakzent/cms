@@ -102,93 +102,139 @@
 	</colgroup>
 {/snippet}
 
-<Table.Table class="table-fixed">
-	{@render columns()}
-	<Table.TableHeader>
-		<Table.TableRow>
-			<Table.TableHead>Name</Table.TableHead>
-			<Table.TableHead>E-Mail</Table.TableHead>
-			<Table.TableHead>Rolle</Table.TableHead>
-			<Table.TableHead>Seit</Table.TableHead>
-			<Table.TableHead>Zuletzt angemeldet</Table.TableHead>
-			<Table.TableHead></Table.TableHead>
-		</Table.TableRow>
-	</Table.TableHeader>
-	<Table.TableBody>
-		{#each data.users as user (user.id)}
-			<Table.TableRow class={user.banned ? 'opacity-60' : ''}>
-				<Table.TableCell class="font-medium break-words whitespace-normal">
-					{user.name}
-					{#if user.id === data.user?.id}<Badge variant="id" class="ms-2">Sie</Badge>{/if}
-					{#if user.banned}<Badge variant="signal" class="ms-2">gesperrt</Badge>{/if}
-					{#if data.twoFactor !== 'off' && user.twoFactorEnabled}<Badge
-							variant="positive"
-							class="ms-2"
-							title="Zwei-Faktor-Anmeldung aktiv">2FA</Badge
-						>{/if}
-				</Table.TableCell>
-				<Table.TableCell class="truncate" title={user.email}>{user.email}</Table.TableCell>
-				<Table.TableCell>
-					<SearchableSelect
-						options={ADMIN_ROLES}
-						value={user.role}
-						onSelect={(selectedRole) => setRole(user, selectedRole)}
-						disabled={busy || user.id === data.user?.id}
-						class="w-full max-w-48"
-					/>
-				</Table.TableCell>
-				<Table.TableCell class="text-muted-foreground text-sm"
-					>{formatDate(user.createdAt)}</Table.TableCell
-				>
-				<Table.TableCell class="text-muted-foreground text-sm whitespace-nowrap"
-					>{user.lastSignInAt ? formatDateTime(user.lastSignInAt) : '—'}</Table.TableCell
-				>
-				<Table.TableCell class="text-right whitespace-nowrap">
-					<Button
-						size="sm"
-						variant="ghost"
-						onclick={() => (passwordUser = user)}
-						disabled={busy}
-						title="Neues Passwort setzen"
-						aria-label="Neues Passwort setzen"><KeyIcon aria-hidden="true" /></Button
-					>
-					{#if data.twoFactor !== 'off' && user.twoFactorEnabled}
-						<Button
-							size="sm"
-							variant="ghost"
-							onclick={() => (twoFactorUser = user)}
-							disabled={busy}
-							title="Zwei-Faktor-Anmeldung zurücksetzen"
-							aria-label="Zwei-Faktor-Anmeldung zurücksetzen"
-						>
-							<ShieldOffIcon aria-hidden="true" />
-						</Button>
-					{/if}
-					<Button
-						size="sm"
-						variant="ghost"
-						onclick={() => setBanned(user, !user.banned)}
-						disabled={busy || user.id === data.user?.id}
-						title={user.banned ? 'Entsperren' : 'Sperren'}
-						aria-label={user.banned ? 'Entsperren' : 'Sperren'}
-					>
-						<BanIcon aria-hidden="true" />
-					</Button>
-					<Button
-						size="sm"
-						variant="ghost"
-						class="text-destructive"
-						onclick={() => (toDelete = user)}
-						disabled={busy || user.id === data.user?.id}
-						aria-label="Konto entfernen"
-					>
-						<TrashIcon aria-hidden="true" />
-					</Button>
-				</Table.TableCell>
+{#snippet userBadges(user: AdminUser)}
+	{#if user.id === data.user?.id}<Badge variant="id" class="ms-2">Sie</Badge>{/if}
+	{#if user.banned}<Badge variant="signal" class="ms-2">gesperrt</Badge>{/if}
+	{#if data.twoFactor !== 'off' && user.twoFactorEnabled}<Badge
+			variant="positive"
+			class="ms-2"
+			title="Zwei-Faktor-Anmeldung aktiv">2FA</Badge
+		>{/if}
+{/snippet}
+
+{#snippet roleSelect(user: AdminUser)}
+	<SearchableSelect
+		options={ADMIN_ROLES}
+		value={user.role}
+		onSelect={(selectedRole) => setRole(user, selectedRole)}
+		disabled={busy || user.id === data.user?.id}
+		ariaLabel="Rolle von {user.name}"
+		class="w-full max-w-48"
+	/>
+{/snippet}
+
+{#snippet userActions(user: AdminUser)}
+	<Button
+		size="icon-sm"
+		variant="ghost"
+		onclick={() => (passwordUser = user)}
+		disabled={busy}
+		title="Neues Passwort setzen"
+		aria-label="Neues Passwort setzen"><KeyIcon aria-hidden="true" /></Button
+	>
+	{#if data.twoFactor !== 'off' && user.twoFactorEnabled}
+		<Button
+			size="icon-sm"
+			variant="ghost"
+			onclick={() => (twoFactorUser = user)}
+			disabled={busy}
+			title="Zwei-Faktor-Anmeldung zurücksetzen"
+			aria-label="Zwei-Faktor-Anmeldung zurücksetzen"
+		>
+			<ShieldOffIcon aria-hidden="true" />
+		</Button>
+	{/if}
+	<Button
+		size="icon-sm"
+		variant="ghost"
+		onclick={() => setBanned(user, !user.banned)}
+		disabled={busy || user.id === data.user?.id}
+		title={user.banned ? 'Entsperren' : 'Sperren'}
+		aria-label={user.banned ? 'Entsperren' : 'Sperren'}
+	>
+		<BanIcon aria-hidden="true" />
+	</Button>
+	<Button
+		size="icon-sm"
+		variant="ghost"
+		class="text-destructive"
+		onclick={() => (toDelete = user)}
+		disabled={busy || user.id === data.user?.id}
+		title="Konto entfernen"
+		aria-label="Konto entfernen"
+	>
+		<TrashIcon aria-hidden="true" />
+	</Button>
+{/snippet}
+
+{#snippet revokeButton(apiKey: (typeof data.apiKeys)[number])}
+	{#if !apiKey.revokedAt}
+		<Button
+			size="sm"
+			variant="ghost"
+			class="text-destructive"
+			onclick={() => (keyToRevoke = apiKey)}
+			disabled={busy}>Widerrufen</Button
+		>
+	{/if}
+{/snippet}
+
+<!-- Phones: one card per account instead of a table that does not fit. -->
+<ul class="border-border divide-border divide-y rounded-lg border md:hidden">
+	{#each data.users as user (user.id)}
+		<li class="space-y-3 p-4 {user.banned ? 'opacity-60' : ''}">
+			<div>
+				<div class="font-medium">{user.name}{@render userBadges(user)}</div>
+				<div class="text-muted-foreground text-sm break-all">{user.email}</div>
+				<div class="text-muted-foreground mt-1 text-xs">
+					Seit {formatDate(user.createdAt)} · zuletzt angemeldet {user.lastSignInAt
+						? formatDateTime(user.lastSignInAt)
+						: '—'}
+				</div>
+			</div>
+			<div class="flex items-center gap-2">
+				<div class="min-w-0 flex-1">{@render roleSelect(user)}</div>
+				<div class="flex shrink-0 items-center gap-1">{@render userActions(user)}</div>
+			</div>
+		</li>
+	{/each}
+</ul>
+
+<div class="hidden md:block">
+	<Table.Table class="table-fixed">
+		{@render columns()}
+		<Table.TableHeader>
+			<Table.TableRow>
+				<Table.TableHead>Name</Table.TableHead>
+				<Table.TableHead>E-Mail</Table.TableHead>
+				<Table.TableHead>Rolle</Table.TableHead>
+				<Table.TableHead>Seit</Table.TableHead>
+				<Table.TableHead>Zuletzt angemeldet</Table.TableHead>
+				<Table.TableHead></Table.TableHead>
 			</Table.TableRow>
-		{/each}
-	</Table.TableBody>
-</Table.Table>
+		</Table.TableHeader>
+		<Table.TableBody>
+			{#each data.users as user (user.id)}
+				<Table.TableRow class={user.banned ? 'opacity-60' : ''}>
+					<Table.TableCell class="font-medium break-words whitespace-normal">
+						{user.name}{@render userBadges(user)}
+					</Table.TableCell>
+					<Table.TableCell class="truncate" title={user.email}>{user.email}</Table.TableCell>
+					<Table.TableCell>{@render roleSelect(user)}</Table.TableCell>
+					<Table.TableCell class="text-muted-foreground text-sm"
+						>{formatDate(user.createdAt)}</Table.TableCell
+					>
+					<Table.TableCell class="text-muted-foreground text-sm whitespace-nowrap"
+						>{user.lastSignInAt ? formatDateTime(user.lastSignInAt) : '—'}</Table.TableCell
+					>
+					<Table.TableCell class="text-right whitespace-nowrap"
+						>{@render userActions(user)}</Table.TableCell
+					>
+				</Table.TableRow>
+			{/each}
+		</Table.TableBody>
+	</Table.Table>
+</div>
 
 <section class="mt-10">
 	<div class="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -203,51 +249,67 @@
 	{#if !data.apiKeys.length}
 		<p class="text-muted-foreground text-sm">Noch keine API-Zugänge.</p>
 	{:else}
-		<Table.Table class="table-fixed">
-			{@render columns()}
-			<Table.TableHeader>
-				<Table.TableRow>
-					<Table.TableHead>Name</Table.TableHead>
-					<Table.TableHead>Präfix</Table.TableHead>
-					<Table.TableHead>Rolle</Table.TableHead>
-					<Table.TableHead>Angelegt</Table.TableHead>
-					<Table.TableHead>Zuletzt genutzt</Table.TableHead>
-					<Table.TableHead></Table.TableHead>
-				</Table.TableRow>
-			</Table.TableHeader>
-			<Table.TableBody>
-				{#each data.apiKeys as apiKey (apiKey.id)}
-					<Table.TableRow class={apiKey.revokedAt ? 'opacity-50' : ''}>
-						<Table.TableCell class="font-medium break-words whitespace-normal">
+		<ul class="border-border divide-border divide-y rounded-lg border md:hidden">
+			{#each data.apiKeys as apiKey (apiKey.id)}
+				<li class="flex items-start gap-3 p-4 {apiKey.revokedAt ? 'opacity-50' : ''}">
+					<div class="min-w-0 flex-1">
+						<div class="font-medium">
 							{apiKey.name}
 							{#if apiKey.revokedAt}<Badge variant="neutral" class="ms-2">widerrufen</Badge>{/if}
-						</Table.TableCell>
-						<Table.TableCell><code class="text-xs">{apiKey.prefix}…</code></Table.TableCell>
-						<Table.TableCell
-							>{apiKey.role === 'admin' ? 'Administrator' : 'Redakteur'}</Table.TableCell
-						>
-						<Table.TableCell
-							class="text-muted-foreground truncate text-sm"
-							title={`von ${apiKey.createdBy}`}>{formatDate(apiKey.createdAt)}</Table.TableCell
-						>
-						<Table.TableCell class="text-muted-foreground text-sm whitespace-nowrap"
-							>{apiKey.lastUsedAt ? formatDateTime(apiKey.lastUsedAt) : '—'}</Table.TableCell
-						>
-						<Table.TableCell class="text-right">
-							{#if !apiKey.revokedAt}
-								<Button
-									size="sm"
-									variant="ghost"
-									class="text-destructive"
-									onclick={() => (keyToRevoke = apiKey)}
-									disabled={busy}>Widerrufen</Button
-								>
-							{/if}
-						</Table.TableCell>
+						</div>
+						<div class="text-muted-foreground text-sm">
+							<code class="text-xs">{apiKey.prefix}…</code> · {apiKey.role === 'admin'
+								? 'Administrator'
+								: 'Redakteur'}
+						</div>
+						<div class="text-muted-foreground mt-1 text-xs">
+							Angelegt {formatDate(apiKey.createdAt)} · zuletzt genutzt {apiKey.lastUsedAt
+								? formatDateTime(apiKey.lastUsedAt)
+								: '—'}
+						</div>
+					</div>
+					{@render revokeButton(apiKey)}
+				</li>
+			{/each}
+		</ul>
+
+		<div class="hidden md:block">
+			<Table.Table class="table-fixed">
+				{@render columns()}
+				<Table.TableHeader>
+					<Table.TableRow>
+						<Table.TableHead>Name</Table.TableHead>
+						<Table.TableHead>Präfix</Table.TableHead>
+						<Table.TableHead>Rolle</Table.TableHead>
+						<Table.TableHead>Angelegt</Table.TableHead>
+						<Table.TableHead>Zuletzt genutzt</Table.TableHead>
+						<Table.TableHead></Table.TableHead>
 					</Table.TableRow>
-				{/each}
-			</Table.TableBody>
-		</Table.Table>
+				</Table.TableHeader>
+				<Table.TableBody>
+					{#each data.apiKeys as apiKey (apiKey.id)}
+						<Table.TableRow class={apiKey.revokedAt ? 'opacity-50' : ''}>
+							<Table.TableCell class="font-medium break-words whitespace-normal">
+								{apiKey.name}
+								{#if apiKey.revokedAt}<Badge variant="neutral" class="ms-2">widerrufen</Badge>{/if}
+							</Table.TableCell>
+							<Table.TableCell><code class="text-xs">{apiKey.prefix}…</code></Table.TableCell>
+							<Table.TableCell
+								>{apiKey.role === 'admin' ? 'Administrator' : 'Redakteur'}</Table.TableCell
+							>
+							<Table.TableCell
+								class="text-muted-foreground truncate text-sm"
+								title={`von ${apiKey.createdBy}`}>{formatDate(apiKey.createdAt)}</Table.TableCell
+							>
+							<Table.TableCell class="text-muted-foreground text-sm whitespace-nowrap"
+								>{apiKey.lastUsedAt ? formatDateTime(apiKey.lastUsedAt) : '—'}</Table.TableCell
+							>
+							<Table.TableCell class="text-right">{@render revokeButton(apiKey)}</Table.TableCell>
+						</Table.TableRow>
+					{/each}
+				</Table.TableBody>
+			</Table.Table>
+		</div>
 	{/if}
 </section>
 

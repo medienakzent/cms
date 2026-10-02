@@ -2,6 +2,23 @@
 
 Alle relevanten Änderungen. Format: Datum, Version, Abschnitte Neu / Geändert / Breaking.
 
+## 0.8.15 — 2026-10-02
+
+### Behoben
+
+- **Admin auf dem Handy** (geprüft bei 390 px, keine Seite scrollt mehr horizontal):
+  - Mediathek: Kacheln wurden so breit wie das Originalbild (fehlendes `grid-cols-1`).
+  - Seitenliste, Mediathek: Suche und „anlegen“/„Hochladen“ brechen um statt aus dem Bild zu ragen.
+  - Collection-Liste und Einsendungen blenden auf kleinen Bildschirmen Nebenspalten aus (Slug,
+    Sprachen, Geändert bzw. Formular, Absender, Inhalt); Slug bzw. Absender stehen unter dem Titel.
+  - Nutzerverwaltung: auf dem Handy Karten statt Tabellen (Name, E-Mail, Daten, Rolle, Aktionen).
+  - Editor: Block-Kopfzeilen kürzen den Titel und blenden die Zusammenfassung aus; die Live-Vorschau
+    springt beim Einschalten in den Blick, wenn sie unter dem Formular liegt; Versionsverlauf
+    bildschirmbreit und scrollbar.
+  - Markdown-Feld mit 16 px Schrift auf dem Handy, damit iOS beim Antippen nicht hineinzoomt.
+- Das Consent-Banner der Website erscheint nicht mehr in der Live-Vorschau des Editors (dort werden
+  auch keine Tracking-Dienste geladen).
+
 ## 0.8.14 — 2026-10-01
 
 ### Behoben

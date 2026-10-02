@@ -83,9 +83,9 @@
 	<h1 class="text-2xl font-semibold">
 		Medien <Badge variant="neutral" class="ms-2 align-middle">{data.media.total}</Badge>
 	</h1>
-	<div class="flex items-center gap-2">
-		<form method="get">
-			<Input type="search" name="q" value={data.q} placeholder="Suchen …" class="w-56" />
+	<div class="flex w-full flex-wrap items-center gap-2 sm:w-auto">
+		<form method="get" class="min-w-40 flex-1 sm:flex-none">
+			<Input type="search" name="q" value={data.q} placeholder="Suchen …" class="w-full sm:w-56" />
 		</form>
 		<input bind:this={fileInput} type="file" multiple class="hidden" onchange={upload} />
 		<Button onclick={() => fileInput?.click()} disabled={uploading}
@@ -98,7 +98,7 @@
 	<p class="text-muted-foreground">Noch keine Medien.</p>
 {/if}
 
-<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
 	{#each data.media.items as mediaItem (mediaItem.id)}
 		<div class="border-border bg-card rounded-lg border p-3">
 			{#if mediaItem.kind === 'image'}
