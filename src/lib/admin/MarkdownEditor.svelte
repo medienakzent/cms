@@ -209,7 +209,7 @@
 			oninput={(event) => onchange(event.currentTarget.value)}
 			{onkeydown}
 			spellcheck="true"
-			class="placeholder:text-muted-foreground block w-full resize-y bg-transparent px-3 py-2 font-mono text-sm leading-relaxed outline-none"
+			class="placeholder:text-muted-foreground block w-full resize-y bg-transparent px-3 py-2 font-mono text-base leading-relaxed outline-none sm:text-sm"
 		></textarea>
 	{/if}
 </div>

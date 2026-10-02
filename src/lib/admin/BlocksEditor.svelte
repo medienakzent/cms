@@ -111,19 +111,20 @@
 				? 'border-destructive'
 				: ''}"
 		>
-			<div class="flex items-center gap-2 px-3 py-2">
+			<div class="flex items-center gap-1 px-2 py-2 sm:gap-2 sm:px-3">
 				<button
 					type="button"
-					class="flex flex-1 items-center gap-2 text-start"
+					class="flex min-w-0 flex-1 items-center gap-2 text-start"
 					onclick={() => toggle(block.id)}
 				>
 					<ChevronRightIcon
-						class="size-4 transition-transform {open ? 'rotate-90' : ''}"
+						class="size-4 shrink-0 transition-transform {open ? 'rotate-90' : ''}"
 						aria-hidden="true"
 					/>
-					<Icon class="text-muted-foreground size-4" />
-					<span class="font-medium">{definition?.label ?? block.type}</span>
-					{#if !open}<span class="text-muted-foreground truncate text-sm">{summary(block)}</span
+					<Icon class="text-muted-foreground size-4 shrink-0" />
+					<span class="truncate font-medium">{definition?.label ?? block.type}</span>
+					{#if !open}<span class="text-muted-foreground hidden truncate text-sm sm:inline"
+							>{summary(block)}</span
 						>{/if}
 					{#if !definition}<span class="text-destructive text-xs">Unbekannter Block-Typ</span>{/if}
 				</button>
@@ -152,7 +153,7 @@
 				>
 			</div>
 			{#if open && definition}
-				<div class="border-border border-t p-4">
+				<div class="border-border border-t p-3 sm:p-4">
 					<FieldsForm
 						fields={definition.fields}
 						value={block.data}

@@ -15,13 +15,16 @@
 	let { config, lang = 'de', class: className = '' }: Props = $props();
 
 	let showSettings = $state(false);
+	/** The admin's live preview renders the site layout; no banner and no tracking there. */
+	let inPreview = $state(false);
 	let draft = $state<Record<string, boolean>>({});
 
 	const text = (key: Parameters<typeof consentText>[2]) =>
 		config ? consentText(config, lang, key) : '';
 
 	onMount(() => {
-		if (config) consent.init(config);
+		inPreview = location.pathname.endsWith('/cms-preview');
+		if (config && !inPreview) consent.init(config);
 	});
 	afterNavigate(({ to }) => {
 		if (to?.url) consent.pageview(to.url.href);
@@ -38,7 +41,7 @@
 	}
 </script>
 
-{#if config && consent.open}
+{#if config && consent.open && !inPreview}
 	<div
 		class="cms-consent {className}"
 		role="dialog"

@@ -29,10 +29,10 @@
 		{data.def.labelPlural}
 		<Badge variant="neutral" class="ms-2 align-middle">{data.rows.length}</Badge>
 	</h1>
-	<div class="flex items-center gap-2">
-		<form method="get">
+	<div class="flex w-full flex-wrap items-center gap-2 sm:w-auto">
+		<form method="get" class="min-w-40 flex-1 sm:flex-none">
 			<input type="hidden" name="lang" value={data.lang} />
-			<Input type="search" name="q" value={data.q} placeholder="Suchen …" class="w-56" />
+			<Input type="search" name="q" value={data.q} placeholder="Suchen …" class="w-full sm:w-56" />
 		</form>
 		<Button href="/admin/{data.def.name}/new?lang={data.lang}"
 			><PlusIcon aria-hidden="true" /> {data.def.label} anlegen</Button
@@ -49,10 +49,10 @@
 		<Table.TableHeader>
 			<Table.TableRow>
 				<Table.TableHead>Titel</Table.TableHead>
-				<Table.TableHead>Slug</Table.TableHead>
+				<Table.TableHead class="hidden sm:table-cell">Slug</Table.TableHead>
 				<Table.TableHead>Status ({data.lang.toUpperCase()})</Table.TableHead>
-				<Table.TableHead>Sprachen</Table.TableHead>
-				<Table.TableHead>Geändert</Table.TableHead>
+				<Table.TableHead class="hidden md:table-cell">Sprachen</Table.TableHead>
+				<Table.TableHead class="hidden lg:table-cell">Geändert</Table.TableHead>
 			</Table.TableRow>
 		</Table.TableHeader>
 		<Table.TableBody>
@@ -63,15 +63,18 @@
 						><a
 							href="/admin/{data.def.name}/{row.slug}?lang={data.lang}"
 							class="font-medium hover:underline">{row.title || row.slug}</a
+						><code class="text-muted-foreground block text-xs sm:hidden">{row.slug}</code
 						></Table.TableCell
 					>
-					<Table.TableCell><code class="text-xs">{row.slug}</code></Table.TableCell>
+					<Table.TableCell class="hidden sm:table-cell"
+						><code class="text-xs">{row.slug}</code></Table.TableCell
+					>
 					<Table.TableCell>
 						{#if !inLang}<Badge variant="info">fehlt</Badge>
 						{:else if inLang.status === 'published'}<Badge variant="positive">Veröffentlicht</Badge>
 						{:else}<Badge variant="warning">Entwurf</Badge>{/if}
 					</Table.TableCell>
-					<Table.TableCell>
+					<Table.TableCell class="hidden md:table-cell">
 						<span class="flex gap-1">
 							{#each langs as entry (entry.lang)}
 								<Badge variant={entry.status === 'published' ? 'positive' : 'neutral'}
@@ -80,7 +83,7 @@
 							{/each}
 						</span>
 					</Table.TableCell>
-					<Table.TableCell class="text-muted-foreground text-sm"
+					<Table.TableCell class="text-muted-foreground hidden text-sm lg:table-cell"
 						>{formatDateTime((inLang ?? row).updatedAt)} · {(inLang ?? row)
 							.updatedBy}</Table.TableCell
 					>

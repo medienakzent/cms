@@ -53,7 +53,7 @@
 				: 'border-border'}">{template.label}</a
 		>
 	{/each}
-	<span class="bg-border mx-1 h-5 w-px"></span>
+	<span class="bg-border mx-1 hidden h-5 w-px sm:inline-block"></span>
 	{#each Object.entries(statusLabel) as [key, label] (key)}
 		<a
 			href={href({ status: key })}
@@ -71,9 +71,9 @@
 		<Table.TableHeader>
 			<Table.TableRow>
 				<Table.TableHead>Zeit</Table.TableHead>
-				<Table.TableHead>Formular</Table.TableHead>
-				<Table.TableHead>Absender</Table.TableHead>
-				<Table.TableHead>Inhalt</Table.TableHead>
+				<Table.TableHead class="hidden sm:table-cell">Formular</Table.TableHead>
+				<Table.TableHead class="hidden md:table-cell">Absender</Table.TableHead>
+				<Table.TableHead class="hidden lg:table-cell">Inhalt</Table.TableHead>
 				<Table.TableHead>Status</Table.TableHead>
 			</Table.TableRow>
 		</Table.TableHeader>
@@ -83,14 +83,17 @@
 					<Table.TableCell class="whitespace-nowrap"
 						><a href="/admin/submissions/{submission.id}" class="font-medium hover:underline"
 							>{formatDateTime(submission.sentAt)}</a
+						><span class="text-muted-foreground block text-xs md:hidden"
+							>{submission.replyTo ?? ''}</span
 						></Table.TableCell
 					>
-					<Table.TableCell
+					<Table.TableCell class="hidden sm:table-cell"
 						>{data.templates.find((template) => template.name === submission.template)?.label ??
 							submission.template}</Table.TableCell
 					>
-					<Table.TableCell>{submission.replyTo ?? '—'}</Table.TableCell>
-					<Table.TableCell class="text-muted-foreground max-w-md truncate"
+					<Table.TableCell class="hidden md:table-cell">{submission.replyTo ?? '—'}</Table.TableCell
+					>
+					<Table.TableCell class="text-muted-foreground hidden max-w-md truncate lg:table-cell"
 						>{submission.subject || preview(submission.data)}</Table.TableCell
 					>
 					<Table.TableCell
