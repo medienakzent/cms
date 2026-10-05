@@ -3,6 +3,12 @@ import { isValidName } from './name';
 import type { Migration } from './block';
 import type { Document } from './types';
 
+/**
+ * Editor layout: block forms only, forms and preview side by side, or the preview alone with
+ * direct editing. Editors can switch; this is the default per collection.
+ */
+export type EditorView = 'form' | 'split' | 'preview';
+
 export interface CollectionDefinition<Fields extends FieldMap = FieldMap> {
 	/** Must match the file name under `src/collections/` (`pages.ts` -> `pages`). */
 	name: string;
@@ -23,6 +29,7 @@ export interface CollectionDefinition<Fields extends FieldMap = FieldMap> {
 	/** Public path of a document; `null` = not directly reachable. */
 	path: (slug: string, lang: string) => string | null;
 	migrate?: Record<number, Migration>;
+	editor?: { view: EditorView };
 }
 
 export interface CollectionOptions<Fields extends FieldMap> {
@@ -39,6 +46,8 @@ export interface CollectionOptions<Fields extends FieldMap> {
 	sortBy?: { field: string; direction: 'asc' | 'desc' };
 	path?: (slug: string, lang: string) => string | null;
 	migrate?: Record<number, Migration>;
+	/** Default editor layout (`form` if omitted). */
+	editor?: { view?: EditorView };
 }
 
 export function defineCollection<const Fields extends FieldMap>(
@@ -67,7 +76,8 @@ export function defineCollection<const Fields extends FieldMap>(
 		excerptField: options.excerptField,
 		sortBy: options.sortBy ?? { field: 'updatedAt', direction: 'desc' },
 		path: options.path ?? (() => null),
-		migrate: options.migrate
+		migrate: options.migrate,
+		editor: { view: options.editor?.view ?? 'form' }
 	};
 }
 

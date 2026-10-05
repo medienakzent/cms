@@ -142,6 +142,35 @@ export default defineContent({
 Jeder Typ bekommt automatisch Admin-Liste und Editor, Storage-Ordner, Index mit
 Facetten und die REST-Endpunkte unter `/api/v1/<name>`.
 
+## Editor-Ansichten und Bearbeiten in der Vorschau
+
+Der Editor kennt drei Ansichten, umschaltbar oben rechts und je Collection im Browser gemerkt:
+
+- **Formular** — Block-Liste mit allen Feldern (wie bisher).
+- **Beides** — Formular und Live-Vorschau; nebeneinander ab 1536 px, darunter untereinander.
+- **Vorschau** — die Block-Liste ist ausgeblendet, bearbeitet wird direkt in der Vorschau.
+
+In der Vorschau zeigt jeder Block beim Darüberfahren Umriss, Namen und eine Leiste (alle Felder,
+hoch, runter, duplizieren, löschen). **Text- und Textarea-Felder** werden direkt getippt, **Bilder**
+(Medienfelder) per Klick über die Medienauswahl getauscht; ein Klick auf eine andere Stelle des Blocks
+öffnet alle seine Felder (in der Ansicht „Vorschau“ als Seitenleiste, sonst klappt der Block im
+Formular auf). Gespeichert wird wie immer über „Speichern“.
+
+Kundenblocks brauchen dafür keine Änderungen: Das CMS findet Textfelder über ihren gerenderten Text
+und Bilder über ihre Datei-URL. Direkt tippbar ist ein Textfeld, wenn sein Wert als eigener Text eines
+Elements erscheint (`<h1>{title}</h1>`); zusammengesetzte oder umformatierte Texte (`{title} – {ort}`,
+gekürzte Texte) und Markdown bearbeitet man über die Felder des Blocks.
+
+Standardansicht je Collection:
+
+```ts
+export default defineCollection({
+	name: 'pages',
+	editor: { view: 'preview' }, // 'form' (Default) | 'split' | 'preview'
+	…
+});
+```
+
 ## Live-Vorschau eigener Collections
 
 Die Live-Vorschau neben dem Editor läuft im Seitenlayout (`/cms-preview`) und zeigt ohne weiteres

@@ -4,7 +4,7 @@ export type * from './fields';
 export { defineBlock, migrateBlockData } from './block';
 export type { BlockDefinition, BlockProps, Migration } from './block';
 export { defineCollection, defineContent } from './collection';
-export type { CollectionDefinition, ContentDefinition, DocumentOf } from './collection';
+export type { CollectionDefinition, ContentDefinition, DocumentOf, EditorView } from './collection';
 export { defineConfig, localizePath } from './config';
 export type { CmsConfig, LanguageConfig } from './config';
 export type * from './types';

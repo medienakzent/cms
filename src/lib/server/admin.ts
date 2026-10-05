@@ -11,7 +11,8 @@ export function toAdminCollection(collection: CollectionDefinition): AdminCollec
 		icon: collection.icon,
 		titleField: collection.titleField,
 		fields: collection.fields,
-		blocks: collection.blocks ? [...collection.blocks] : []
+		blocks: collection.blocks ? [...collection.blocks] : [],
+		editorView: collection.editor?.view ?? 'form'
 	};
 }
 

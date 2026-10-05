@@ -2,6 +2,20 @@
 
 Alle relevanten Änderungen. Format: Datum, Version, Abschnitte Neu / Geändert / Breaking.
 
+## 0.9.0 — 2026-10-05
+
+### Neu
+
+- **Bearbeiten direkt in der Vorschau:** Blocks zeigen beim Darüberfahren Umriss, Namen und eine
+  Leiste (alle Felder, hoch, runter, duplizieren, löschen). Text- und Textarea-Felder werden direkt in
+  der Vorschau getippt, Bilder per Klick über die Medienauswahl getauscht; ein Klick auf den Block
+  öffnet alle seine Felder. Kundenblocks brauchen keine Anpassung (Erkennung über den gerenderten
+  Text bzw. die Datei-URL). Links und Formulare in der Vorschau navigieren bzw. senden nicht mehr.
+- **Editor-Ansichten** „Formular“, „Beides“ und „Vorschau“ (Block-Liste ausgeblendet), umschaltbar
+  und je Collection im Browser gemerkt. Neue Collection-Option `editor: { view }` für die
+  Standardansicht (`'form'` | `'split'` | `'preview'`, Default `'form'`). Ersetzt den bisherigen
+  Schalter „Vorschau“.
+
 ## 0.8.15 — 2026-10-02
 
 ### Behoben
