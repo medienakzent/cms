@@ -11,7 +11,17 @@
 	import BlocksEditor from './BlocksEditor.svelte';
 	import { getCmsContext } from '../context';
 	import { localizePath } from '../config';
-	import { PREVIEW_MESSAGE, PREVIEW_READY_MESSAGE } from '../preview';
+	import {
+		PREVIEW_EVENT,
+		PREVIEW_MESSAGE,
+		PREVIEW_READY_MESSAGE,
+		type PreviewEvent
+	} from '../preview';
+	import type { EditorView } from '../collection';
+	import { emptyValues } from '../localize';
+	import { nanoid } from 'nanoid';
+	import MediaPicker from './MediaPicker.svelte';
+	import { SearchableSelect } from '@compdata/ui/select';
 	import type { FieldMap } from '../fields';
 	import { Button } from '@compdata/ui/button';
 	import { Badge } from '@compdata/ui/badge';
@@ -23,7 +33,10 @@
 	import HistoryIcon from '@lucide/svelte/icons/history';
 	import TrashIcon from '@lucide/svelte/icons/trash-2';
 	import EyeIcon from '@lucide/svelte/icons/eye';
-	import EyeOffIcon from '@lucide/svelte/icons/eye-off';
+	import ColumnsIcon from '@lucide/svelte/icons/columns-2';
+	import ListIcon from '@lucide/svelte/icons/list';
+	import PlusIcon from '@lucide/svelte/icons/plus';
+	import type { MediaRef } from '../types';
 	import ExternalLinkIcon from '@lucide/svelte/icons/external-link';
 	import Settings2Icon from '@lucide/svelte/icons/settings-2';
 	import ChevronDownIcon from '@lucide/svelte/icons/chevron-down';
@@ -63,7 +76,16 @@
 	const allExpanded = $derived(
 		blocks.length > 0 && blocks.every((block) => expandedBlocks.has(block.id))
 	);
-	let preview = $state(false);
+	// svelte-ignore state_referenced_locally
+	let view = $state<EditorView>(collection.blocks.length ? collection.editorView : 'form');
+	const showForm = $derived(view !== 'preview' || !collection.blocks.length);
+	const showPreview = $derived(view !== 'form');
+	let selectedBlockId = $state<string | null>(null);
+	/** Block whose form is open as a side sheet (preview-only view). */
+	let sheetBlockId = $state<string | null>(null);
+	const sheetIndex = $derived(blocks.findIndex((block) => block.id === sheetBlockId));
+	let mediaTarget = $state<{ blockId: string; field: string } | null>(null);
+	let mediaOpen = $state(false);
 	let previewFrame = $state<HTMLIFrameElement | null>(null);
 	let previewPanel = $state<HTMLElement | null>(null);
 	const siteConfig = getCmsContext().config;
@@ -78,13 +100,15 @@
 				collection: collection.name,
 				slug: doc.slug,
 				fields: $state.snapshot(fields),
-				blocks: $state.snapshot(blocks)
+				blocks: $state.snapshot(blocks),
+				editable: collection.blocks.length > 0,
+				selectedBlockId
 			},
 			window.location.origin
 		);
 	}
 	$effect(() => {
-		if (!preview) return;
+		if (!showPreview) return;
 		postPreview();
 	});
 	$effect(() => {
@@ -97,26 +121,130 @@
 		return () => window.removeEventListener('message', onMessage);
 	});
 
-	const PREVIEW_KEY = 'cms.editor.preview';
 	$effect(() => {
+		const onEvent = (event: MessageEvent<PreviewEvent>) => {
+			if (
+				event.origin !== window.location.origin ||
+				event.source !== previewFrame?.contentWindow ||
+				event.data?.type !== PREVIEW_EVENT
+			)
+				return;
+			void handlePreviewEvent(event.data);
+		};
+		window.addEventListener('message', onEvent);
+		return () => window.removeEventListener('message', onEvent);
+	});
+
+	const viewKey = $derived(`cms.editor.view.${collection.name}`);
+	$effect(() => {
+		if (!collection.blocks.length) return;
 		try {
-			preview = localStorage.getItem(PREVIEW_KEY) === '1';
+			const stored = localStorage.getItem(viewKey);
+			if (stored === 'form' || stored === 'split' || stored === 'preview') view = stored;
 		} catch {
 			/* storage unavailable */
 		}
 	});
-	async function togglePreview() {
-		preview = !preview;
+	async function setView(nextView: EditorView) {
+		view = nextView;
 		try {
-			localStorage.setItem(PREVIEW_KEY, preview ? '1' : '0');
+			localStorage.setItem(viewKey, nextView);
 		} catch {
 			/* storage unavailable */
 		}
 		// Below the two-column breakpoint the preview sits under the whole form; jump to it.
-		if (preview && !window.matchMedia('(min-width: 1536px)').matches) {
+		if (nextView === 'split' && !window.matchMedia('(min-width: 1536px)').matches) {
 			await tick();
 			previewPanel?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 		}
+	}
+
+	const blockOptions = $derived(
+		collection.blocks
+			.filter((type) => blockDefs[type])
+			.map((type) => ({ value: type, label: blockDefs[type].label }))
+	);
+
+	function updateBlockData(blockId: string, data: Record<string, unknown>) {
+		setBlocks(blocks.map((block) => (block.id === blockId ? { ...block, data } : block)));
+	}
+
+	function addBlock(type: string) {
+		const definition = blockDefs[type];
+		if (!definition) return;
+		const block = { id: nanoid(8), type, data: emptyValues(definition.fields) };
+		setBlocks([...blocks, block]);
+		void selectBlock(block.id);
+	}
+
+	/** Brings a block's form into view: expanded in the list, or as a sheet in the preview view. */
+	async function selectBlock(blockId: string) {
+		selectedBlockId = blockId;
+		if (!showForm) {
+			sheetBlockId = blockId;
+			return;
+		}
+		expandedBlocks = new Set([...expandedBlocks, blockId]);
+		await tick();
+		document
+			.getElementById(`cms-block-${blockId}`)
+			?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+	}
+
+	async function handlePreviewEvent(event: PreviewEvent) {
+		const index = blocks.findIndex((block) => block.id === event.blockId);
+		if (index < 0) return;
+		const block = blocks[index];
+		switch (event.action) {
+			case 'select':
+				await selectBlock(block.id);
+				break;
+			case 'input':
+				updateBlockData(block.id, { ...block.data, [event.field]: event.value });
+				break;
+			case 'media':
+				selectedBlockId = block.id;
+				mediaTarget = { blockId: block.id, field: event.field };
+				mediaOpen = true;
+				break;
+			case 'move-up':
+			case 'move-down': {
+				const target = index + (event.action === 'move-up' ? -1 : 1);
+				if (target < 0 || target >= blocks.length) return;
+				const next = [...blocks];
+				[next[index], next[target]] = [next[target], next[index]];
+				setBlocks(next);
+				break;
+			}
+			case 'duplicate': {
+				const copy = {
+					id: nanoid(8),
+					type: block.type,
+					data: structuredClone($state.snapshot(block.data))
+				};
+				setBlocks([...blocks.slice(0, index + 1), copy, ...blocks.slice(index + 1)]);
+				break;
+			}
+			case 'remove':
+				setBlocks(blocks.filter((entry) => entry.id !== block.id));
+				if (sheetBlockId === block.id) sheetBlockId = null;
+				break;
+		}
+	}
+
+	const mediaAccept = $derived.by((): 'image' | 'video' | 'file' | 'any' => {
+		if (!mediaTarget) return 'any';
+		const block = blocks.find((entry) => entry.id === mediaTarget!.blockId);
+		const field = block ? blockDefs[block.type]?.fields[mediaTarget.field] : undefined;
+		return field?.kind === 'media' ? (field.accept ?? 'any') : 'any';
+	});
+
+	function pickMedia(media: MediaRef) {
+		const target = mediaTarget;
+		const block = target ? blocks.find((entry) => entry.id === target.blockId) : undefined;
+		if (!target || !block) return;
+		updateBlockData(block.id, { ...block.data, [target.field]: media });
+		mediaTarget = null;
 	}
 
 	/** Settings are all fields except the title, which is shown prominently at the top. */
@@ -245,14 +373,33 @@
 			</div>
 		</div>
 		<div class="flex flex-wrap gap-2">
-			<Button
-				variant={preview ? 'secondary' : 'ghost'}
-				size="sm"
-				onclick={togglePreview}
-				title="Live-Vorschau neben dem Editor"
-			>
-				{#if preview}<EyeOffIcon aria-hidden="true" />{:else}<EyeIcon aria-hidden="true" />{/if} Vorschau
-			</Button>
+			{#if collection.blocks.length}
+				<div class="border-border flex rounded-md border p-0.5" role="group" aria-label="Ansicht">
+					{#each [{ value: 'form', label: 'Formular', icon: ListIcon }, { value: 'split', label: 'Beides', icon: ColumnsIcon }, { value: 'preview', label: 'Vorschau', icon: EyeIcon }] as option (option.value)}
+						<Button
+							variant={view === option.value ? 'secondary' : 'ghost'}
+							size="sm"
+							class="h-7 px-2"
+							aria-pressed={view === option.value}
+							title={option.value === 'preview'
+								? 'Vorschau mit direktem Bearbeiten'
+								: option.value === 'split'
+									? 'Formular und Vorschau nebeneinander'
+									: 'Nur Formular'}
+							onclick={() => setView(option.value as EditorView)}
+							><option.icon aria-hidden="true" /><span class="hidden sm:inline">{option.label}</span
+							></Button
+						>
+					{/each}
+				</div>
+			{:else}
+				<Button
+					variant={view === 'split' ? 'secondary' : 'ghost'}
+					size="sm"
+					onclick={() => setView(view === 'split' ? 'form' : 'split')}
+					title="Live-Vorschau neben dem Editor"><EyeIcon aria-hidden="true" /> Vorschau</Button
+				>
+			{/if}
 			<Button variant="ghost" size="sm" onclick={() => (historyOpen = true)}
 				><HistoryIcon aria-hidden="true" /> Versionen <CountBadge count={versions.length} /></Button
 			>
@@ -288,7 +435,7 @@
 		{/each}
 	</div>
 
-	<div class="grid gap-6 {preview ? '2xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]' : ''}">
+	<div class="grid gap-6 {view === 'split' ? '2xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]' : ''}">
 		<!-- Editor column -->
 		<div class="min-w-0 space-y-8">
 			{#if titleField}
@@ -306,7 +453,29 @@
 				</div>
 			{/if}
 
-			{#if collection.blocks.length}
+			{#if collection.blocks.length && !showForm}
+				<div class="flex flex-wrap items-center justify-between gap-3">
+					<p class="text-muted-foreground text-sm">
+						Texte direkt in der Vorschau anklicken und tippen, Bilder anklicken zum Tauschen; ein
+						Klick auf einen Block öffnet alle seine Felder.
+					</p>
+					{#if blockOptions.length}
+						<SearchableSelect
+							options={blockOptions}
+							value={null}
+							onSelect={addBlock}
+							placeholder="Block hinzufügen"
+							searchable={blockOptions.length > 6}
+							ariaLabel="Block hinzufügen"
+							align="end"
+							triggerIcon={PlusIcon}
+							class="bg-primary text-primary-foreground hover:bg-primary/90 dark:bg-primary dark:hover:bg-primary/90 w-auto border-transparent font-medium"
+						/>
+					{/if}
+				</div>
+			{/if}
+
+			{#if collection.blocks.length && showForm}
 				<section class="space-y-3">
 					<div class="flex items-center justify-between">
 						<h2 class="text-lg font-semibold">
@@ -392,7 +561,7 @@
 		</div>
 
 		<!-- Live preview renders the current unsaved state with the block renderer. -->
-		{#if preview}
+		{#if showPreview}
 			<aside
 				bind:this={previewPanel}
 				class="min-w-0 scroll-mt-4 2xl:sticky 2xl:top-4 2xl:max-h-[calc(100vh-2rem)]"
@@ -421,7 +590,9 @@
 						bind:this={previewFrame}
 						src={previewFrameSrc}
 						title="Live-Vorschau"
-						class="h-[70vh] w-full bg-white 2xl:h-[calc(100vh-6rem)]"
+						class="w-full bg-white {view === 'preview'
+							? 'h-[calc(100vh-7rem)] min-h-[32rem]'
+							: 'h-[70vh] 2xl:h-[calc(100vh-6rem)]'}"
 					></iframe>
 				</div>
 			</aside>
@@ -442,6 +613,40 @@
 	onConfirm={() => remove(confirm === 'delete-doc')}
 	onCancel={() => (confirm = null)}
 />
+
+<Sheet.Root
+	open={sheetBlockId !== null && sheetIndex >= 0}
+	onOpenChange={(open) => {
+		if (!open) sheetBlockId = null;
+	}}
+>
+	<Sheet.Content side="right" class="w-full overflow-y-auto sm:max-w-lg">
+		{#if sheetIndex >= 0}
+			{@const block = blocks[sheetIndex]}
+			{@const definition = blockDefs[block.type]}
+			<Sheet.Header>
+				<Sheet.Title>{definition?.label ?? block.type}</Sheet.Title>
+				<Sheet.Description>Änderungen erscheinen sofort in der Vorschau.</Sheet.Description>
+			</Sheet.Header>
+			<div class="space-y-6 px-4 pb-6">
+				{#if definition}
+					<FieldsForm
+						fields={definition.fields}
+						value={block.data}
+						onchange={(data) => updateBlockData(block.id, data)}
+						path={`blocks[${sheetIndex}].`}
+						{errors}
+						{lang}
+						{blockDefs}
+					/>
+				{/if}
+				<Button class="w-full" onclick={() => (sheetBlockId = null)}>Fertig</Button>
+			</div>
+		{/if}
+	</Sheet.Content>
+</Sheet.Root>
+
+<MediaPicker bind:open={mediaOpen} accept={mediaAccept} onselect={pickMedia} />
 
 <Sheet.Root bind:open={historyOpen}>
 	<Sheet.Content side="right" class="w-full overflow-y-auto sm:max-w-md">

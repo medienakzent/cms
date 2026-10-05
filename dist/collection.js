@@ -21,7 +21,8 @@ export function defineCollection(options) {
         excerptField: options.excerptField,
         sortBy: options.sortBy ?? { field: 'updatedAt', direction: 'desc' },
         path: options.path ?? (() => null),
-        migrate: options.migrate
+        migrate: options.migrate,
+        editor: { view: options.editor?.view ?? 'form' }
     };
 }
 export function defineContent(options) {

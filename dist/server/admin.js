@@ -7,7 +7,8 @@ export function toAdminCollection(collection) {
         icon: collection.icon,
         titleField: collection.titleField,
         fields: collection.fields,
-        blocks: collection.blocks ? [...collection.blocks] : []
+        blocks: collection.blocks ? [...collection.blocks] : [],
+        editorView: collection.editor?.view ?? 'form'
     };
 }
 export function toAdminBlock(block) {

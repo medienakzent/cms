@@ -107,7 +107,8 @@
 		{@const blockPath = `${path}[${index}]`}
 		{@const open = expanded.has(block.id)}
 		<div
-			class="border-border bg-card rounded-lg border {hasError(blockPath)
+			id="cms-block-{block.id}"
+			class="border-border bg-card scroll-mt-4 rounded-lg border {hasError(blockPath)
 				? 'border-destructive'
 				: ''}"
 		>

@@ -1,3 +1,4 @@
+import type { EditorView } from '../collection';
 import type { FieldMap } from '../fields';
 /** Serializable view of the definitions for the client (no functions). */
 export interface AdminCollection {
@@ -8,6 +9,8 @@ export interface AdminCollection {
     titleField: string;
     fields: FieldMap;
     blocks: string[];
+    /** Default editor layout of the collection. */
+    editorView: EditorView;
 }
 export interface AdminBlock {
     name: string;

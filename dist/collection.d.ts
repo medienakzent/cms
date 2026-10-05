@@ -1,6 +1,11 @@
 import type { FieldMap } from './fields';
 import type { Migration } from './block';
 import type { Document } from './types';
+/**
+ * Editor layout: block forms only, forms and preview side by side, or the preview alone with
+ * direct editing. Editors can switch; this is the default per collection.
+ */
+export type EditorView = 'form' | 'split' | 'preview';
 export interface CollectionDefinition<Fields extends FieldMap = FieldMap> {
     /** Must match the file name under `src/collections/` (`pages.ts` -> `pages`). */
     name: string;
@@ -24,6 +29,9 @@ export interface CollectionDefinition<Fields extends FieldMap = FieldMap> {
     /** Public path of a document; `null` = not directly reachable. */
     path: (slug: string, lang: string) => string | null;
     migrate?: Record<number, Migration>;
+    editor?: {
+        view: EditorView;
+    };
 }
 export interface CollectionOptions<Fields extends FieldMap> {
     name: string;
@@ -42,6 +50,10 @@ export interface CollectionOptions<Fields extends FieldMap> {
     };
     path?: (slug: string, lang: string) => string | null;
     migrate?: Record<number, Migration>;
+    /** Default editor layout (`form` if omitted). */
+    editor?: {
+        view?: EditorView;
+    };
 }
 export declare function defineCollection<const Fields extends FieldMap>(options: CollectionOptions<Fields>): CollectionDefinition<Fields>;
 /** Document type of a collection: `DocumentOf<typeof pages>`. */

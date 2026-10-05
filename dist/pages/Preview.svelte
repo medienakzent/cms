@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { getCmsContext } from '../context';
 	import BlockRenderer from '../render/BlockRenderer.svelte';
+	import PreviewBlocks from './PreviewBlocks.svelte';
 	import { PREVIEW_MESSAGE, PREVIEW_READY_MESSAGE, type PreviewMessage } from '../preview';
 
 	/**
@@ -12,13 +13,23 @@
 	// svelte-ignore state_referenced_locally
 	const registry = getCmsContext();
 	let message = $state<PreviewMessage | null>(null);
+	/** While a text is typed into, newer state waits; the editor already holds what was typed. */
+	let editing = $state(false);
+	let pending: PreviewMessage | null = null;
+	$effect(() => {
+		if (!editing && pending) {
+			message = pending;
+			pending = null;
+		}
+	});
 
 	const CollectionPreview = $derived(message ? registry.previews[message.collection] : undefined);
 
 	onMount(() => {
 		const onMessage = (event: MessageEvent<PreviewMessage>) => {
 			if (event.origin !== window.location.origin || event.data?.type !== PREVIEW_MESSAGE) return;
-			message = event.data;
+			if (editing) pending = event.data;
+			else message = event.data;
 		};
 		window.addEventListener('message', onMessage);
 		window.parent?.postMessage({ type: PREVIEW_READY_MESSAGE }, window.location.origin);
@@ -39,6 +50,12 @@
 			lang={message.lang}
 			fields={message.fields}
 			blocks={message.blocks}
+		/>
+	{:else if message?.blocks.length && message.editable}
+		<PreviewBlocks
+			blocks={message.blocks}
+			selectedBlockId={message.selectedBlockId ?? null}
+			bind:editing
 		/>
 	{:else if message?.blocks.length}
 		<BlockRenderer blocks={message.blocks} />
