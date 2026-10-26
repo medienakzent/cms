@@ -2,6 +2,16 @@
 
 Alle relevanten Änderungen. Format: Datum, Version, Abschnitte Neu / Geändert / Breaking.
 
+## 0.9.1 — 2026-10-25
+
+### Behoben
+
+- **Passwort vergessen / Anmeldung mit `trailingSlash = 'always'`:** `/api/auth/…` hatte keine eigene
+  Route, also traf der Catch-all der Website zu und leitete etwa `POST
+  /api/auth/request-password-reset` auf eine Adresse mit Schrägstrich um, die Better Auth mit 404
+  beantwortet. Neuer Stub `src/routes/api/auth/[...path]/+server.ts`; eigene Param-Matcher, die
+  `/api` aus dem Catch-all heraushalten, sind nicht mehr nötig.
+
 ## 0.9.0 — 2026-10-05
 
 ### Neu
